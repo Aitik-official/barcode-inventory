@@ -11,6 +11,8 @@ import {
   ScanBarcode,
   Printer,
   Plus,
+  Minus,
+  RotateCcw,
   ArrowLeft,
   X,
   CheckCircle2,
@@ -32,6 +34,7 @@ import {
   Truck,
   Hash,
   Info,
+  AlertTriangle,
 } from "lucide-react";
 
 interface Category {
@@ -57,8 +60,10 @@ export default function ProductDetailClient({
   const unitBarcodes = variant?.unitBarcodes || [];
   const inventory = variant?.inventory;
 
-  const availableCount = unitBarcodes.filter((u: any) => u.status === "AVAILABLE").length;
-  const soldCount = unitBarcodes.filter((u: any) => u.status === "SOLD").length;
+  const availableUnits = unitBarcodes.filter((u: any) => u.status === "AVAILABLE");
+  const availableCount = availableUnits.length;
+  const soldUnits = unitBarcodes.filter((u: any) => u.status === "SOLD");
+  const soldCount = soldUnits.length;
   const damagedCount = unitBarcodes.filter((u: any) => u.status === "DAMAGED").length;
 
   // Edit Modal State
@@ -224,7 +229,13 @@ export default function ProductDetailClient({
   const [addStockStep, setAddStockStep] = useState<"input" | "success">("input");
   const [newlyGeneratedBarcodes, setNewlyGeneratedBarcodes] = useState<string[]>([]);
 
-  // Delete Modal State
+  // Reduce / Remove Extra Stock Modal State
+  const [reduceStockOpen, setReduceStockOpen] = useState(false);
+  const [qtyToReduce, setQtyToReduce] = useState(1);
+  const [reduceReason, setReduceReason] = useState("Accidental extra stock entry");
+  const [reducingStock, setReducingStock] = useState(false);
+
+  // Delete Entire Product Modal State
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
 
@@ -311,7 +322,188 @@ export default function ProductDetailClient({
     }
   };
 
-  // Delete Product Handler
+  // Reduce / Undo Extra Stock Handler (Removes last N available unit barcodes)
+  const handleReduceStock = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!variant || qtyToReduce <= 0) return;
+
+    if (qtyToReduce > availableCount) {
+      alert(`Cannot remove ${qtyToReduce} units because only ${availableCount} units are currently available.`);
+      return;
+    }
+
+    setReducingStock(true);
+    try {
+      const res = await fetch("/api/barcodes", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          productVariantId: variant.id,
+          count: qtyToReduce,
+          reason: reduceReason.trim() || `Removed ${qtyToReduce} extra unit barcodes`,
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || "Failed to reduce stock");
+      }
+
+      const removedIds = new Set(data.removedIds || []);
+      setProduct((prev: any) => {
+        const updatedVariants = prev.variants.map((v: any) => {
+          if (v.id === variant.id) {
+            const updatedUnits = v.unitBarcodes.filter((u: any) => !removedIds.has(u.id));
+            return {
+              ...v,
+              unitBarcodes: updatedUnits,
+              inventory: {
+                ...v.inventory,
+                quantity: data.newAvailableStock,
+              },
+            };
+          }
+          return v;
+        });
+        return { ...prev, variants: updatedVariants };
+      });
+
+      setReduceStockOpen(false);
+      setFeedback({ type: "success", message: data.message || `Removed ${qtyToReduce} extra unit barcodes.` });
+      setTimeout(() => setFeedback(null), 6000);
+    } catch (err: any) {
+      alert("Reduce Stock Error: " + err.message);
+    } finally {
+      setReducingStock(false);
+    }
+  };
+
+  // Delete Individual Unit Barcode Handler
+  const handleDeleteSingleUnit = async (unit: any) => {
+    if (!confirm(`Are you sure you want to remove unit barcode #${unit.serialNumber} (${unit.barcode}) and release its serial number?`)) {
+      return;
+    }
+
+    try {
+      const res = await fetch(`/api/barcodes?id=${unit.id}`, {
+        method: "DELETE",
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to delete barcode");
+
+      setProduct((prev: any) => {
+        const updatedVariants = prev.variants.map((v: any) => {
+          if (v.id === variant.id) {
+            const updatedUnits = v.unitBarcodes.filter((u: any) => u.id !== unit.id);
+            const newAvail = updatedUnits.filter((u: any) => u.status === "AVAILABLE").length;
+            return {
+              ...v,
+              unitBarcodes: updatedUnits,
+              inventory: {
+                ...v.inventory,
+                quantity: newAvail,
+              },
+            };
+          }
+          return v;
+        });
+        return { ...prev, variants: updatedVariants };
+      });
+
+      setFeedback({ type: "success", message: `Unit barcode #${unit.serialNumber} removed. Serial number released.` });
+      setTimeout(() => setFeedback(null), 5000);
+    } catch (err: any) {
+      alert("Delete Error: " + err.message);
+    }
+  };
+
+  // Delete Selected Unit Barcodes
+  const handleDeleteSelectedUnits = async () => {
+    const selectedUnits = unitBarcodes.filter((u: any) => selectedIds.has(u.id));
+    if (selectedUnits.length === 0) return;
+
+    if (!confirm(`Remove ${selectedUnits.length} selected unit barcode(s) and release their serial numbers for reuse?`)) {
+      return;
+    }
+
+    try {
+      const ids = Array.from(selectedIds);
+      const res = await fetch("/api/barcodes", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ids }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to delete selected units");
+
+      const deletedSet = new Set(ids);
+      setProduct((prev: any) => {
+        const updatedVariants = prev.variants.map((v: any) => {
+          if (v.id === variant.id) {
+            const updatedUnits = v.unitBarcodes.filter((u: any) => !deletedSet.has(u.id));
+            const newAvail = updatedUnits.filter((u: any) => u.status === "AVAILABLE").length;
+            return {
+              ...v,
+              unitBarcodes: updatedUnits,
+              inventory: {
+                ...v.inventory,
+                quantity: newAvail,
+              },
+            };
+          }
+          return v;
+        });
+        return { ...prev, variants: updatedVariants };
+      });
+
+      setSelectedIds(new Set());
+      setFeedback({ type: "success", message: `Deleted ${ids.length} unit barcode(s). Serial numbers released.` });
+      setTimeout(() => setFeedback(null), 5000);
+    } catch (err: any) {
+      alert("Delete Error: " + err.message);
+    }
+  };
+
+  // Reopen / Reset Unit Status to AVAILABLE
+  const handleResetUnitStatus = async (unitId: string, newStatus: string = "AVAILABLE") => {
+    try {
+      const res = await fetch("/api/barcodes", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: unitId, status: newStatus }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to update unit status");
+
+      setProduct((prev: any) => {
+        const updatedVariants = prev.variants.map((v: any) => {
+          if (v.id === variant.id) {
+            const updatedUnits = v.unitBarcodes.map((u: any) =>
+              u.id === unitId ? { ...u, status: newStatus, soldAt: null } : u
+            );
+            const newAvail = updatedUnits.filter((u: any) => u.status === "AVAILABLE").length;
+            return {
+              ...v,
+              unitBarcodes: updatedUnits,
+              inventory: {
+                ...v.inventory,
+                quantity: newAvail,
+              },
+            };
+          }
+          return v;
+        });
+        return { ...prev, variants: updatedVariants };
+      });
+
+      setFeedback({ type: "success", message: `Unit barcode reset to ${newStatus} for reuse.` });
+      setTimeout(() => setFeedback(null), 5000);
+    } catch (err: any) {
+      alert("Status Update Error: " + err.message);
+    }
+  };
+
+  // Delete Entire Product Handler
   const handleConfirmDeleteProduct = async () => {
     setIsDeleting(true);
     try {
@@ -403,7 +595,7 @@ export default function ProductDetailClient({
           </div>
         </div>
 
-        <div className="flex items-center gap-2.5 flex-wrap">
+        <div className="flex items-center gap-2 flex-wrap">
           {/* EDIT PRODUCT BUTTON */}
           <button
             type="button"
@@ -415,6 +607,7 @@ export default function ProductDetailClient({
             <span>Edit Details</span>
           </button>
 
+          {/* PRINT ALL BUTTON */}
           <button
             type="button"
             onClick={handlePrintAll}
@@ -425,6 +618,7 @@ export default function ProductDetailClient({
             <span>Print All ({unitBarcodes.length})</span>
           </button>
 
+          {/* RECEIVE STOCK BUTTON */}
           <button
             type="button"
             onClick={() => {
@@ -433,12 +627,28 @@ export default function ProductDetailClient({
               setNewlyGeneratedBarcodes([]);
               setAddStockOpen(true);
             }}
-            className="px-4 py-2 rounded-lg bg-[#056468] hover:bg-[#044e51] active:scale-95 text-white font-medium text-xs shadow-xs transition-all flex items-center gap-1.5 cursor-pointer"
+            className="px-3.5 py-2 rounded-lg bg-[#056468] hover:bg-[#044e51] active:scale-95 text-white font-medium text-xs shadow-xs transition-all flex items-center gap-1.5 cursor-pointer"
           >
             <Plus className="w-3.5 h-3.5" />
-            <span>Receive Stock (+ Barcodes)</span>
+            <span>Receive Stock</span>
           </button>
 
+          {/* REDUCE / UNDO STOCK BUTTON */}
+          <button
+            type="button"
+            onClick={() => {
+              setQtyToReduce(Math.min(1, availableCount));
+              setReduceStockOpen(true);
+            }}
+            disabled={availableCount === 0}
+            className="px-3 py-2 rounded-lg bg-amber-50 hover:bg-amber-100 active:scale-95 text-amber-800 font-semibold text-xs border border-amber-200 shadow-xs transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+            title="Remove accidental extra stock and release serial numbers"
+          >
+            <Minus className="w-3.5 h-3.5" />
+            <span>Reduce / Undo Stock</span>
+          </button>
+
+          {/* DELETE PRODUCT BUTTON */}
           <button
             type="button"
             onClick={() => setIsDeleteModalOpen(true)}
@@ -550,15 +760,29 @@ export default function ProductDetailClient({
               <ScanBarcode className="w-5 h-5 text-[#056468]" />
               <span>Per-Unit Serial Barcode Registry</span>
               <span className="text-xs px-2.5 py-0.5 rounded-full bg-[#e3f2f5] text-[#056468] font-mono border border-[#cce7ed]">
-                {unitBarcodes.length} Barcodes
+                {unitBarcodes.length} Barcodes ({availableCount} Available)
               </span>
             </h2>
             <p className="text-xs text-[#4a6870] mt-0.5">
-              Individual 12-digit Code 128 barcodes tracked per physical unit item.
+              Individual sequential 12-digit Code 128 barcodes. If extra stock was entered, remove it to release serial numbers for reuse.
             </p>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
+            {/* Reduce stock button in registry */}
+            <button
+              type="button"
+              onClick={() => {
+                setQtyToReduce(Math.min(1, availableCount));
+                setReduceStockOpen(true);
+              }}
+              disabled={availableCount === 0}
+              className="px-3 py-1.5 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-800 font-semibold text-xs border border-amber-200 transition-all flex items-center gap-1.5 disabled:opacity-50 cursor-pointer"
+            >
+              <Minus className="w-3.5 h-3.5" />
+              <span>Remove Extra Stock</span>
+            </button>
+
             <button
               type="button"
               onClick={toggleSelectAll}
@@ -577,15 +801,28 @@ export default function ProductDetailClient({
               )}
             </button>
 
+            {/* Selected Batch Actions */}
             {selectedIds.size > 0 && (
-              <button
-                type="button"
-                onClick={handlePrintSelected}
-                className="px-3.5 py-1.5 rounded-lg bg-[#056468] hover:bg-[#044e51] text-white font-medium text-xs shadow-xs transition-all flex items-center gap-1.5 cursor-pointer"
-              >
-                <Printer className="w-3.5 h-3.5" />
-                <span>Print Selected ({selectedIds.size})</span>
-              </button>
+              <div className="flex items-center gap-1.5">
+                <button
+                  type="button"
+                  onClick={handlePrintSelected}
+                  className="px-3 py-1.5 rounded-lg bg-[#056468] hover:bg-[#044e51] text-white font-medium text-xs shadow-xs transition-all flex items-center gap-1.5 cursor-pointer"
+                >
+                  <Printer className="w-3.5 h-3.5" />
+                  <span>Print ({selectedIds.size})</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handleDeleteSelectedUnits}
+                  className="px-3 py-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold text-xs border border-rose-200 shadow-xs transition-all flex items-center gap-1.5 cursor-pointer"
+                  title="Remove selected unit barcodes and release their serial numbers"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                  <span>Delete Selected ({selectedIds.size})</span>
+                </button>
+              </div>
             )}
           </div>
         </div>
@@ -605,7 +842,7 @@ export default function ProductDetailClient({
                 setQtyToAdd(10);
                 setAddStockOpen(true);
               }}
-              className="px-4 py-2 bg-[#056468] hover:bg-[#044e51] text-white text-xs font-medium rounded-lg shadow-xs"
+              className="px-4 py-2 bg-[#056468] hover:bg-[#044e51] text-white text-xs font-medium rounded-lg shadow-xs cursor-pointer"
             >
               Generate First 10 Barcodes
             </button>
@@ -673,18 +910,53 @@ export default function ProductDetailClient({
                     <span>
                       {unit.printedCount > 0 ? `Printed (${unit.printedCount}x)` : "Not Printed"}
                     </span>
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleOpenPrintSingle(unit);
-                      }}
-                      className="px-2 py-1 rounded bg-white hover:bg-[#e3f2f5] text-[#056468] border border-[#cce7ed] font-medium text-[10px] flex items-center gap-1 transition-all"
-                      title="Print Single Thermal Label"
-                    >
-                      <Printer className="w-3 h-3" />
-                      <span>Print</span>
-                    </button>
+
+                    <div className="flex items-center gap-1">
+                      {/* Reopen button if SOLD or DAMAGED */}
+                      {!isAvailable && (
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleResetUnitStatus(unit.id, "AVAILABLE");
+                          }}
+                          className="px-2 py-1 rounded bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 font-bold text-[10px] flex items-center gap-1 transition-all"
+                          title="Reopen and make this serial barcode AVAILABLE again"
+                        >
+                          <RotateCcw className="w-3 h-3" />
+                          <span>Reopen</span>
+                        </button>
+                      )}
+
+                      {/* Print button */}
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleOpenPrintSingle(unit);
+                        }}
+                        className="px-2 py-1 rounded bg-white hover:bg-[#e3f2f5] text-[#056468] border border-[#cce7ed] font-medium text-[10px] flex items-center gap-1 transition-all"
+                        title="Print Single Thermal Label"
+                      >
+                        <Printer className="w-3 h-3" />
+                        <span>Print</span>
+                      </button>
+
+                      {/* Delete individual available unit */}
+                      {isAvailable && (
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDeleteSingleUnit(unit);
+                          }}
+                          className="p-1 rounded bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 text-[10px] transition-all"
+                          title="Remove this extra barcode and release serial number"
+                        >
+                          <Trash2 className="w-3 h-3" />
+                        </button>
+                      )}
+                    </div>
                   </div>
                 </div>
               );
@@ -693,7 +965,7 @@ export default function ProductDetailClient({
         )}
       </div>
 
-      {/* Stock Receive Modal */}
+      {/* MODAL 1: RECEIVE STOCK (+ GENERATE BARCODES) */}
       {addStockOpen && (
         <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 overflow-y-auto pointer-events-auto">
           <div className="relative z-[10000] bg-white border border-[#cce7ed] rounded-xl max-w-md w-full p-6 shadow-2xl space-y-4 text-[#0b252c]">
@@ -818,7 +1090,117 @@ export default function ProductDetailClient({
         </div>
       )}
 
-      {/* EDIT PRODUCT DETAILS MODAL */}
+      {/* MODAL 2: REDUCE / UNDO EXTRA STOCK & RELEASE SERIAL NUMBERS */}
+      {reduceStockOpen && (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 overflow-y-auto pointer-events-auto">
+          <div className="relative z-[10000] bg-white border border-amber-300 rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4 text-slate-800 animate-in fade-in zoom-in-95 my-auto">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-lg bg-amber-100 text-amber-800 flex items-center justify-center border border-amber-200">
+                  <Minus className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-slate-900">
+                    Reduce Stock / Undo Entry
+                  </h3>
+                  <p className="text-[11px] text-slate-500">
+                    Releases unused serial numbers for reuse
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setReduceStockOpen(false)}
+                className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleReduceStock} className="space-y-4 text-xs">
+              <div className="bg-amber-50 border border-amber-200 rounded-xl p-3.5 space-y-1 text-amber-950">
+                <div className="font-bold flex items-center gap-1.5">
+                  <AlertTriangle className="w-4 h-4 text-amber-700 shrink-0" />
+                  <span>Available Stock to Reduce: {availableCount} pcs</span>
+                </div>
+                <p className="text-[11px] text-amber-800 leading-relaxed">
+                  Removing extra units will delete the highest-numbered unused barcodes (e.g. #{Math.max(1, availableCount - qtyToReduce + 1)} to #{availableCount}). Those serial numbers will be released for future stock receipts.
+                </p>
+              </div>
+
+              <div>
+                <label className="block font-bold text-slate-800 mb-1">
+                  Number of Extra Units to Remove *
+                </label>
+                <input
+                  type="number"
+                  min="1"
+                  max={availableCount}
+                  required
+                  value={qtyToReduce}
+                  onChange={(e) => setQtyToReduce(Math.min(availableCount, Math.max(1, parseInt(e.target.value) || 1)))}
+                  className="w-full bg-slate-50 border-2 border-amber-300 rounded-xl px-3 py-2 text-lg text-amber-900 font-bold font-mono focus:outline-none focus:border-amber-600 bg-white"
+                />
+              </div>
+
+              {/* Quick Presets */}
+              <div>
+                <span className="text-[11px] text-slate-500 font-semibold block mb-1">Quick Presets:</span>
+                <div className="flex items-center gap-2 flex-wrap">
+                  {[1, 5, 10, 20, availableCount].map((num, idx) => {
+                    if (num <= 0 || num > availableCount) return null;
+                    return (
+                      <button
+                        key={idx}
+                        type="button"
+                        onClick={() => setQtyToReduce(num)}
+                        className={`px-3 py-1 rounded-lg font-mono font-bold text-xs border transition-all ${
+                          qtyToReduce === num
+                            ? "bg-amber-600 text-white border-amber-600 shadow-xs"
+                            : "bg-amber-50 text-amber-800 border-amber-200 hover:bg-amber-100"
+                        }`}
+                      >
+                        {num === availableCount ? `All (${num})` : `-${num}`}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div>
+                <label className="block font-semibold text-slate-700 mb-1">Reason / Note</label>
+                <input
+                  type="text"
+                  value={reduceReason}
+                  onChange={(e) => setReduceReason(e.target.value)}
+                  placeholder="e.g. Accidental extra quantity entered"
+                  className="w-full px-3 py-2 rounded-xl border border-slate-300 text-slate-900 focus:outline-none focus:border-amber-600"
+                />
+              </div>
+
+              <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setReduceStockOpen(false)}
+                  disabled={reducingStock}
+                  className="px-4 py-2 text-xs font-bold text-slate-600 hover:text-slate-900 rounded-xl bg-slate-100 hover:bg-slate-200"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={reducingStock || qtyToReduce <= 0 || availableCount === 0}
+                  className="px-5 py-2.5 bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold rounded-xl shadow-md flex items-center gap-1.5 transition-all disabled:opacity-50 cursor-pointer"
+                >
+                  <Minus className="w-3.5 h-3.5" />
+                  <span>{reducingStock ? "Removing Units..." : `Remove ${qtyToReduce} Units & Release Numbers`}</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL 3: EDIT PRODUCT DETAILS MODAL */}
       {isEditModalOpen && (
         <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/70 backdrop-blur-xs p-3 sm:p-6 overflow-y-auto pointer-events-auto">
           <div className="relative z-[10000] bg-white border border-[#cce7ed] rounded-2xl max-w-3xl w-full max-h-[92vh] flex flex-col shadow-2xl text-[#0b252c] animate-in fade-in zoom-in-95 my-auto">
@@ -1232,7 +1614,7 @@ export default function ProductDetailClient({
                   type="button"
                   onClick={() => setIsEditModalOpen(false)}
                   disabled={isSaving}
-                  className="px-4 py-2 rounded-xl bg-white hover:bg-slate-100 text-slate-700 font-semibold text-xs border border-slate-300 transition-colors"
+                  className="px-4 py-2 rounded-xl bg-white hover:bg-slate-100 text-slate-700 font-semibold text-xs border border-slate-300 transition-colors cursor-pointer"
                 >
                   Cancel
                 </button>

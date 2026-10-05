@@ -100,9 +100,24 @@ export default function OrdersClient({
   const unifiedOrders: UnifiedOrder[] = useMemo(() => {
     const list: UnifiedOrder[] = [];
 
-    // 1. Local Orders (Website / POS / Direct)
+    // 1. Local Orders (Website / POS / Direct / Multi-Channel)
     orders.forEach((ord) => {
-      const isPos = ord.orderNumber?.startsWith("POS-") || ord.customerName?.toLowerCase().includes("walk-in");
+      let detectedChannel: "AMAZON" | "FLIPKART" | "WEBSITE" | "POS" = "WEBSITE";
+      if (ord.orderNumber?.startsWith("AMZ-") || ord.notes?.includes("Channel: AMAZON")) {
+        detectedChannel = "AMAZON";
+      } else if (ord.orderNumber?.startsWith("FK-") || ord.notes?.includes("Channel: FLIPKART")) {
+        detectedChannel = "FLIPKART";
+      } else if (
+        ord.orderNumber?.startsWith("POS-") ||
+        ord.notes?.includes("Channel: POS") ||
+        ord.customerName?.toLowerCase().includes("walk-in")
+      ) {
+        detectedChannel = "POS";
+      } else if (ord.orderNumber?.startsWith("WEB-") || ord.notes?.includes("Channel: WEBSITE")) {
+        detectedChannel = "WEBSITE";
+      }
+
+      const isPos = detectedChannel === "POS";
       const orderItems = (ord.items || []).map((i: any) => ({
         title: i.name || i.productVariant?.product?.name || "Inventory Product",
         sku: i.sku || i.productVariant?.sku || "PROD",
@@ -115,7 +130,7 @@ export default function OrdersClient({
       list.push({
         id: ord.id,
         orderNumber: ord.orderNumber,
-        channel: isPos ? "POS" : "WEBSITE",
+        channel: detectedChannel,
         customerName: ord.customerName || (isPos ? "Walk-in Retail Customer" : "Store Customer"),
         customerEmail: ord.customerEmail || "",
         customerPhone: ord.customerPhone || "",

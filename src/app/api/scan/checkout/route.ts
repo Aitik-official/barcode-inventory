@@ -6,8 +6,16 @@ export async function POST(req: Request) {
     const body = await req.json();
     const {
       items,
-      customerName = "Walk-in Customer",
+      channel = "POS",
+      channelOrderId,
+      customerName = "Walk-in Retail Customer",
+      customerEmail,
+      customerPhone,
+      shippingAddress,
+      paymentStatus = "PAID",
       paymentMethod = "CASH",
+      courier,
+      trackingNumber,
       notes,
     } = body;
 
@@ -25,7 +33,7 @@ export async function POST(req: Request) {
         // Find exact unit barcode
         const unit = await prisma.unitBarcode.findFirst({
           where: { barcode: unitBarcode },
-          include: { productVariant: true },
+          include: { productVariant: { include: { product: true } } },
         });
 
         if (unit) {
@@ -70,15 +78,15 @@ export async function POST(req: Request) {
               quantity: -1,
               previousStock: prevStock,
               newStock: availableCount,
-              note: `POS Sale — Scanned Unit Barcode ${unit.barcode} (Serial #${unit.serialNumber})`,
-              performedBy: "cashier",
+              note: `Dispatch Scan [${channel}] — Unit ${unit.barcode} (Serial #${unit.serialNumber}) [${paymentStatus}: ${paymentMethod}]`,
+              performedBy: "scanner",
             },
           });
 
           const itemPrice = price || unit.productVariant.sellingPrice;
           totalSaleAmount += itemPrice;
           processedItems.push({
-            name: (unit.productVariant as any).product?.name || unit.productVariant.sku,
+            name: unit.productVariant.product?.name || unit.productVariant.sku,
             unitBarcode: unit.barcode,
             unitBarcodeId: unit.id,
             productVariantId: unit.productVariantId,
@@ -88,7 +96,7 @@ export async function POST(req: Request) {
           });
         }
       } else if (sku) {
-        // Fallback if checked out by SKU: pick first available unit barcode for that SKU
+        // Fallback if checked out by SKU
         const variant = await prisma.productVariant.findUnique({
           where: { sku },
           include: {
@@ -138,8 +146,8 @@ export async function POST(req: Request) {
               quantity: -1,
               previousStock: prevStock,
               newStock: availableCount,
-              note: `POS Sale — Auto-allocated Unit Barcode ${unit.barcode} for SKU ${sku}`,
-              performedBy: "cashier",
+              note: `Dispatch Scan [${channel}] — Auto-allocated Unit ${unit.barcode} for SKU ${sku}`,
+              performedBy: "scanner",
             },
           });
 
@@ -158,18 +166,52 @@ export async function POST(req: Request) {
       }
     }
 
-    // Create Order record for tracking with full OrderItems
+    // Determine Prefix and Order Number
     const orderCount = await prisma.order.count();
-    const orderNumber = `ORD-${String(orderCount + 1).padStart(4, "0")}`;
+    const prefix =
+      channel === "AMAZON"
+        ? "AMZ"
+        : channel === "FLIPKART"
+        ? "FK"
+        : channel === "WEBSITE"
+        ? "WEB"
+        : channel === "SHOPIFY"
+        ? "SHP"
+        : channel === "B2B"
+        ? "B2B"
+        : "POS";
+
+    const finalOrderNumber =
+      channelOrderId && channelOrderId.trim()
+        ? channelOrderId.trim()
+        : `${prefix}-${String(orderCount + 1).padStart(4, "0")}`;
+
+    const orderNotes =
+      notes ||
+      `Channel: ${channel} | Payment Status: ${paymentStatus} | Mode: ${paymentMethod}${
+        courier ? ` | Courier: ${courier}` : ""
+      }${trackingNumber ? ` | AWB: ${trackingNumber}` : ""}`;
+
+    const defaultAddress =
+      shippingAddress ||
+      (channel === "POS"
+        ? "Local Store Counter Pickup"
+        : channel === "AMAZON"
+        ? "Amazon Easy Ship / ATS Logistics"
+        : channel === "FLIPKART"
+        ? "Ekart Logistics Hub"
+        : "Direct Online Shipping");
 
     const order = await prisma.order.create({
       data: {
-        orderNumber,
-        customerName,
-        customerEmail: "pos@store.local",
+        orderNumber: finalOrderNumber,
+        customerName: customerName || `${channel} Customer`,
+        customerEmail: customerEmail || `${channel.toLowerCase()}@dispatch.local`,
+        customerPhone: customerPhone || null,
+        shippingAddress: defaultAddress,
         totalAmount: totalSaleAmount,
-        status: "Delivered",
-        notes: notes || `POS Walk-in Barcode Sale [Payment: ${paymentMethod}]`,
+        status: paymentStatus === "PAID" ? "Confirmed" : "Order Placed",
+        notes: orderNotes,
         items: {
           create: processedItems.map((item) => ({
             name: item.name || item.sku,
@@ -191,8 +233,11 @@ export async function POST(req: Request) {
       success: true,
       orderId: order.id,
       orderNumber: order.orderNumber,
+      channel,
       customerName: order.customerName,
+      paymentStatus,
       paymentMethod,
+      shippingAddress: order.shippingAddress,
       totalAmount: totalSaleAmount,
       createdAt: order.createdAt,
       itemCount: processedItems.length,
