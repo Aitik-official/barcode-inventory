@@ -1,0 +1,448 @@
+generator client {
+  provider   = "prisma-client-js"
+  output     = "../src/generated/client"
+  engineType = "library"
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+model Category {
+  id             String        @id @default(cuid()) @map("_id")
+  name           String        @unique
+  slug           String        @unique
+  mainUse        String        @default("product") // product | service
+  description    String?
+  parentId       String?
+  parent         Category?     @relation("CategoryHierarchy", fields: [parentId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  children       Category[]    @relation("CategoryHierarchy")
+  createdAt      DateTime      @default(now())
+  products       Product[]     @relation("ProductCategory")
+  subProducts    Product[]     @relation("ProductSubCategory")
+  level2Products Product[]     @relation("ProductLevel2Category")
+}
+
+model Product {
+  id               String           @id @default(cuid()) @map("_id")
+  name             String
+  slug             String           @unique
+  description      String?
+  categoryId       String?
+  category         Category?        @relation("ProductCategory", fields: [categoryId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  subCategoryId    String?
+  subCategory      Category?        @relation("ProductSubCategory", fields: [subCategoryId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  level2CategoryId String?
+  level2Category   Category?        @relation("ProductLevel2Category", fields: [level2CategoryId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  brand            String?
+  vendor           String?
+  hsn              String?
+  mrp              Float            @default(0)
+  offerPrice       Float            @default(0)
+  gstPercent       Float            @default(0)
+  status           String           @default("ACTIVE") // ACTIVE | INACTIVE | OUT_OF_STOCK
+  productType      String           @default("PRODUCT") // PRODUCT | SERVICE
+  showOnWebsite    Boolean          @default(true)
+  featured         Boolean          @default(false)
+  badge            String?
+  homepageSections String[]
+  displayOrder     Int              @default(99)
+  tags             String?
+  imageUrl         String?
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+  variants         ProductVariant[]
+}
+
+model ProductVariant {
+  id             String                 @id @default(cuid()) @map("_id")
+  productId      String
+  product        Product                @relation(fields: [productId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  sku            String                 @unique
+  color          String?
+  size           String?
+  unit           String                 @default("PCS")
+  purchasePrice  Float                  @default(0)
+  sellingPrice   Float                  @default(0)
+  status         String                 @default("ACTIVE") // ACTIVE | INACTIVE
+  createdAt      DateTime               @default(now())
+  updatedAt      DateTime               @updatedAt
+  unitBarcodes   UnitBarcode[]
+  inventory      Inventory?
+  transactions   InventoryTransaction[]
+  printJobs      PrintJob[]
+  customerStocks CustomerStock[]
+  wasteRecords   Waste[]
+  orderItems     OrderItem[]
+}
+
+/// Unique barcode per physical unit item (serial barcode series)
+model UnitBarcode {
+  id               String         @id @default(cuid()) @map("_id")
+  productVariantId String
+  productVariant   ProductVariant @relation(fields: [productVariantId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  barcode          String         @unique
+  serialNumber     Int            @default(1)
+  status           String         @default("AVAILABLE") // AVAILABLE | SOLD | RESERVED | DAMAGED | RETIRED
+  printedCount     Int            @default(0)
+  generatedAt      DateTime       @default(now())
+  generatedBy      String         @default("system")
+  soldAt           DateTime?
+  deactivatedAt    DateTime?
+  reason           String?
+  transactions     InventoryTransaction[]
+  orderItems       OrderItem[]
+
+  @@index([productVariantId])
+  @@index([status])
+}
+
+model Inventory {
+  id               String         @id @default(cuid()) @map("_id")
+  productVariantId String         @unique
+  productVariant   ProductVariant @relation(fields: [productVariantId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  warehouse        String         @default("MAIN")
+  quantity         Int            @default(0) // Available unit barcodes count
+  reservedQuantity Int            @default(0)
+  updatedAt        DateTime       @updatedAt
+}
+
+model InventoryTransaction {
+  id               String         @id @default(cuid()) @map("_id")
+  productVariantId String
+  productVariant   ProductVariant @relation(fields: [productVariantId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  unitBarcodeId    String?
+  unitBarcode      UnitBarcode?   @relation(fields: [unitBarcodeId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  transactionType  String         // RECEIVE | SALE | RETURN | ADJUST | DAMAGE | TRANSFER
+  quantity         Int
+  previousStock    Int
+  newStock         Int
+  referenceType    String?
+  referenceId      String?
+  note             String?
+  performedBy      String         @default("system")
+  createdAt        DateTime       @default(now())
+
+  @@index([productVariantId])
+  @@index([createdAt])
+}
+
+model PrintJob {
+  id               String         @id @default(cuid()) @map("_id")
+  productVariantId String
+  productVariant   ProductVariant @relation(fields: [productVariantId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  unitBarcode      String?
+  copies           Int            @default(1)
+  labelWidthMm     Int
+  labelHeightMm    Int
+  labelTemplate    String         @default("BASIC")
+  printedBy        String         @default("system")
+  createdAt        DateTime       @default(now())
+
+  @@index([productVariantId])
+}
+
+model Customer {
+  id             String          @id @default(cuid()) @map("_id")
+  name           String
+  username       String          @unique
+  email          String          @unique
+  phone          String?
+  company        String?
+  address        String?
+  city           String?
+  state          String?
+  zip            String?
+  country        String          @default("India")
+  gstin          String?
+  status         String          @default("ACTIVE") // ACTIVE | BLOCKED
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  orders         Order[]
+  quotations     Quotation[]
+  enquiries      Enquiry[]
+  invoices       Invoice[]
+  customerStocks CustomerStock[]
+}
+
+model Supplier {
+  id             String          @id @default(cuid()) @map("_id")
+  name           String          @unique
+  contact        String?
+  email          String?
+  phone          String?
+  address        String?
+  city           String?
+  state          String?
+  pincode        String?
+  gstin          String?
+  notes          String?
+  active         Boolean         @default(true)
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  purchaseOrders PurchaseOrder[]
+  wastes         Waste[]
+}
+
+model PurchaseOrder {
+  id           String             @id @default(cuid()) @map("_id")
+  poNumber     String             @unique
+  supplierId   String
+  supplier     Supplier           @relation(fields: [supplierId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  deliveryType String             @default("WAREHOUSE") // WAREHOUSE | DIRECT_CUSTOMER
+  totalAmount  Float              @default(0)
+  status       String             @default("PO_CREATED") // PO_CREATED | PARTIALLY_RECEIVED | CLOSED | CANCELLED
+  expectedDate DateTime?
+  notes        String?
+  createdAt    DateTime           @default(now())
+  updatedAt    DateTime           @updatedAt
+  items        PurchaseOrderItem[]
+}
+
+model PurchaseOrderItem {
+  id              String        @id @default(cuid()) @map("_id")
+  purchaseOrderId String
+  purchaseOrder   PurchaseOrder @relation(fields: [purchaseOrderId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  sku             String
+  name            String
+  quantity        Int
+  receivedQty     Int           @default(0)
+  unitPrice       Float
+  totalPrice      Float
+}
+
+model Order {
+  id              String      @id @default(cuid()) @map("_id")
+  orderNumber     String      @unique
+  customerId      String?
+  customer        Customer?   @relation(fields: [customerId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  customerName    String
+  customerEmail   String
+  customerPhone   String?
+  company         String?
+  gstin           String?
+  shippingAddress String?
+  totalAmount     Float       @default(0)
+  status          String      @default("Order Placed") // Order Placed | Confirmed | Processing | Shipped | Delivered | Cancelled
+  notes           String?
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+  items           OrderItem[]
+  invoices        Invoice[]
+}
+
+model OrderItem {
+  id               String         @id @default(cuid()) @map("_id")
+  orderId          String
+  order            Order          @relation(fields: [orderId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  productVariantId String?
+  productVariant   ProductVariant? @relation(fields: [productVariantId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  unitBarcodeId    String?
+  unitBarcode      UnitBarcode?   @relation(fields: [unitBarcodeId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  sku              String
+  name             String
+  quantity         Int            @default(1)
+  unitPrice        Float
+  totalPrice       Float
+}
+
+model Quotation {
+  id              String   @id @default(cuid()) @map("_id")
+  quotationNumber String   @unique
+  customerId      String?
+  customer        Customer? @relation(fields: [customerId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  totalAmount     Float    @default(0)
+  status          String   @default("SENT") // DRAFT | SENT | ACCEPTED | REJECTED | REQUOTE_REQUESTED
+  userResponse    String?  // accepted | rejected | requested re-quote
+  reQuoteMessage  String?
+  notes           String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model Enquiry {
+  id               String    @id @default(cuid()) @map("_id")
+  customerId       String?
+  customer         Customer? @relation(fields: [customerId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  itemType         String    @default("product") // product | service | contact
+  itemName         String
+  message          String
+  name             String
+  company          String?
+  phone            String?
+  email            String?
+  preferredContact String    @default("email") // email | phone | whatsapp
+  status           String    @default("pending") // pending | viewed | responded | closed
+  adminNotes       String?
+  createdAt        DateTime  @default(now())
+}
+
+model Invoice {
+  id            String   @id @default(cuid()) @map("_id")
+  invoiceNumber String   @unique
+  orderId       String?
+  order         Order?   @relation(fields: [orderId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  customerId    String?
+  customer      Customer? @relation(fields: [customerId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  subtotal      Float
+  gstType       String   @default("CGST_SGST") // CGST_SGST | IGST
+  gstRate       Float    @default(18)
+  cgst          Float    @default(0)
+  sgst          Float    @default(0)
+  igst          Float    @default(0)
+  extraCharges  Float    @default(0)
+  grandTotal    Float
+  createdAt     DateTime @default(now())
+}
+
+model CustomerStock {
+  id               String         @id @default(cuid()) @map("_id")
+  customerId       String
+  customer         Customer       @relation(fields: [customerId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  productVariantId String
+  productVariant   ProductVariant @relation(fields: [productVariantId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  quantity         Int            @default(0)
+  unitPrice        Float          @default(0)
+  notes            String?
+  updatedAt        DateTime       @updatedAt
+}
+
+model Waste {
+  id               String         @id @default(cuid()) @map("_id")
+  productVariantId String
+  productVariant   ProductVariant @relation(fields: [productVariantId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  supplierId       String?
+  supplier         Supplier?      @relation(fields: [supplierId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  quantity         Int
+  reason           String         // DAMAGED | EXPIRED | LOST | OTHER
+  description      String?
+  recordedBy       String         @default("system")
+  createdAt        DateTime       @default(now())
+}
+
+model AuditLog {
+  id          String   @id @default(cuid()) @map("_id")
+  action      String
+  entity      String?
+  entityId    String?
+  details     String?
+  performedBy String   @default("system")
+  createdAt   DateTime @default(now())
+
+  @@index([createdAt])
+}
+
+model MarketplaceCredential {
+  id             String               @id @default(cuid()) @map("_id")
+  channel        String               // "AMAZON" | "FLIPKART"
+  name           String               // e.g. "Amazon India Store"
+  sellerId       String?              // Seller ID / Merchant Token
+  marketplaceId  String?              // e.g. "A21TJRUUN4KGV" for Amazon India
+  appId          String?              // LWA Client ID or Flipkart App ID
+  appSecret      String?              // LWA Client Secret or Flipkart Secret
+  refreshToken   String?              // Amazon LWA Refresh Token
+  accessToken    String?              // Temporary cached Bearer Token
+  tokenExpiresAt DateTime?
+  sandbox        Boolean              @default(false)
+  isActive       Boolean              @default(true)
+  autoSyncStock  Boolean              @default(true)
+  autoSyncOrders Boolean              @default(true)
+  lastSyncAt     DateTime?
+  createdAt      DateTime             @default(now())
+  updatedAt      DateTime             @updatedAt
+  mappings       MarketplaceMapping[]
+  orders         MarketplaceOrder[]
+}
+
+model MarketplaceMapping {
+  id               String                @id @default(cuid()) @map("_id")
+  credentialId     String
+  credential       MarketplaceCredential @relation(fields: [credentialId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  productVariantId String
+  channel          String                // "AMAZON" | "FLIPKART"
+  channelSku       String                // Seller SKU
+  externalId       String?               // ASIN or FSN
+  title            String?
+  listingPrice     Float                 @default(0)
+  channelStock     Int                   @default(0)
+  fulfillmentType  String                @default("FBM") // FBM (Merchant) | FBA (Amazon/Flipkart Fulfilled)
+  syncStatus       String                @default("SYNCED") // SYNCED | PENDING | ERROR
+  lastStockPushAt  DateTime?
+  lastErrorMessage String?
+  createdAt        DateTime              @default(now())
+  updatedAt        DateTime              @updatedAt
+
+  @@index([credentialId])
+  @@index([channelSku])
+}
+
+model MarketplaceOrder {
+  id                 String                 @id @default(cuid()) @map("_id")
+  credentialId       String?
+  credential         MarketplaceCredential? @relation(fields: [credentialId], references: [id], onDelete: SetNull, onUpdate: NoAction)
+  channel            String                 // "AMAZON" | "FLIPKART"
+  channelOrderId     String                 @unique
+  orderDate          DateTime               @default(now())
+  orderStatus        String                 // PENDING | UNSHIPPED | SHIPPED | DELIVERED | CANCELLED
+  fulfillmentChannel String                 @default("MERCHANT") // MERCHANT | MARKETPLACE
+  buyerName          String?
+  buyerCity          String?
+  buyerState         String?
+  buyerPincode       String?
+  shippingAddress    String?
+  totalAmount        Float                  @default(0)
+  currency           String                 @default("INR")
+  trackingNumber     String?
+  courier            String?
+  dispatchedAt       DateTime?
+  rawPayload         String?
+  createdAt          DateTime               @default(now())
+  updatedAt          DateTime               @updatedAt
+  items              MarketplaceOrderItem[]
+
+  @@index([channel])
+  @@index([orderStatus])
+  @@index([orderDate])
+}
+
+model MarketplaceOrderItem {
+  id                 String           @id @default(cuid()) @map("_id")
+  marketplaceOrderId String
+  marketplaceOrder   MarketplaceOrder @relation(fields: [marketplaceOrderId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  orderItemId        String?
+  channelSku         String
+  asinOrFsn          String?
+  title              String
+  quantity           Int              @default(1)
+  itemPrice          Float            @default(0)
+  taxPrice           Float            @default(0)
+  localVariantId     String?
+  scannedBarcode     String?
+
+  @@index([marketplaceOrderId])
+  @@index([channelSku])
+}
+
+model User {
+  id           String    @id @default(cuid()) @map("_id")
+  name         String
+  email        String    @unique
+  password     String
+  role         String    @default("STAFF") // SUPER_ADMIN | ADMIN | STAFF | ACCOUNTANT | CUSTOM
+  isSuperAdmin Boolean   @default(false)
+  status       String    @default("ACTIVE") // ACTIVE | SUSPENDED | INACTIVE
+  phone        String?
+  department   String?   // Executive | Warehouse | Operations | Accounts
+  avatarUrl    String?
+  permissions  String[]  @default([])
+  lastLoginAt  DateTime?
+  createdById  String?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  @@index([role])
+  @@index([status])
+}
+
+

@@ -1,36 +1,36 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Barcode Inventory System
 
-## Getting Started
+Next.js full-stack barcode generation & inventory management (MVP).
 
-First, run the development server:
+## Quick start
 
 ```bash
+npm install
+npm run db:setup
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open http://localhost:3000
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Demo product: **Black T-Shirt M** — barcode `2900010245` (use on Scan / POS).
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## How to use (short)
 
-## Learn More
+1. **Add product** → barcode created  
+2. **Print label** → pick size for your printer → print  
+3. Stick label on item  
+4. **Sell** → scan barcode → complete sale  
 
-To learn more about Next.js, take a look at the following resources:
+Full steps: [HOW_TO_USE.md](./HOW_TO_USE.md) or open **/guide** in the app.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Features
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+- Create products with SKU + Code 128 barcode
+- Preview / print / reprint labels
+- **Print dialog asks for label size** (50×25, 50×30, 75×50, 100×50 mm)
+- USB scanner–friendly POS cart
+- Stock receive / sale / transactions
+- Bulk generate missing barcodes
+- Clear Home steps + How to use guide
 
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+See [STATUS.md](./STATUS.md) for **done vs remaining**.
