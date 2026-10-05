@@ -145,19 +145,19 @@ export function PrintLabelDialog({
         (item, idx) => `
         JsBarcode("#bc-svg-${idx}", "${item.barcode}", {
           format: "CODE128",
-          width: ${is50x50 ? 1.3 : labelSize === "50x30" ? 1.2 : labelSize === "50x25" ? 1.1 : 1.4},
-          height: ${is50x50 ? 26 : labelSize === "50x30" ? 16 : labelSize === "50x25" ? 14 : 30},
+          width: ${is50x50 ? 1.65 : labelSize === "50x30" ? 1.35 : labelSize === "50x25" ? 1.2 : 1.5},
+          height: ${is50x50 ? 36 : labelSize === "50x30" ? 22 : labelSize === "50x25" ? 18 : 34},
           displayValue: true,
-          fontSize: ${is50x50 ? 8.5 : 7.5},
+          fontSize: ${is50x50 ? 9.5 : 8},
           font: "monospace",
-          textMargin: 0,
+          textMargin: 1,
           margin: 0
         });
       `
       )
       .join("\n");
 
-    const safeHeight = is50x50 ? 48 : s.h > 35 ? s.h - 2 : s.h - 1.5;
+    const safeHeight = is50x50 ? 48.5 : s.h > 35 ? s.h - 2 : s.h - 1.5;
 
     printWindow.document.write(`
       <!DOCTYPE html>
@@ -190,7 +190,7 @@ export function PrintLabelDialog({
               height: ${safeHeight}mm !important;
               max-height: ${safeHeight}mm !important;
               box-sizing: border-box !important;
-              padding: 1.5mm 2mm 1mm 2mm !important;
+              padding: 1.2mm 2mm 1mm 2mm !important;
               margin: 0 auto !important;
               display: flex !important;
               flex-direction: column !important;
@@ -205,24 +205,24 @@ export function PrintLabelDialog({
               border: none !important;
             }
             .brand-header {
-              font-size: 8px;
-              font-weight: 800;
+              font-size: 8.5px;
+              font-weight: 900;
               letter-spacing: 1.5px;
               text-transform: uppercase;
               color: #000;
-              border-bottom: 0.75px solid #000;
+              border-bottom: 0.8px solid #000;
               width: 100%;
               padding-bottom: 0.5px;
               margin: 0;
-              line-height: 1.1;
+              line-height: 1;
               flex-shrink: 0;
             }
             .name {
-              font-size: 8px;
-              font-weight: 700;
+              font-size: 8.5px;
+              font-weight: 800;
               max-width: 98%;
-              line-height: 1.15;
-              max-height: 16px;
+              line-height: 1.1;
+              max-height: 17px;
               overflow: hidden;
               text-overflow: ellipsis;
               display: -webkit-box;
@@ -232,10 +232,10 @@ export function PrintLabelDialog({
               flex-shrink: 0;
             }
             .meta {
-              font-size: 7.5px;
+              font-size: 8px;
               color: #000;
               font-family: monospace;
-              font-weight: 600;
+              font-weight: 700;
               line-height: 1;
               margin: 0.5px 0;
               flex-shrink: 0;
@@ -247,11 +247,13 @@ export function PrintLabelDialog({
               display: flex;
               justify-content: center;
               align-items: center;
-              margin: 0;
+              margin: 0.5px 0;
               overflow: hidden;
             }
             .barcode-box svg {
-              max-width: 98%;
+              width: 99%;
+              max-width: 99%;
+              height: auto;
               max-height: 100%;
               display: block;
             }
@@ -260,20 +262,20 @@ export function PrintLabelDialog({
               justify-content: space-between;
               align-items: center;
               width: 100%;
-              border-top: 0.75px solid #000;
+              border-top: 0.8px solid #000;
               padding-top: 1px;
               margin: 0;
               line-height: 1;
               flex-shrink: 0;
             }
             .price {
-              font-size: 8.5px;
-              font-weight: 800;
+              font-size: 9px;
+              font-weight: 900;
               color: #000;
             }
             .origin {
-              font-size: 7px;
-              font-weight: 700;
+              font-size: 7.5px;
+              font-weight: 800;
               color: #000;
               text-transform: uppercase;
               letter-spacing: 0.5px;
@@ -391,12 +393,12 @@ export function PrintLabelDialog({
             </div>
 
             {/* Code 128 SVG Barcode */}
-            <div className="w-full my-0.5 flex flex-col items-center justify-center bg-white flex-1 min-h-0">
+            <div className="w-full my-1 flex flex-col items-center justify-center bg-white flex-1 min-h-0">
               <BarcodeSvg
                 barcode={currentItem.barcode}
-                height={is50x50 ? 28 : 20}
-                width={1.3}
-                fontSize={9}
+                height={is50x50 ? 40 : 26}
+                width={1.5}
+                fontSize={10}
               />
             </div>
 
