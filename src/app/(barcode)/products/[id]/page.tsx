@@ -12,29 +12,36 @@ export default async function ProductDetailPage({
 }) {
   const { id } = await params;
 
-  const product = await prisma.product.findUnique({
-    where: { id },
-    include: {
-      category: true,
-      variants: {
-        include: {
-          inventory: true,
-          unitBarcodes: {
-            orderBy: { serialNumber: "asc" },
-          },
-          transactions: {
-            take: 10,
-            orderBy: { createdAt: "desc" },
-            include: { unitBarcode: true },
+  const [product, categories] = await Promise.all([
+    prisma.product.findUnique({
+      where: { id },
+      include: {
+        category: true,
+        subCategory: true,
+        level2Category: true,
+        variants: {
+          include: {
+            inventory: true,
+            unitBarcodes: {
+              orderBy: { serialNumber: "asc" },
+            },
+            transactions: {
+              take: 10,
+              orderBy: { createdAt: "desc" },
+              include: { unitBarcode: true },
+            },
           },
         },
       },
-    },
-  });
+    }),
+    prisma.category.findMany({
+      orderBy: { name: "asc" },
+    }),
+  ]);
 
   if (!product) {
     notFound();
   }
 
-  return <ProductDetailClient product={product} />;
+  return <ProductDetailClient initialProduct={product} categories={categories} />;
 }

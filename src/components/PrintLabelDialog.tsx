@@ -123,26 +123,9 @@ export function PrintLabelDialog({
         const itemBrand = brandText || "MICAWAS";
         const priceHtml = showPrice ? `<div class="price">MRP: ₹${(item.price || 0).toFixed(2)}</div>` : `<div></div>`;
 
-        if (is50x50) {
-          return `
-            <div class="label-page label-50x50">
-              <div class="brand-header">${itemBrand}</div>
-              <div class="name">${item.productName}</div>
-              <div class="meta">SKU: <strong>${item.sku}</strong></div>
-              <div class="barcode-box">
-                <svg id="bc-svg-${idx}"></svg>
-              </div>
-              <div class="footer-row">
-                ${priceHtml}
-                <div class="origin">Packed in India</div>
-              </div>
-            </div>
-          `;
-        }
-
         return `
-          <div class="label-page label-general">
-            <div class="brand-header-sm">${itemBrand}</div>
+          <div class="label-page">
+            <div class="brand-header">${itemBrand}</div>
             <div class="name">${item.productName}</div>
             <div class="meta">SKU: <strong>${item.sku}</strong></div>
             <div class="barcode-box">
@@ -150,7 +133,7 @@ export function PrintLabelDialog({
             </div>
             <div class="footer-row">
               ${priceHtml}
-              <div class="origin">Packed in India</div>
+              <div class="origin">PACKED IN INDIA</div>
             </div>
           </div>
         `;
@@ -162,16 +145,19 @@ export function PrintLabelDialog({
         (item, idx) => `
         JsBarcode("#bc-svg-${idx}", "${item.barcode}", {
           format: "CODE128",
-          width: ${is50x50 ? 1.6 : 1.4},
-          height: ${is50x50 ? 44 : 30},
+          width: ${is50x50 ? 1.3 : labelSize === "50x30" ? 1.2 : labelSize === "50x25" ? 1.1 : 1.4},
+          height: ${is50x50 ? 26 : labelSize === "50x30" ? 16 : labelSize === "50x25" ? 14 : 30},
           displayValue: true,
-          fontSize: ${is50x50 ? 10 : 8.5},
+          fontSize: ${is50x50 ? 8.5 : 7.5},
           font: "monospace",
-          margin: 1
+          textMargin: 0,
+          margin: 0
         });
       `
       )
       .join("\n");
+
+    const safeHeight = is50x50 ? 48 : s.h > 35 ? s.h - 2 : s.h - 1.5;
 
     printWindow.document.write(`
       <!DOCTYPE html>
@@ -181,38 +167,42 @@ export function PrintLabelDialog({
           <style>
             @page {
               size: ${s.w}mm ${s.h}mm;
-              margin: 0;
+              margin: 0mm;
             }
-            * { box-sizing: border-box; margin: 0; padding: 0; }
-            body {
+            * {
+              box-sizing: border-box !important;
               margin: 0;
               padding: 0;
+            }
+            html, body {
+              width: ${s.w}mm;
+              height: ${s.h}mm;
+              margin: 0 !important;
+              padding: 0 !important;
               font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
               background: #fff;
               color: #000;
               -webkit-print-color-adjust: exact;
+              overflow: hidden !important;
             }
             .label-page {
-              width: ${s.w}mm;
-              height: ${s.h}mm;
-              box-sizing: border-box;
-              padding: 2mm 2mm;
-              display: flex;
-              flex-direction: column;
-              justify-content: space-between;
-              align-items: center;
-              text-align: center;
-              page-break-after: always;
-              break-after: page;
-              overflow: hidden;
-            }
-            .label-50x50 {
-              border: 1px dashed #ddd;
-              padding: 2.2mm 2mm;
-            }
-            .label-general {
-              border: 1px dashed #ddd;
-              padding: 1.5mm 1.5mm;
+              width: ${s.w}mm !important;
+              height: ${safeHeight}mm !important;
+              max-height: ${safeHeight}mm !important;
+              box-sizing: border-box !important;
+              padding: 1.5mm 2mm 1mm 2mm !important;
+              margin: 0 auto !important;
+              display: flex !important;
+              flex-direction: column !important;
+              justify-content: space-between !important;
+              align-items: center !important;
+              text-align: center !important;
+              page-break-after: always !important;
+              break-after: page !important;
+              page-break-inside: avoid !important;
+              break-inside: avoid !important;
+              overflow: hidden !important;
+              border: none !important;
             }
             .brand-header {
               font-size: 8px;
@@ -222,49 +212,48 @@ export function PrintLabelDialog({
               color: #000;
               border-bottom: 0.75px solid #000;
               width: 100%;
-              padding-bottom: 1px;
-              margin-bottom: 1px;
-            }
-            .brand-header-sm {
-              font-size: 7px;
-              font-weight: 800;
-              letter-spacing: 1px;
-              text-transform: uppercase;
-              color: #000;
-              border-bottom: 0.5px solid #000;
-              width: 100%;
               padding-bottom: 0.5px;
-              margin-bottom: 0.5px;
+              margin: 0;
+              line-height: 1.1;
+              flex-shrink: 0;
             }
             .name {
-              font-size: 8.5px;
+              font-size: 8px;
               font-weight: 700;
-              max-width: 96%;
+              max-width: 98%;
               line-height: 1.15;
-              max-height: 20px;
+              max-height: 16px;
               overflow: hidden;
               text-overflow: ellipsis;
               display: -webkit-box;
               -webkit-line-clamp: 2;
               -webkit-box-orient: vertical;
-              margin: 1px 0;
+              margin: 0.5px 0;
+              flex-shrink: 0;
             }
             .meta {
               font-size: 7.5px;
-              color: #222;
+              color: #000;
               font-family: monospace;
-              margin-bottom: 1px;
+              font-weight: 600;
+              line-height: 1;
+              margin: 0.5px 0;
+              flex-shrink: 0;
             }
             .barcode-box {
               width: 100%;
+              flex: 1;
+              min-height: 0;
               display: flex;
               justify-content: center;
               align-items: center;
-              margin: 1px 0;
+              margin: 0;
+              overflow: hidden;
             }
-            svg {
-              width: 96%;
-              max-height: ${is50x50 ? "52%" : "44%"};
+            .barcode-box svg {
+              max-width: 98%;
+              max-height: 100%;
+              display: block;
             }
             .footer-row {
               display: flex;
@@ -273,17 +262,21 @@ export function PrintLabelDialog({
               width: 100%;
               border-top: 0.75px solid #000;
               padding-top: 1px;
-              margin-top: 1px;
+              margin: 0;
+              line-height: 1;
+              flex-shrink: 0;
             }
             .price {
-              font-size: 9px;
+              font-size: 8.5px;
               font-weight: 800;
+              color: #000;
             }
             .origin {
               font-size: 7px;
-              font-weight: 600;
-              color: #333;
+              font-weight: 700;
+              color: #000;
               text-transform: uppercase;
+              letter-spacing: 0.5px;
             }
           </style>
         </head>
@@ -291,11 +284,15 @@ export function PrintLabelDialog({
           ${labelsHtml}
           <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
           <script>
-            ${jsBarcodeInit}
-            setTimeout(() => {
-              window.print();
-              window.close();
-            }, 500);
+            window.onload = function() {
+              ${jsBarcodeInit}
+              setTimeout(function() {
+                window.print();
+                setTimeout(function() {
+                  window.close();
+                }, 500);
+              }, 300);
+            };
           </script>
         </body>
       </html>
@@ -369,51 +366,51 @@ export function PrintLabelDialog({
 
           {/* PHYSICAL THERMAL STICKER SIMULATION */}
           <div
-            className="bg-white rounded-lg shadow-md border-2 border-dashed border-slate-400 p-3.5 flex flex-col justify-between items-center text-center transition-all duration-200 select-none"
+            className="bg-white rounded-lg shadow-md border border-slate-300 p-3 flex flex-col justify-between items-center text-center transition-all duration-200 select-none"
             style={{
-              width: is50x50 ? "230px" : "260px",
-              minHeight: is50x50 ? "230px" : labelSize === "50x30" ? "160px" : "150px",
-              aspectRatio: `${currentSize.w} / ${Math.min(currentSize.h, 75)}`,
+              width: is50x50 ? "210px" : "240px",
+              height: is50x50 ? "210px" : labelSize === "50x30" ? "145px" : "135px",
+              aspectRatio: `${currentSize.w} / ${currentSize.h}`,
             }}
           >
             {/* Top Brand Header */}
-            <div className="w-full border-b border-black pb-1 mb-1 flex items-center justify-between">
-              <span className="text-[10px] font-black tracking-widest uppercase text-black font-sans w-full text-center">
+            <div className="w-full border-b border-black pb-0.5 mb-0.5 flex items-center justify-between">
+              <span className="text-[9.5px] font-black tracking-widest uppercase text-black font-sans w-full text-center">
                 {brandText || "MICAWAS"}
               </span>
             </div>
 
             {/* Product Title */}
-            <div className="font-bold text-[11px] text-black leading-tight line-clamp-2 max-w-[95%]">
+            <div className="font-bold text-[10px] text-black leading-tight line-clamp-2 max-w-[95%] my-0.5">
               {currentItem.productName}
             </div>
 
-            {/* SKU (Clean without Unit #) */}
-            <div className="text-[10px] font-mono text-slate-800 font-semibold my-0.5">
+            {/* SKU */}
+            <div className="text-[9px] font-mono text-slate-800 font-semibold my-0.5">
               SKU: <span className="font-bold text-black">{currentItem.sku}</span>
             </div>
 
             {/* Code 128 SVG Barcode */}
-            <div className="w-full my-1 flex flex-col items-center justify-center bg-white">
+            <div className="w-full my-0.5 flex flex-col items-center justify-center bg-white flex-1 min-h-0">
               <BarcodeSvg
                 barcode={currentItem.barcode}
-                height={is50x50 ? 46 : 34}
-                width={1.5}
-                fontSize={10}
+                height={is50x50 ? 28 : 20}
+                width={1.3}
+                fontSize={9}
               />
             </div>
 
             {/* Bottom Footer (MRP & Origin) */}
-            <div className="w-full border-t border-black pt-1 mt-1 flex items-center justify-between text-[10px]">
+            <div className="w-full border-t border-black pt-0.5 mt-0.5 flex items-center justify-between text-[9px]">
               {showPrice ? (
-                <div className="font-black text-black text-[11px]">
+                <div className="font-black text-black text-[10px]">
                   MRP: ₹{(currentItem.price || 0).toFixed(2)}
                 </div>
               ) : (
-                <div className="text-[9px] text-slate-500 font-mono">CODE 128</div>
+                <div className="text-[8px] text-slate-500 font-mono">CODE 128</div>
               )}
-              <div className="font-bold uppercase tracking-wider text-[8.5px] text-slate-800">
-                Packed in India
+              <div className="font-bold uppercase tracking-wider text-[8px] text-slate-800">
+                PACKED IN INDIA
               </div>
             </div>
           </div>

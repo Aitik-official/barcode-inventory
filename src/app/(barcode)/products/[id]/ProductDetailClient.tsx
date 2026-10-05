@@ -19,20 +19,197 @@ import {
   CheckSquare,
   Square,
   Trash2,
+  Edit,
+  Save,
+  Globe,
+  Tag,
+  DollarSign,
+  ShieldCheck,
+  AlertCircle,
+  Upload,
+  Image as ImageIcon,
+  Building2,
+  Truck,
+  Hash,
+  Info,
 } from "lucide-react";
 
-export default function ProductDetailClient({ product }: { product: any }) {
+interface Category {
+  id: string;
+  name: string;
+  parentId: string | null;
+  mainUse?: string;
+}
+
+export default function ProductDetailClient({
+  initialProduct,
+  categories = [],
+}: {
+  initialProduct: any;
+  categories?: Category[];
+}) {
   const router = useRouter();
-  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-  const [isDeleting, setIsDeleting] = useState(false);
-  const variant = product.variants[0];
+
+  // Active product state
+  const [product, setProduct] = useState(initialProduct);
+
+  const variant = product?.variants?.[0];
   const unitBarcodes = variant?.unitBarcodes || [];
   const inventory = variant?.inventory;
 
   const availableCount = unitBarcodes.filter((u: any) => u.status === "AVAILABLE").length;
   const soldCount = unitBarcodes.filter((u: any) => u.status === "SOLD").length;
+  const damagedCount = unitBarcodes.filter((u: any) => u.status === "DAMAGED").length;
 
-  // Multi-Select State
+  // Edit Modal State
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const [feedback, setFeedback] = useState<{ type: "success" | "error"; message: string } | null>(null);
+
+  // Edit Form Values
+  const [editForm, setEditForm] = useState({
+    name: product.name || "",
+    sku: variant?.sku || "",
+    brand: product.brand || "",
+    vendor: product.vendor || "",
+    hsn: product.hsn || "",
+    mrp: product.mrp ?? 0,
+    offerPrice: product.offerPrice ?? (variant?.sellingPrice ?? 0),
+    purchasePrice: variant?.purchasePrice ?? 0,
+    sellingPrice: variant?.sellingPrice ?? (product.offerPrice ?? 0),
+    gstPercent: product.gstPercent ?? 18,
+    status: product.status || "ACTIVE",
+    productType: product.productType || "PRODUCT",
+    unit: variant?.unit || "PCS",
+    color: variant?.color || "",
+    size: variant?.size || "",
+    description: product.description || "",
+    imageUrl: product.imageUrl || "",
+    categoryId: product.categoryId || "",
+    subCategoryId: product.subCategoryId || "",
+    level2CategoryId: product.level2CategoryId || "",
+    showOnWebsite: product.showOnWebsite ?? true,
+    featured: product.featured ?? false,
+    badge: product.badge || "",
+    homepageSections: product.homepageSections || ["FEATURED"],
+    displayOrder: product.displayOrder ?? 99,
+    tags: product.tags || "",
+  });
+
+  // Open Edit Modal and sync form values
+  const handleOpenEdit = () => {
+    setEditForm({
+      name: product.name || "",
+      sku: variant?.sku || "",
+      brand: product.brand || "",
+      vendor: product.vendor || "",
+      hsn: product.hsn || "",
+      mrp: product.mrp ?? 0,
+      offerPrice: product.offerPrice ?? (variant?.sellingPrice ?? 0),
+      purchasePrice: variant?.purchasePrice ?? 0,
+      sellingPrice: variant?.sellingPrice ?? (product.offerPrice ?? 0),
+      gstPercent: product.gstPercent ?? 18,
+      status: product.status || "ACTIVE",
+      productType: product.productType || "PRODUCT",
+      unit: variant?.unit || "PCS",
+      color: variant?.color || "",
+      size: variant?.size || "",
+      description: product.description || "",
+      imageUrl: product.imageUrl || "",
+      categoryId: product.categoryId || "",
+      subCategoryId: product.subCategoryId || "",
+      level2CategoryId: product.level2CategoryId || "",
+      showOnWebsite: product.showOnWebsite ?? true,
+      featured: product.featured ?? false,
+      badge: product.badge || "",
+      homepageSections: product.homepageSections || ["FEATURED"],
+      displayOrder: product.displayOrder ?? 99,
+      tags: product.tags || "",
+    });
+    setIsEditModalOpen(true);
+  };
+
+  // Categories hierarchy
+  const mainCategories = categories.filter((c) => !c.parentId || c.parentId === "");
+  const subCategories = categories.filter((c) => c.parentId === editForm.categoryId);
+  const level2Categories = categories.filter((c) => c.parentId === editForm.subCategoryId);
+
+  // Form Change Handler
+  const handleFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+    const { name, value, type } = e.target;
+    if (type === "checkbox") {
+      const checked = (e.target as HTMLInputElement).checked;
+      setEditForm((prev) => ({ ...prev, [name]: checked }));
+    } else {
+      setEditForm((prev) => ({ ...prev, [name]: value }));
+    }
+  };
+
+  // Image Upload Handler
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploadingImage(true);
+    try {
+      const uploadData = new FormData();
+      uploadData.append("file", file);
+
+      const res = await fetch("/api/upload", {
+        method: "POST",
+        body: uploadData,
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Image upload failed");
+
+      setEditForm((prev) => ({ ...prev, imageUrl: data.url }));
+    } catch (err: any) {
+      alert("Image Upload Error: " + err.message);
+    } finally {
+      setUploadingImage(false);
+    }
+  };
+
+  // Save Product Details Handler
+  const handleSaveProductDetails = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSaving(true);
+    setFeedback(null);
+
+    try {
+      const res = await fetch(`/api/products/${product.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ...editForm,
+          mrp: parseFloat(String(editForm.mrp)) || 0,
+          offerPrice: parseFloat(String(editForm.offerPrice)) || 0,
+          sellingPrice: parseFloat(String(editForm.offerPrice)) || 0,
+          purchasePrice: parseFloat(String(editForm.purchasePrice)) || 0,
+          gstPercent: parseFloat(String(editForm.gstPercent)) || 0,
+          displayOrder: parseInt(String(editForm.displayOrder)) || 99,
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || "Failed to update product");
+      }
+
+      setProduct(data);
+      setIsEditModalOpen(false);
+      setFeedback({ type: "success", message: "Product details saved successfully!" });
+      setTimeout(() => setFeedback(null), 5000);
+    } catch (err: any) {
+      setFeedback({ type: "error", message: err.message || "Failed to update product" });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  // Multi-Select State for Barcodes
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
   // Print Dialog State
@@ -46,6 +223,10 @@ export default function ProductDetailClient({ product }: { product: any }) {
   const [addingStock, setAddingStock] = useState(false);
   const [addStockStep, setAddStockStep] = useState<"input" | "success">("input");
   const [newlyGeneratedBarcodes, setNewlyGeneratedBarcodes] = useState<string[]>([]);
+
+  // Delete Modal State
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // Toggle Single Selection
   const toggleSelect = (id: string) => {
@@ -149,8 +330,37 @@ export default function ProductDetailClient({ product }: { product: any }) {
     }
   };
 
+  const marginAmount = (product.offerPrice || variant?.sellingPrice || 0) - (variant?.purchasePrice || 0);
+  const marginPercent =
+    variant?.purchasePrice && variant.purchasePrice > 0
+      ? ((marginAmount / variant.purchasePrice) * 100).toFixed(1)
+      : null;
+
   return (
     <div className="space-y-6 py-2">
+      {/* Toast Feedback */}
+      {feedback && (
+        <div
+          className={`p-3.5 rounded-xl border flex items-center justify-between text-xs font-semibold animate-in fade-in ${
+            feedback.type === "success"
+              ? "bg-emerald-50 text-emerald-900 border-emerald-200"
+              : "bg-rose-50 text-rose-900 border-rose-200"
+          }`}
+        >
+          <div className="flex items-center gap-2">
+            {feedback.type === "success" ? (
+              <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+            ) : (
+              <AlertCircle className="w-4 h-4 text-rose-600" />
+            )}
+            <span>{feedback.message}</span>
+          </div>
+          <button onClick={() => setFeedback(null)} className="text-slate-400 hover:text-slate-700">
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+      )}
+
       {/* Top Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-[#cce7ed] pb-4">
         <div>
@@ -162,22 +372,56 @@ export default function ProductDetailClient({ product }: { product: any }) {
             <span>/</span>
             <span className="text-[#0b252c] font-semibold">{product.name}</span>
           </div>
-          <h1 className="text-xl sm:text-2xl font-bold text-[#0b252c] flex items-center gap-3 flex-wrap">
-            <span>{product.name}</span>
+          <div className="flex items-center gap-3 flex-wrap">
+            <h1 className="text-xl sm:text-2xl font-bold text-[#0b252c] flex items-center gap-3">
+              {product.name}
+            </h1>
             <span className="text-xs font-semibold px-2.5 py-0.5 rounded-md bg-[#e3f2f5] text-[#056468] border border-[#cce7ed] font-mono">
               SKU: {variant?.sku}
             </span>
-          </h1>
+            <span
+              className={`text-[11px] font-bold px-2 py-0.5 rounded-full border ${
+                product.status === "ACTIVE"
+                  ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                  : product.status === "OUT_OF_STOCK"
+                  ? "bg-amber-50 text-amber-700 border-amber-200"
+                  : "bg-slate-100 text-slate-600 border-slate-200"
+              }`}
+            >
+              {product.status}
+            </span>
+            {product.showOnWebsite ? (
+              <span className="text-[11px] font-medium px-2 py-0.5 rounded-md bg-teal-50 text-teal-700 border border-teal-200 flex items-center gap-1">
+                <Globe className="w-3 h-3" />
+                Live on Website
+              </span>
+            ) : (
+              <span className="text-[11px] font-medium px-2 py-0.5 rounded-md bg-slate-100 text-slate-500 border border-slate-200">
+                Hidden from Website
+              </span>
+            )}
+          </div>
         </div>
 
         <div className="flex items-center gap-2.5 flex-wrap">
+          {/* EDIT PRODUCT BUTTON */}
+          <button
+            type="button"
+            onClick={handleOpenEdit}
+            className="px-3.5 py-2 rounded-lg bg-teal-50 hover:bg-teal-100 active:scale-95 text-[#056468] font-bold text-xs border border-teal-200 shadow-xs transition-all flex items-center gap-1.5 cursor-pointer"
+            title="Edit all product fields, name, pricing, category, SKU, etc."
+          >
+            <Edit className="w-3.5 h-3.5" />
+            <span>Edit Details</span>
+          </button>
+
           <button
             type="button"
             onClick={handlePrintAll}
             disabled={unitBarcodes.length === 0}
-            className="px-3.5 py-2 rounded-lg bg-white hover:bg-[#f0f8fa] active:scale-95 text-[#056468] font-semibold text-xs border border-[#cce7ed] shadow-sm transition-all flex items-center gap-1.5 disabled:opacity-50 cursor-pointer"
+            className="px-3.5 py-2 rounded-lg bg-white hover:bg-[#f0f8fa] active:scale-95 text-[#056468] font-semibold text-xs border border-[#cce7ed] shadow-xs transition-all flex items-center gap-1.5 disabled:opacity-50 cursor-pointer"
           >
-            <Printer className="w-4 h-4" />
+            <Printer className="w-3.5 h-3.5" />
             <span>Print All ({unitBarcodes.length})</span>
           </button>
 
@@ -189,10 +433,10 @@ export default function ProductDetailClient({ product }: { product: any }) {
               setNewlyGeneratedBarcodes([]);
               setAddStockOpen(true);
             }}
-            className="px-4 py-2 rounded-lg bg-[#056468] hover:bg-[#044e51] active:scale-95 text-white font-medium text-xs shadow transition-all flex items-center gap-1.5 cursor-pointer"
+            className="px-4 py-2 rounded-lg bg-[#056468] hover:bg-[#044e51] active:scale-95 text-white font-medium text-xs shadow-xs transition-all flex items-center gap-1.5 cursor-pointer"
           >
-            <Plus className="w-4 h-4" />
-            <span>Receive Stock (+ Generate Barcodes)</span>
+            <Plus className="w-3.5 h-3.5" />
+            <span>Receive Stock (+ Barcodes)</span>
           </button>
 
           <button
@@ -201,7 +445,7 @@ export default function ProductDetailClient({ product }: { product: any }) {
             className="px-3 py-2 rounded-lg bg-rose-50 hover:bg-rose-100 active:scale-95 text-rose-700 font-semibold text-xs border border-rose-200 transition-all flex items-center gap-1.5 cursor-pointer"
             title="Delete Product and its barcodes"
           >
-            <Trash2 className="w-4 h-4" />
+            <Trash2 className="w-3.5 h-3.5" />
             <span>Delete</span>
           </button>
         </div>
@@ -209,174 +453,242 @@ export default function ProductDetailClient({ product }: { product: any }) {
 
       {/* Info Overview Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
-        <div className="bg-white border border-[#cce7ed] rounded-xl p-4 space-y-1 shadow-sm">
-          <div className="text-xs text-[#4a6870] font-medium">Category / Brand</div>
-          <div className="font-semibold text-[#0b252c] text-sm">{product.category?.name || "General"}</div>
-          <div className="text-[11px] text-[#5f818b]">Brand: {product.brand || "N/A"}</div>
+        {/* Card 1: Category / Brand / Hierarchy */}
+        <div className="bg-white border border-[#cce7ed] rounded-xl p-4 space-y-2 shadow-xs">
+          <div className="flex items-center justify-between">
+            <div className="text-xs text-[#4a6870] font-medium">Category & Brand</div>
+            <Tag className="w-3.5 h-3.5 text-[#056468]" />
+          </div>
+          <div className="font-bold text-[#0b252c] text-sm truncate">
+            {product.category?.name || "General Category"}
+          </div>
+          <div className="text-[11px] text-slate-500 space-y-0.5">
+            <div>Brand: <strong className="text-slate-800">{product.brand || "Standard"}</strong></div>
+            {product.subCategory && (
+              <div>Sub-Cat: <span className="text-slate-700">{product.subCategory.name}</span></div>
+            )}
+            {product.hsn && <div>HSN: <span className="font-mono text-slate-700">{product.hsn}</span></div>}
+          </div>
         </div>
 
-        <div className="bg-white border border-[#cce7ed] rounded-xl p-4 space-y-1 shadow-sm">
-          <div className="text-xs text-[#4a6870] font-medium">Pricing & GST</div>
-          <div className="font-bold text-[#056468] text-base">
+        {/* Card 2: Pricing & Margins */}
+        <div className="bg-white border border-[#cce7ed] rounded-xl p-4 space-y-2 shadow-xs">
+          <div className="flex items-center justify-between">
+            <div className="text-xs text-[#4a6870] font-medium">Selling & Offer Price</div>
+            <DollarSign className="w-3.5 h-3.5 text-[#056468]" />
+          </div>
+          <div className="font-bold text-[#056468] text-xl">
             ₹{(product.offerPrice || variant?.sellingPrice || 0).toFixed(2)}
           </div>
-          <div className="text-[11px] text-[#5f818b]">
-            MRP ₹{product.mrp} | GST {product.gstPercent}%
+          <div className="text-[11px] text-slate-500 space-y-0.5">
+            <div>MRP: <span className="line-through text-slate-400 font-medium">₹{product.mrp}</span> | GST {product.gstPercent}%</div>
+            {variant?.purchasePrice > 0 && (
+              <div className="text-emerald-700 font-medium">
+                Cost ₹{variant.purchasePrice} {marginPercent && `(+${marginPercent}% margin)`}
+              </div>
+            )}
           </div>
         </div>
 
-        <div className="bg-white border border-[#cce7ed] rounded-xl p-4 space-y-1 shadow-sm">
-          <div className="text-xs text-[#056468] font-medium">Available Units</div>
+        {/* Card 3: Available Inventory */}
+        <div className="bg-white border border-[#cce7ed] rounded-xl p-4 space-y-2 shadow-xs">
+          <div className="flex items-center justify-between">
+            <div className="text-xs text-[#056468] font-medium">Available Units</div>
+            <ScanBarcode className="w-3.5 h-3.5 text-emerald-600" />
+          </div>
           <div className="font-bold text-2xl text-[#056468]">{availableCount}</div>
-          <div className="text-[11px] text-emerald-700 font-medium">Ready to Scan & Sell</div>
+          <div className="text-[11px] text-emerald-700 font-medium">
+            Ready to Scan & Sell (Unit: {variant?.unit || "PCS"})
+          </div>
         </div>
 
-        <div className="bg-white border border-[#cce7ed] rounded-xl p-4 space-y-1 shadow-sm">
-          <div className="text-xs text-purple-700 font-medium">Sold Units</div>
+        {/* Card 4: Sold / Damaged Units */}
+        <div className="bg-white border border-[#cce7ed] rounded-xl p-4 space-y-2 shadow-xs">
+          <div className="flex items-center justify-between">
+            <div className="text-xs text-purple-700 font-medium">Sold Barcodes</div>
+            <Package className="w-3.5 h-3.5 text-purple-600" />
+          </div>
           <div className="font-bold text-2xl text-purple-700">{soldCount}</div>
-          <div className="text-[11px] text-purple-600 font-medium">Total Barcodes Sold</div>
+          <div className="text-[11px] text-slate-500">
+            Total Generated: <strong className="text-slate-800">{unitBarcodes.length} pcs</strong>
+          </div>
         </div>
       </div>
 
+      {/* Description & Website Metadata Accordion Card */}
+      {(product.description || product.imageUrl || product.tags) && (
+        <div className="bg-white border border-[#cce7ed] rounded-xl p-4 shadow-xs flex flex-col md:flex-row items-start gap-4">
+          {product.imageUrl && (
+            <div className="w-24 h-24 rounded-lg bg-slate-50 border border-slate-200 shrink-0 overflow-hidden flex items-center justify-center">
+              <img src={product.imageUrl} alt={product.name} className="w-full h-full object-cover" />
+            </div>
+          )}
+          <div className="space-y-1.5 flex-1 text-xs">
+            <div className="font-bold text-slate-800 text-sm">Product Description & Specs</div>
+            <p className="text-slate-600 whitespace-pre-line leading-relaxed">
+              {product.description || "No description specified."}
+            </p>
+            {product.tags && (
+              <div className="flex items-center gap-1.5 pt-1 flex-wrap">
+                <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Tags:</span>
+                {product.tags.split(",").map((tag: string, idx: number) => (
+                  <span key={idx} className="px-2 py-0.5 rounded bg-slate-100 text-slate-600 font-mono text-[10px]">
+                    #{tag.trim()}
+                  </span>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* Per-Unit Serial Barcodes Section */}
-      <div className="bg-white border border-[#cce7ed] rounded-xl p-5 shadow-sm space-y-4">
+      <div className="bg-white border border-[#cce7ed] rounded-xl p-5 shadow-xs space-y-4">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b border-[#cce7ed] pb-3">
           <div>
             <h2 className="text-base font-semibold text-[#0b252c] flex items-center gap-2">
               <ScanBarcode className="w-5 h-5 text-[#056468]" />
               <span>Per-Unit Serial Barcode Registry</span>
               <span className="text-xs px-2.5 py-0.5 rounded-full bg-[#e3f2f5] text-[#056468] font-mono border border-[#cce7ed]">
-                {unitBarcodes.length} Barcodes Generated
+                {unitBarcodes.length} Barcodes
               </span>
             </h2>
-            <p className="text-xs text-[#4a6870] mt-0.5 font-normal">
-              Select multiple units using checkboxes to batch print thermal stickers on rolls or PDF.
+            <p className="text-xs text-[#4a6870] mt-0.5">
+              Individual 12-digit Code 128 barcodes tracked per physical unit item.
             </p>
           </div>
 
-          {/* Batch Actions Toolbar */}
           <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={toggleSelectAll}
+              className="px-3 py-1.5 rounded-lg bg-white hover:bg-[#f0f8fa] text-[#056468] font-medium text-xs border border-[#cce7ed] transition-all flex items-center gap-1.5 cursor-pointer"
+            >
+              {selectedIds.size === unitBarcodes.length && unitBarcodes.length > 0 ? (
+                <>
+                  <CheckSquare className="w-3.5 h-3.5 text-[#056468]" />
+                  <span>Deselect All</span>
+                </>
+              ) : (
+                <>
+                  <Square className="w-3.5 h-3.5 text-[#4a6870]" />
+                  <span>Select All ({unitBarcodes.length})</span>
+                </>
+              )}
+            </button>
+
             {selectedIds.size > 0 && (
-              <div className="flex items-center gap-2 bg-[#e3f2f5] border border-[#b2dce5] px-3 py-1.5 rounded-lg text-xs animate-in fade-in">
-                <span className="font-semibold text-[#056468]">
-                  {selectedIds.size} of {unitBarcodes.length} Selected
-                </span>
-                <button
-                  type="button"
-                  onClick={handlePrintSelected}
-                  className="px-3 py-1 bg-[#056468] hover:bg-[#044e51] text-white font-medium rounded shadow-xs flex items-center gap-1"
-                >
-                  <Printer className="w-3 h-3" />
-                  <span>Print Selected ({selectedIds.size})</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setSelectedIds(new Set())}
-                  className="text-[#4a6870] hover:text-[#0b252c] text-[11px] underline ml-1"
-                >
-                  Clear
-                </button>
-              </div>
+              <button
+                type="button"
+                onClick={handlePrintSelected}
+                className="px-3.5 py-1.5 rounded-lg bg-[#056468] hover:bg-[#044e51] text-white font-medium text-xs shadow-xs transition-all flex items-center gap-1.5 cursor-pointer"
+              >
+                <Printer className="w-3.5 h-3.5" />
+                <span>Print Selected ({selectedIds.size})</span>
+              </button>
             )}
           </div>
         </div>
 
+        {/* Barcode Grid */}
         {unitBarcodes.length === 0 ? (
-          <div className="text-center py-10 text-[#5f818b] text-xs space-y-2">
-            <Package className="w-10 h-10 text-[#056468] mx-auto opacity-60" />
-            <p>No per-unit barcodes generated for this product variant yet.</p>
+          <div className="text-center py-10 bg-[#f8fcfe] rounded-xl border border-dashed border-[#cce7ed] space-y-3">
+            <ScanBarcode className="w-8 h-8 text-[#5f818b] mx-auto opacity-50" />
+            <div className="text-xs font-semibold text-[#0b252c]">No unit barcodes generated yet</div>
+            <p className="text-xs text-[#4a6870] max-w-sm mx-auto">
+              Click &quot;Receive Stock&quot; to generate individual serial barcodes for this product.
+            </p>
             <button
+              type="button"
               onClick={() => {
                 setAddStockStep("input");
+                setQtyToAdd(10);
                 setAddStockOpen(true);
               }}
-              className="px-3.5 py-1.5 bg-[#056468] text-white font-medium text-xs rounded-lg shadow-sm"
+              className="px-4 py-2 bg-[#056468] hover:bg-[#044e51] text-white text-xs font-medium rounded-lg shadow-xs"
             >
-              + Receive Stock & Generate Barcodes
+              Generate First 10 Barcodes
             </button>
           </div>
         ) : (
-          <div className="overflow-x-auto rounded-lg border border-[#cce7ed]">
-            <table className="w-full text-left text-xs">
-              <thead className="bg-[#f0f8fa] text-[#0b252c] font-semibold uppercase tracking-wider border-b border-[#cce7ed]">
-                <tr>
-                  <th className="p-3 w-10 text-center">
-                    <input
-                      type="checkbox"
-                      checked={selectedIds.size === unitBarcodes.length && unitBarcodes.length > 0}
-                      onChange={toggleSelectAll}
-                      className="rounded border-[#cce7ed] text-[#056468] focus:ring-[#056468] cursor-pointer"
-                      title="Select / Deselect All"
-                    />
-                  </th>
-                  <th className="p-3">Unit #</th>
-                  <th className="p-3">Unit Barcode</th>
-                  <th className="p-3">Barcode Visual</th>
-                  <th className="p-3">Status</th>
-                  <th className="p-3">Generated Date</th>
-                  <th className="p-3 text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-[#cce7ed] font-normal">
-                {unitBarcodes.map((unit: any) => {
-                  const isChecked = selectedIds.has(unit.id);
-                  return (
-                    <tr
-                      key={unit.id}
-                      className={`hover:bg-[#f8fcfe] transition-colors ${
-                        isChecked ? "bg-[#f0f8fa]" : "bg-white"
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3.5">
+            {unitBarcodes.map((unit: any) => {
+              const isSelected = selectedIds.has(unit.id);
+              const isAvailable = unit.status === "AVAILABLE";
+              const isSold = unit.status === "SOLD";
+
+              return (
+                <div
+                  key={unit.id}
+                  onClick={() => toggleSelect(unit.id)}
+                  className={`p-3 rounded-xl border transition-all cursor-pointer select-none relative flex flex-col justify-between space-y-2 ${
+                    isSelected
+                      ? "bg-[#e3f2f5] border-[#056468] shadow-xs"
+                      : "bg-[#f8fcfe] border-[#cce7ed] hover:border-[#056468]/50"
+                  }`}
+                >
+                  {/* Card Header */}
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-1.5">
+                      <div
+                        className={`w-4 h-4 rounded flex items-center justify-center border ${
+                          isSelected
+                            ? "bg-[#056468] border-[#056468] text-white"
+                            : "border-[#5f818b] bg-white"
+                        }`}
+                      >
+                        {isSelected && <CheckCircle2 className="w-3.5 h-3.5" />}
+                      </div>
+                      <span className="font-mono text-xs font-bold text-[#056468]">
+                        #{unit.serialNumber}
+                      </span>
+                    </div>
+
+                    <span
+                      className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                        isAvailable
+                          ? "bg-emerald-100 text-emerald-800"
+                          : isSold
+                          ? "bg-purple-100 text-purple-800"
+                          : "bg-slate-200 text-slate-700"
                       }`}
                     >
-                      <td className="p-3 text-center">
-                        <input
-                          type="checkbox"
-                          checked={isChecked}
-                          onChange={() => toggleSelect(unit.id)}
-                          className="rounded border-[#cce7ed] text-[#056468] focus:ring-[#056468] cursor-pointer"
-                        />
-                      </td>
-                      <td className="p-3 font-semibold text-[#056468] font-mono">
-                        Unit #{unit.serialNumber}
-                      </td>
-                      <td className="p-3 font-semibold text-[#0b252c] font-mono tracking-wider">
-                        {unit.barcode}
-                      </td>
-                      <td className="p-3">
-                        <div className="bg-white p-1 rounded border border-[#cce7ed] inline-block shadow-xs">
-                          <BarcodeSvg barcode={unit.barcode} height={24} width={1.2} fontSize={8} />
-                        </div>
-                      </td>
-                      <td className="p-3">
-                        <span
-                          className={`px-2 py-0.5 rounded text-[10px] font-medium ${
-                            unit.status === "AVAILABLE"
-                              ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
-                              : unit.status === "SOLD"
-                              ? "bg-purple-50 text-purple-700 border border-purple-200"
-                              : "bg-slate-100 text-slate-600"
-                          }`}
-                        >
-                          {unit.status}
-                        </span>
-                      </td>
-                      <td className="p-3 text-[#4a6870]">
-                        {new Date(unit.generatedAt).toLocaleDateString()}
-                      </td>
-                      <td className="p-3 text-right">
-                        <button
-                          type="button"
-                          onClick={() => handleOpenPrintSingle(unit)}
-                          className="px-3 py-1.5 bg-[#056468] hover:bg-[#044e51] text-white font-medium text-[11px] rounded-lg shadow-xs transition-all inline-flex items-center gap-1"
-                        >
-                          <Printer className="w-3 h-3" />
-                          <span>Thermal Label</span>
-                        </button>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+                      {unit.status}
+                    </span>
+                  </div>
+
+                  {/* Visual Code 128 Barcode */}
+                  <div className="py-1">
+                    <BarcodeSvg
+                      value={unit.barcode}
+                      width={1.2}
+                      height={36}
+                      fontSize={11}
+                      displayValue={true}
+                    />
+                  </div>
+
+                  {/* Actions & Timestamps */}
+                  <div className="pt-2 border-t border-[#cce7ed] flex items-center justify-between text-[11px] text-[#4a6870]">
+                    <span>
+                      {unit.printedCount > 0 ? `Printed (${unit.printedCount}x)` : "Not Printed"}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleOpenPrintSingle(unit);
+                      }}
+                      className="px-2 py-1 rounded bg-white hover:bg-[#e3f2f5] text-[#056468] border border-[#cce7ed] font-medium text-[10px] flex items-center gap-1 transition-all"
+                      title="Print Single Thermal Label"
+                    >
+                      <Printer className="w-3 h-3" />
+                      <span>Print</span>
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         )}
       </div>
@@ -457,7 +769,7 @@ export default function ProductDetailClient({ product }: { product: any }) {
                   <button
                     type="submit"
                     disabled={addingStock}
-                    className="px-5 py-2.5 bg-[#056468] hover:bg-[#044e51] text-white text-xs font-medium rounded-lg shadow-sm flex items-center gap-1.5"
+                    className="px-5 py-2.5 bg-[#056468] hover:bg-[#044e51] text-white text-xs font-medium rounded-lg shadow-xs flex items-center gap-1.5"
                   >
                     <Plus className="w-3.5 h-3.5" />
                     <span>{addingStock ? "Generating Barcodes..." : `Generate Barcodes & Add +${qtyToAdd}`}</span>
@@ -506,6 +818,438 @@ export default function ProductDetailClient({ product }: { product: any }) {
         </div>
       )}
 
+      {/* EDIT PRODUCT DETAILS MODAL */}
+      {isEditModalOpen && (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/70 backdrop-blur-xs p-3 sm:p-6 overflow-y-auto pointer-events-auto">
+          <div className="relative z-[10000] bg-white border border-[#cce7ed] rounded-2xl max-w-3xl w-full max-h-[92vh] flex flex-col shadow-2xl text-[#0b252c] animate-in fade-in zoom-in-95 my-auto">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between border-b border-slate-200 px-6 py-4 shrink-0 bg-slate-50/50 rounded-t-2xl">
+              <div>
+                <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
+                  <Edit className="w-4 h-4 text-[#056468]" />
+                  <span>Edit Product & Variant Details</span>
+                </h3>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  Update name, pricing, SKU, category, GST %, and e-commerce visibility.
+                </p>
+              </div>
+              <button
+                onClick={() => setIsEditModalOpen(false)}
+                className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-200 transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Modal Form Content */}
+            <form onSubmit={handleSaveProductDetails} className="flex flex-col flex-1 overflow-hidden">
+              <div className="flex-1 overflow-y-auto px-6 py-5 space-y-6 text-xs">
+                {/* SECTION 1: CORE PRODUCT DETAILS */}
+                <div className="space-y-3">
+                  <h4 className="text-xs font-bold text-[#056468] uppercase tracking-wider flex items-center gap-1.5">
+                    <Package className="w-3.5 h-3.5" />
+                    <span>Basic Identification</span>
+                  </h4>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                    <div className="sm:col-span-2">
+                      <label className="block font-semibold text-slate-700 mb-1">Product Title / Name *</label>
+                      <input
+                        type="text"
+                        name="name"
+                        required
+                        value={editForm.name}
+                        onChange={handleFormChange}
+                        className="w-full px-3 py-2 rounded-lg border border-slate-300 font-medium text-slate-900 focus:outline-none focus:border-[#056468] focus:ring-1 focus:ring-[#056468]"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block font-semibold text-slate-700 mb-1">SKU (Stock Keeping Unit) *</label>
+                      <input
+                        type="text"
+                        name="sku"
+                        required
+                        value={editForm.sku}
+                        onChange={handleFormChange}
+                        className="w-full px-3 py-2 rounded-lg border border-slate-300 font-mono font-bold text-[#056468] focus:outline-none focus:border-[#056468]"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block font-semibold text-slate-700 mb-1">Brand Name</label>
+                      <input
+                        type="text"
+                        name="brand"
+                        value={editForm.brand}
+                        onChange={handleFormChange}
+                        placeholder="e.g. Starlet, Supreme, etc."
+                        className="w-full px-3 py-2 rounded-lg border border-slate-300 text-slate-900 focus:outline-none focus:border-[#056468]"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block font-semibold text-slate-700 mb-1">HSN / SAC Code</label>
+                      <input
+                        type="text"
+                        name="hsn"
+                        value={editForm.hsn}
+                        onChange={handleFormChange}
+                        placeholder="e.g. 9405, 8504"
+                        className="w-full px-3 py-2 rounded-lg border border-slate-300 font-mono text-slate-900 focus:outline-none focus:border-[#056468]"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block font-semibold text-slate-700 mb-1">Vendor / Supplier</label>
+                      <input
+                        type="text"
+                        name="vendor"
+                        value={editForm.vendor}
+                        onChange={handleFormChange}
+                        placeholder="Supplier name"
+                        className="w-full px-3 py-2 rounded-lg border border-slate-300 text-slate-900 focus:outline-none focus:border-[#056468]"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block font-semibold text-slate-700 mb-1">Status</label>
+                      <select
+                        name="status"
+                        value={editForm.status}
+                        onChange={handleFormChange}
+                        className="w-full px-3 py-2 rounded-lg border border-slate-300 font-semibold text-slate-800 bg-white"
+                      >
+                        <option value="ACTIVE">ACTIVE (Ready to Sell)</option>
+                        <option value="OUT_OF_STOCK">OUT_OF_STOCK</option>
+                        <option value="INACTIVE">INACTIVE / ARCHIVED</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block font-semibold text-slate-700 mb-1">Product Type</label>
+                      <select
+                        name="productType"
+                        value={editForm.productType}
+                        onChange={handleFormChange}
+                        className="w-full px-3 py-2 rounded-lg border border-slate-300 font-semibold text-slate-800 bg-white"
+                      >
+                        <option value="PRODUCT">PHYSICAL PRODUCT (Code 128 Unit Barcodes)</option>
+                        <option value="SERVICE">SERVICE / REPAIR / JOBWORK</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+
+                {/* SECTION 2: CATEGORY HIERARCHY */}
+                <div className="space-y-3 pt-3 border-t border-slate-200">
+                  <h4 className="text-xs font-bold text-[#056468] uppercase tracking-wider flex items-center gap-1.5">
+                    <Layers className="w-3.5 h-3.5" />
+                    <span>Category Hierarchy</span>
+                  </h4>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div>
+                      <label className="block font-semibold text-slate-700 mb-1">Main Category</label>
+                      <select
+                        name="categoryId"
+                        value={editForm.categoryId}
+                        onChange={(e) => {
+                          handleFormChange(e);
+                          setEditForm((prev) => ({ ...prev, categoryId: e.target.value, subCategoryId: "", level2CategoryId: "" }));
+                        }}
+                        className="w-full px-3 py-2 rounded-lg border border-slate-300 font-medium text-slate-800 bg-white"
+                      >
+                        <option value="">-- None / General --</option>
+                        {mainCategories.map((c) => (
+                          <option key={c.id} value={c.id}>
+                            {c.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block font-semibold text-slate-700 mb-1">Sub-Category</label>
+                      <select
+                        name="subCategoryId"
+                        value={editForm.subCategoryId}
+                        disabled={!editForm.categoryId}
+                        onChange={(e) => {
+                          handleFormChange(e);
+                          setEditForm((prev) => ({ ...prev, subCategoryId: e.target.value, level2CategoryId: "" }));
+                        }}
+                        className="w-full px-3 py-2 rounded-lg border border-slate-300 font-medium text-slate-800 bg-white disabled:opacity-50"
+                      >
+                        <option value="">-- None --</option>
+                        {subCategories.map((c) => (
+                          <option key={c.id} value={c.id}>
+                            {c.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block font-semibold text-slate-700 mb-1">Level 2 Category</label>
+                      <select
+                        name="level2CategoryId"
+                        value={editForm.level2CategoryId}
+                        disabled={!editForm.subCategoryId}
+                        onChange={handleFormChange}
+                        className="w-full px-3 py-2 rounded-lg border border-slate-300 font-medium text-slate-800 bg-white disabled:opacity-50"
+                      >
+                        <option value="">-- None --</option>
+                        {level2Categories.map((c) => (
+                          <option key={c.id} value={c.id}>
+                            {c.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+                </div>
+
+                {/* SECTION 3: PRICING, TAXES & UNIT */}
+                <div className="space-y-3 pt-3 border-t border-slate-200">
+                  <h4 className="text-xs font-bold text-[#056468] uppercase tracking-wider flex items-center gap-1.5">
+                    <DollarSign className="w-3.5 h-3.5" />
+                    <span>Pricing, GST & Variant Unit</span>
+                  </h4>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                    <div>
+                      <label className="block font-semibold text-slate-700 mb-1">MRP (₹) *</label>
+                      <input
+                        type="number"
+                        name="mrp"
+                        step="0.01"
+                        required
+                        value={editForm.mrp}
+                        onChange={handleFormChange}
+                        className="w-full px-3 py-2 rounded-lg border border-slate-300 font-bold text-slate-900 focus:outline-none focus:border-[#056468]"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block font-semibold text-slate-700 mb-1">Selling / Offer (₹) *</label>
+                      <input
+                        type="number"
+                        name="offerPrice"
+                        step="0.01"
+                        required
+                        value={editForm.offerPrice}
+                        onChange={handleFormChange}
+                        className="w-full px-3 py-2 rounded-lg border border-slate-300 font-bold text-[#056468] focus:outline-none focus:border-[#056468]"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block font-semibold text-slate-700 mb-1">Purchase Cost (₹)</label>
+                      <input
+                        type="number"
+                        name="purchasePrice"
+                        step="0.01"
+                        value={editForm.purchasePrice}
+                        onChange={handleFormChange}
+                        className="w-full px-3 py-2 rounded-lg border border-slate-300 font-bold text-slate-900 focus:outline-none focus:border-[#056468]"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block font-semibold text-slate-700 mb-1">GST Rate (%) *</label>
+                      <select
+                        name="gstPercent"
+                        value={editForm.gstPercent}
+                        onChange={handleFormChange}
+                        className="w-full px-3 py-2 rounded-lg border border-slate-300 font-bold text-slate-900 bg-white"
+                      >
+                        <option value="0">0% (Exempt)</option>
+                        <option value="5">5%</option>
+                        <option value="12">12%</option>
+                        <option value="18">18% (Standard)</option>
+                        <option value="28">28%</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block font-semibold text-slate-700 mb-1">Unit of Measure</label>
+                      <select
+                        name="unit"
+                        value={editForm.unit}
+                        onChange={handleFormChange}
+                        className="w-full px-3 py-2 rounded-lg border border-slate-300 font-semibold text-slate-800 bg-white"
+                      >
+                        <option value="PCS">PCS (Pieces)</option>
+                        <option value="BOX">BOX</option>
+                        <option value="SET">SET</option>
+                        <option value="MTR">MTR (Meters)</option>
+                        <option value="KG">KG (Kilograms)</option>
+                        <option value="PAIR">PAIR</option>
+                        <option value="PACK">PACK</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block font-semibold text-slate-700 mb-1">Color (Optional)</label>
+                      <input
+                        type="text"
+                        name="color"
+                        value={editForm.color}
+                        onChange={handleFormChange}
+                        placeholder="e.g. Warm White, Black"
+                        className="w-full px-3 py-2 rounded-lg border border-slate-300 text-slate-900"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block font-semibold text-slate-700 mb-1">Size (Optional)</label>
+                      <input
+                        type="text"
+                        name="size"
+                        value={editForm.size}
+                        onChange={handleFormChange}
+                        placeholder="e.g. 5m, Standard, 12W"
+                        className="w-full px-3 py-2 rounded-lg border border-slate-300 text-slate-900"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block font-semibold text-slate-700 mb-1">Website Badge</label>
+                      <input
+                        type="text"
+                        name="badge"
+                        value={editForm.badge}
+                        onChange={handleFormChange}
+                        placeholder="e.g. Best Seller, Hot, New"
+                        className="w-full px-3 py-2 rounded-lg border border-slate-300 text-slate-900"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* SECTION 4: E-COMMERCE & VISIBILITY */}
+                <div className="space-y-3 pt-3 border-t border-slate-200">
+                  <h4 className="text-xs font-bold text-[#056468] uppercase tracking-wider flex items-center gap-1.5">
+                    <Globe className="w-3.5 h-3.5" />
+                    <span>Website & Online Catalog Settings</span>
+                  </h4>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-slate-50 p-3.5 rounded-xl border border-slate-200">
+                    <label className="flex items-center gap-3 cursor-pointer select-none">
+                      <input
+                        type="checkbox"
+                        name="showOnWebsite"
+                        checked={editForm.showOnWebsite}
+                        onChange={handleFormChange}
+                        className="w-4 h-4 rounded text-[#056468] focus:ring-[#056468]"
+                      />
+                      <div>
+                        <div className="font-bold text-slate-900">Show on Online Website</div>
+                        <div className="text-[11px] text-slate-500">Enable visibility on store frontend</div>
+                      </div>
+                    </label>
+
+                    <label className="flex items-center gap-3 cursor-pointer select-none">
+                      <input
+                        type="checkbox"
+                        name="featured"
+                        checked={editForm.featured}
+                        onChange={handleFormChange}
+                        className="w-4 h-4 rounded text-[#056468] focus:ring-[#056468]"
+                      />
+                      <div>
+                        <div className="font-bold text-slate-900">Feature on Homepage</div>
+                        <div className="text-[11px] text-slate-500">Promote in featured carousel</div>
+                      </div>
+                    </label>
+                  </div>
+                </div>
+
+                {/* SECTION 5: MEDIA & DESCRIPTION */}
+                <div className="space-y-3 pt-3 border-t border-slate-200">
+                  <h4 className="text-xs font-bold text-[#056468] uppercase tracking-wider flex items-center gap-1.5">
+                    <ImageIcon className="w-3.5 h-3.5" />
+                    <span>Image & Description</span>
+                  </h4>
+                  <div className="space-y-3">
+                    <div>
+                      <label className="block font-semibold text-slate-700 mb-1">Product Image</label>
+                      <div className="flex items-center gap-3">
+                        {editForm.imageUrl ? (
+                          <div className="w-14 h-14 rounded-lg bg-slate-100 border border-slate-200 overflow-hidden shrink-0">
+                            <img src={editForm.imageUrl} alt="preview" className="w-full h-full object-cover" />
+                          </div>
+                        ) : (
+                          <div className="w-14 h-14 rounded-lg bg-slate-100 border border-dashed border-slate-300 flex items-center justify-center text-slate-400 shrink-0">
+                            <ImageIcon className="w-6 h-6" />
+                          </div>
+                        )}
+                        <div className="flex-1 space-y-1.5">
+                          <input
+                            type="text"
+                            name="imageUrl"
+                            value={editForm.imageUrl}
+                            onChange={handleFormChange}
+                            placeholder="Image URL or upload below..."
+                            className="w-full px-3 py-1.5 rounded-lg border border-slate-300 font-mono text-xs text-slate-900"
+                          />
+                          <label className="inline-flex items-center gap-1.5 px-3 py-1 bg-white hover:bg-slate-100 border border-slate-300 rounded-lg cursor-pointer text-slate-700 font-medium text-[11px]">
+                            <Upload className="w-3 h-3 text-[#056468]" />
+                            <span>{uploadingImage ? "Uploading..." : "Upload New Image"}</span>
+                            <input type="file" accept="image/*" onChange={handleImageUpload} className="hidden" />
+                          </label>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block font-semibold text-slate-700 mb-1">Search Tags (comma-separated)</label>
+                      <input
+                        type="text"
+                        name="tags"
+                        value={editForm.tags}
+                        onChange={handleFormChange}
+                        placeholder="e.g. lighting, led, strip, neon, interior"
+                        className="w-full px-3 py-2 rounded-lg border border-slate-300 text-slate-900"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block font-semibold text-slate-700 mb-1">Description & Specifications</label>
+                      <textarea
+                        name="description"
+                        rows={3}
+                        value={editForm.description}
+                        onChange={handleFormChange}
+                        placeholder="Write detailed product specifications, features, warranty..."
+                        className="w-full px-3 py-2 rounded-lg border border-slate-300 text-slate-900 focus:outline-none focus:border-[#056468]"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Modal Footer Actions */}
+              <div className="border-t border-slate-200 px-6 py-3.5 bg-slate-50 flex items-center justify-end gap-3 shrink-0 rounded-b-2xl">
+                <button
+                  type="button"
+                  onClick={() => setIsEditModalOpen(false)}
+                  disabled={isSaving}
+                  className="px-4 py-2 rounded-xl bg-white hover:bg-slate-100 text-slate-700 font-semibold text-xs border border-slate-300 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSaving}
+                  className="px-6 py-2 rounded-xl bg-[#056468] hover:bg-[#044e51] text-white font-bold text-xs shadow-md transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+                >
+                  <Save className="w-3.5 h-3.5" />
+                  <span>{isSaving ? "Saving..." : "Save Product Details"}</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
       {/* Universal Thermal Label Printer Dialog */}
       {isPrintOpen && (
         <PrintLabelDialog
@@ -531,5 +1275,3 @@ export default function ProductDetailClient({ product }: { product: any }) {
     </div>
   );
 }
-
-
