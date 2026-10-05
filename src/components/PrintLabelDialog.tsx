@@ -145,19 +145,17 @@ export function PrintLabelDialog({
         (item, idx) => `
         JsBarcode("#bc-svg-${idx}", "${item.barcode}", {
           format: "CODE128",
-          width: ${is50x50 ? 1.65 : labelSize === "50x30" ? 1.35 : labelSize === "50x25" ? 1.2 : 1.5},
-          height: ${is50x50 ? 36 : labelSize === "50x30" ? 22 : labelSize === "50x25" ? 18 : 34},
+          width: ${is50x50 ? 1.4 : labelSize === "50x30" ? 1.25 : labelSize === "50x25" ? 1.15 : 1.5},
+          height: ${is50x50 ? 25 : labelSize === "50x30" ? 18 : labelSize === "50x25" ? 15 : 30},
           displayValue: true,
-          fontSize: ${is50x50 ? 9.5 : 8},
+          fontSize: ${is50x50 ? 8.5 : 7.5},
           font: "monospace",
-          textMargin: 1,
+          textMargin: 0,
           margin: 0
         });
       `
       )
       .join("\n");
-
-    const safeHeight = is50x50 ? 48.5 : s.h > 35 ? s.h - 2 : s.h - 1.5;
 
     printWindow.document.write(`
       <!DOCTYPE html>
@@ -187,30 +185,36 @@ export function PrintLabelDialog({
             }
             .label-page {
               width: ${s.w}mm !important;
-              height: ${safeHeight}mm !important;
-              max-height: ${safeHeight}mm !important;
+              height: ${s.h}mm !important;
+              max-height: ${s.h}mm !important;
               box-sizing: border-box !important;
-              padding: 1.2mm 2mm 1mm 2mm !important;
+              padding: ${is50x50 ? "4mm 3mm 4.5mm 3mm" : "2mm 2mm 2.5mm 2mm"} !important;
               margin: 0 auto !important;
               display: flex !important;
               flex-direction: column !important;
               justify-content: space-between !important;
               align-items: center !important;
               text-align: center !important;
-              page-break-after: always !important;
-              break-after: page !important;
               page-break-inside: avoid !important;
               break-inside: avoid !important;
               overflow: hidden !important;
               border: none !important;
             }
+            .label-page:not(:last-child) {
+              page-break-after: always !important;
+              break-after: page !important;
+            }
+            .label-page:last-child {
+              page-break-after: avoid !important;
+              break-after: avoid !important;
+            }
             .brand-header {
-              font-size: 8.5px;
-              font-weight: 900;
-              letter-spacing: 1.5px;
+              font-size: 8px;
+              font-weight: 800;
+              letter-spacing: 1.2px;
               text-transform: uppercase;
               color: #000;
-              border-bottom: 0.8px solid #000;
+              border-bottom: 0.75px solid #000;
               width: 100%;
               padding-bottom: 0.5px;
               margin: 0;
@@ -218,11 +222,11 @@ export function PrintLabelDialog({
               flex-shrink: 0;
             }
             .name {
-              font-size: 8.5px;
-              font-weight: 800;
-              max-width: 98%;
+              font-size: 8px;
+              font-weight: 700;
+              max-width: 96%;
               line-height: 1.1;
-              max-height: 17px;
+              max-height: 15px;
               overflow: hidden;
               text-overflow: ellipsis;
               display: -webkit-box;
@@ -232,10 +236,10 @@ export function PrintLabelDialog({
               flex-shrink: 0;
             }
             .meta {
-              font-size: 8px;
+              font-size: 7.5px;
               color: #000;
               font-family: monospace;
-              font-weight: 700;
+              font-weight: 600;
               line-height: 1;
               margin: 0.5px 0;
               flex-shrink: 0;
@@ -247,13 +251,11 @@ export function PrintLabelDialog({
               display: flex;
               justify-content: center;
               align-items: center;
-              margin: 0.5px 0;
+              margin: 0;
               overflow: hidden;
             }
             .barcode-box svg {
-              width: 99%;
-              max-width: 99%;
-              height: auto;
+              max-width: 96%;
               max-height: 100%;
               display: block;
             }
@@ -262,20 +264,20 @@ export function PrintLabelDialog({
               justify-content: space-between;
               align-items: center;
               width: 100%;
-              border-top: 0.8px solid #000;
+              border-top: 0.75px solid #000;
               padding-top: 1px;
               margin: 0;
               line-height: 1;
               flex-shrink: 0;
             }
             .price {
-              font-size: 9px;
-              font-weight: 900;
+              font-size: 8.5px;
+              font-weight: 800;
               color: #000;
             }
             .origin {
-              font-size: 7.5px;
-              font-weight: 800;
+              font-size: 7px;
+              font-weight: 700;
               color: #000;
               text-transform: uppercase;
               letter-spacing: 0.5px;
@@ -370,55 +372,56 @@ export function PrintLabelDialog({
           <div
             className="bg-white rounded-lg shadow-md border border-slate-300 p-3 flex flex-col justify-between items-center text-center transition-all duration-200 select-none"
             style={{
-              width: is50x50 ? "210px" : "240px",
-              height: is50x50 ? "210px" : labelSize === "50x30" ? "145px" : "135px",
+              width: is50x50 ? "200px" : "240px",
+              height: is50x50 ? "200px" : labelSize === "50x30" ? "140px" : "130px",
               aspectRatio: `${currentSize.w} / ${currentSize.h}`,
             }}
           >
             {/* Top Brand Header */}
             <div className="w-full border-b border-black pb-0.5 mb-0.5 flex items-center justify-between">
-              <span className="text-[9.5px] font-black tracking-widest uppercase text-black font-sans w-full text-center">
+              <span className="text-[9px] font-black tracking-widest uppercase text-black font-sans w-full text-center">
                 {brandText || "MICAWAS"}
               </span>
             </div>
 
             {/* Product Title */}
-            <div className="font-bold text-[10px] text-black leading-tight line-clamp-2 max-w-[95%] my-0.5">
+            <div className="font-bold text-[9.5px] text-black leading-tight line-clamp-2 max-w-[95%] my-0.5">
               {currentItem.productName}
             </div>
 
             {/* SKU */}
-            <div className="text-[9px] font-mono text-slate-800 font-semibold my-0.5">
+            <div className="text-[8.5px] font-mono text-slate-800 font-semibold my-0.5">
               SKU: <span className="font-bold text-black">{currentItem.sku}</span>
             </div>
 
             {/* Code 128 SVG Barcode */}
-            <div className="w-full my-1 flex flex-col items-center justify-center bg-white flex-1 min-h-0">
+            <div className="w-full my-0.5 flex flex-col items-center justify-center bg-white flex-1 min-h-0">
               <BarcodeSvg
                 barcode={currentItem.barcode}
-                height={is50x50 ? 40 : 26}
-                width={1.5}
-                fontSize={10}
+                height={is50x50 ? 30 : 20}
+                width={1.4}
+                fontSize={9}
               />
             </div>
 
             {/* Bottom Footer (MRP & Origin) */}
-            <div className="w-full border-t border-black pt-0.5 mt-0.5 flex items-center justify-between text-[9px]">
+            <div className="w-full border-t border-black pt-0.5 mt-0.5 flex items-center justify-between text-[8.5px]">
               {showPrice ? (
-                <div className="font-black text-black text-[10px]">
+                <div className="font-black text-black text-[9.5px]">
                   MRP: ₹{(currentItem.price || 0).toFixed(2)}
                 </div>
               ) : (
                 <div className="text-[8px] text-slate-500 font-mono">CODE 128</div>
               )}
-              <div className="font-bold uppercase tracking-wider text-[8px] text-slate-800">
+              <div className="font-bold uppercase tracking-wider text-[7.5px] text-slate-800">
                 PACKED IN INDIA
               </div>
             </div>
           </div>
 
-          <div className="text-[10px] text-slate-500 font-mono pt-1">
-            Barcode: <strong>{currentItem.barcode}</strong> • Format: Code 128 • Thermal Roll: 1-Up
+          <div className="text-[10.5px] text-emerald-800 font-medium bg-emerald-50 border border-emerald-200 px-3 py-1.5 rounded-lg flex items-center gap-1.5">
+            <span>✨</span>
+            <span><strong>Zero-Spill Calibration Active:</strong> Set <strong>Margins: None</strong> in Chrome print window for 1-to-1 exact physical sticker alignment.</span>
           </div>
         </div>
 
