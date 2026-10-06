@@ -58,9 +58,9 @@ async function main() {
       },
       include: { variants: true },
     });
-    if (!varCam1) varCam1 = camProduct.variants.find((v) => v.sku === "MS-6W5188") || camProduct.variants[0];
-    if (!varCam2) varCam2 = camProduct.variants.find((v) => v.sku === "MS-DIYC180") || camProduct.variants[0];
-    if (!varCam3) varCam3 = camProduct.variants.find((v) => v.sku === "sentra-charger-wifi-cam") || camProduct.variants[0];
+    if (!varCam1) varCam1 = camProduct.variants.find((v: any) => v.sku === "MS-6W5188") || camProduct.variants[0];
+    if (!varCam2) varCam2 = camProduct.variants.find((v: any) => v.sku === "MS-DIYC180") || camProduct.variants[0];
+    if (!varCam3) varCam3 = camProduct.variants.find((v: any) => v.sku === "sentra-charger-wifi-cam") || camProduct.variants[0];
   }
 
   // 2. Customers
