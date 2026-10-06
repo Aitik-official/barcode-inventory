@@ -35,6 +35,7 @@ import {
   ShippingInvoiceData,
 } from "@/components/PrintShippingInvoiceDialog";
 import { DeleteConfirmationModal } from "@/components/DeleteConfirmationModal";
+import { Pagination } from "@/components/Pagination";
 
 interface MarketplaceCredential {
   id: string;
@@ -434,6 +435,19 @@ export default function MarketplacesClient({
     return true;
   });
 
+  // Pagination states
+  const [ordersPage, setOrdersPage] = useState(1);
+  const [ordersPageSize, setOrdersPageSize] = useState(10);
+  const paginatedOrders = filteredOrders.slice((ordersPage - 1) * ordersPageSize, ordersPage * ordersPageSize);
+
+  const [matrixPage, setMatrixPage] = useState(1);
+  const [matrixPageSize, setMatrixPageSize] = useState(10);
+  const paginatedMatrix = mappings.slice((matrixPage - 1) * matrixPageSize, matrixPage * matrixPageSize);
+
+  const [mappingsPage, setMappingsPage] = useState(1);
+  const [mappingsPageSize, setMappingsPageSize] = useState(12);
+  const paginatedMappings = mappings.slice((mappingsPage - 1) * mappingsPageSize, mappingsPage * mappingsPageSize);
+
   // Metrics
   const amazonOrdersCount = orders.filter((o) => o.channel === "AMAZON").length;
   const flipkartOrdersCount = orders.filter((o) => o.channel === "FLIPKART").length;
@@ -704,8 +718,9 @@ export default function MarketplacesClient({
                 </div>
               </div>
             ) : (
-              <div className="space-y-3">
-                {filteredOrders.map((order) => {
+              <div className="space-y-4">
+                <div className="space-y-3">
+                  {paginatedOrders.map((order) => {
                   const isAmazon = order.channel === "AMAZON";
                   const isUnshipped = order.orderStatus === "UNSHIPPED" || order.orderStatus === "PENDING";
                   const isShipped = order.orderStatus === "SHIPPED";
@@ -869,6 +884,16 @@ export default function MarketplacesClient({
                     </div>
                   );
                 })}
+                </div>
+
+                <Pagination
+                  currentPage={ordersPage}
+                  totalItems={filteredOrders.length}
+                  pageSize={ordersPageSize}
+                  pageSizeOptions={[5, 10, 25, 50]}
+                  onPageChange={setOrdersPage}
+                  onPageSizeChange={setOrdersPageSize}
+                />
               </div>
             )}
           </div>
@@ -925,7 +950,7 @@ export default function MarketplacesClient({
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100">
-                      {mappings.map((m) => {
+                      {paginatedMatrix.map((m) => {
                         const isAmz = m.channel === "AMAZON";
                         const inSync = m.availableBarcodeStock === m.channelStock;
 
@@ -1007,6 +1032,15 @@ export default function MarketplacesClient({
                     </tbody>
                   </table>
                 </div>
+
+                <Pagination
+                  currentPage={matrixPage}
+                  totalItems={mappings.length}
+                  pageSize={matrixPageSize}
+                  pageSizeOptions={[10, 25, 50, 100]}
+                  onPageChange={setMatrixPage}
+                  onPageSizeChange={setMatrixPageSize}
+                />
               </div>
             )}
           </div>
@@ -1048,73 +1082,84 @@ export default function MarketplacesClient({
                 </p>
               </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {mappings.map((m) => {
-                  const isAmz = m.channel === "AMAZON";
-                  return (
-                    <div
-                      key={m.id}
-                      className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 hover:border-slate-300 transition-all flex flex-col justify-between space-y-3"
-                    >
-                      <div className="space-y-2">
-                        <div className="flex items-center justify-between">
-                          <span
-                            className={`px-2 py-0.5 rounded text-[10px] font-black uppercase ${
-                              isAmz ? "bg-amber-100 text-amber-900" : "bg-blue-100 text-blue-900"
-                            }`}
-                          >
-                            {isAmz ? "Amazon SP-API" : "Flipkart"}
-                          </span>
-                          <span className="text-[11px] font-mono text-slate-500">{m.fulfillmentType}</span>
-                        </div>
-
-                        <div>
-                          <div className="text-xs font-bold text-slate-900">{m.variantName}</div>
-                          <div className="text-[11px] text-slate-500 mt-0.5">
-                            Channel SKU: <strong className="text-slate-800 font-mono">{m.channelSku}</strong>
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {paginatedMappings.map((m) => {
+                    const isAmz = m.channel === "AMAZON";
+                    return (
+                      <div
+                        key={m.id}
+                        className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 hover:border-slate-300 transition-all flex flex-col justify-between space-y-3"
+                      >
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between">
+                            <span
+                              className={`px-2 py-0.5 rounded text-[10px] font-black uppercase ${
+                                isAmz ? "bg-amber-100 text-amber-900" : "bg-blue-100 text-blue-900"
+                              }`}
+                            >
+                              {isAmz ? "Amazon SP-API" : "Flipkart"}
+                            </span>
+                            <span className="text-[11px] font-mono text-slate-500">{m.fulfillmentType}</span>
                           </div>
-                          {m.externalId && (
-                            <div className="text-[11px] text-slate-500">
-                              {isAmz ? "ASIN: " : "FSN: "}
-                              <strong className="text-slate-800 font-mono">{m.externalId}</strong>
+
+                          <div>
+                            <div className="text-xs font-bold text-slate-900">{m.variantName}</div>
+                            <div className="text-[11px] text-slate-500 mt-0.5">
+                              Channel SKU: <strong className="text-slate-800 font-mono">{m.channelSku}</strong>
                             </div>
-                          )}
+                            {m.externalId && (
+                              <div className="text-[11px] text-slate-500">
+                                {isAmz ? "ASIN: " : "FSN: "}
+                                <strong className="text-slate-800 font-mono">{m.externalId}</strong>
+                              </div>
+                            )}
+                          </div>
+
+                          <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-100 flex items-center justify-between text-xs">
+                            <span className="text-slate-500">Listing Price:</span>
+                            <span className="font-bold text-slate-800">₹{m.listingPrice.toLocaleString("en-IN")}</span>
+                          </div>
                         </div>
 
-                        <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-100 flex items-center justify-between text-xs">
-                          <span className="text-slate-500">Listing Price:</span>
-                          <span className="font-bold text-slate-800">₹{m.listingPrice.toLocaleString("en-IN")}</span>
+                        <div className="border-t border-slate-100 pt-2.5 flex items-center justify-between">
+                          <div className="text-[11px] text-slate-500 font-medium">
+                            Available: <strong className="text-[#056468]">{m.availableBarcodeStock ?? 0} pcs</strong>
+                          </div>
+
+                          <div className="flex items-center gap-1">
+                            <button
+                              onClick={() => {
+                                setEditingMapping(m);
+                                setIsMappingModalOpen(true);
+                              }}
+                              className="p-1.5 rounded-lg text-slate-500 hover:text-[#056468] hover:bg-slate-100"
+                              title="Edit"
+                            >
+                              <Edit2 className="w-3.5 h-3.5" />
+                            </button>
+                            <button
+                              onClick={() => setDeleteTarget({ type: "mapping", id: m.id, name: `Mapping for SKU ${m.channelSku}` })}
+                              className="p-1.5 rounded-lg text-slate-500 hover:text-rose-600 hover:bg-rose-50"
+                              title="Delete"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
                         </div>
                       </div>
+                    );
+                  })}
+                </div>
 
-                      <div className="border-t border-slate-100 pt-2.5 flex items-center justify-between">
-                        <div className="text-[11px] text-slate-500 font-medium">
-                          Available: <strong className="text-[#056468]">{m.availableBarcodeStock ?? 0} pcs</strong>
-                        </div>
-
-                        <div className="flex items-center gap-1">
-                          <button
-                            onClick={() => {
-                              setEditingMapping(m);
-                              setIsMappingModalOpen(true);
-                            }}
-                            className="p-1.5 rounded-lg text-slate-500 hover:text-[#056468] hover:bg-slate-100"
-                            title="Edit"
-                          >
-                            <Edit2 className="w-3.5 h-3.5" />
-                          </button>
-                          <button
-                            onClick={() => setDeleteTarget({ type: "mapping", id: m.id, name: `Mapping for SKU ${m.channelSku}` })}
-                            className="p-1.5 rounded-lg text-slate-500 hover:text-rose-600 hover:bg-rose-50"
-                            title="Delete"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
+                <Pagination
+                  currentPage={mappingsPage}
+                  totalItems={mappings.length}
+                  pageSize={mappingsPageSize}
+                  pageSizeOptions={[6, 12, 24, 48]}
+                  onPageChange={setMappingsPage}
+                  onPageSizeChange={setMappingsPageSize}
+                />
               </div>
             )}
           </div>

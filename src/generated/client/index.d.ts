@@ -133,6 +133,11 @@ export type MarketplaceOrderItem = $Result.DefaultSelection<Prisma.$MarketplaceO
  * 
  */
 export type User = $Result.DefaultSelection<Prisma.$UserPayload>
+/**
+ * Model CompanySettings
+ * 
+ */
+export type CompanySettings = $Result.DefaultSelection<Prisma.$CompanySettingsPayload>
 
 /**
  * ##  Prisma Client ʲˢ
@@ -458,6 +463,16 @@ export class PrismaClient<
     * ```
     */
   get user(): Prisma.UserDelegate<ExtArgs, ClientOptions>;
+
+  /**
+   * `prisma.companySettings`: Exposes CRUD operations for the **CompanySettings** model.
+    * Example usage:
+    * ```ts
+    * // Fetch zero or more CompanySettings
+    * const companySettings = await prisma.companySettings.findMany()
+    * ```
+    */
+  get companySettings(): Prisma.CompanySettingsDelegate<ExtArgs, ClientOptions>;
 }
 
 export namespace Prisma {
@@ -922,7 +937,8 @@ export namespace Prisma {
     MarketplaceMapping: 'MarketplaceMapping',
     MarketplaceOrder: 'MarketplaceOrder',
     MarketplaceOrderItem: 'MarketplaceOrderItem',
-    User: 'User'
+    User: 'User',
+    CompanySettings: 'CompanySettings'
   };
 
   export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -941,7 +957,7 @@ export namespace Prisma {
       omit: GlobalOmitOptions
     }
     meta: {
-      modelProps: "category" | "product" | "productVariant" | "unitBarcode" | "inventory" | "inventoryTransaction" | "printJob" | "customer" | "supplier" | "purchaseOrder" | "purchaseOrderItem" | "order" | "orderItem" | "quotation" | "enquiry" | "invoice" | "customerStock" | "waste" | "auditLog" | "marketplaceCredential" | "marketplaceMapping" | "marketplaceOrder" | "marketplaceOrderItem" | "user"
+      modelProps: "category" | "product" | "productVariant" | "unitBarcode" | "inventory" | "inventoryTransaction" | "printJob" | "customer" | "supplier" | "purchaseOrder" | "purchaseOrderItem" | "order" | "orderItem" | "quotation" | "enquiry" | "invoice" | "customerStock" | "waste" | "auditLog" | "marketplaceCredential" | "marketplaceMapping" | "marketplaceOrder" | "marketplaceOrderItem" | "user" | "companySettings"
       txIsolationLevel: never
     }
     model: {
@@ -2721,6 +2737,80 @@ export namespace Prisma {
           }
         }
       }
+      CompanySettings: {
+        payload: Prisma.$CompanySettingsPayload<ExtArgs>
+        fields: Prisma.CompanySettingsFieldRefs
+        operations: {
+          findUnique: {
+            args: Prisma.CompanySettingsFindUniqueArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$CompanySettingsPayload> | null
+          }
+          findUniqueOrThrow: {
+            args: Prisma.CompanySettingsFindUniqueOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$CompanySettingsPayload>
+          }
+          findFirst: {
+            args: Prisma.CompanySettingsFindFirstArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$CompanySettingsPayload> | null
+          }
+          findFirstOrThrow: {
+            args: Prisma.CompanySettingsFindFirstOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$CompanySettingsPayload>
+          }
+          findMany: {
+            args: Prisma.CompanySettingsFindManyArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$CompanySettingsPayload>[]
+          }
+          create: {
+            args: Prisma.CompanySettingsCreateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$CompanySettingsPayload>
+          }
+          createMany: {
+            args: Prisma.CompanySettingsCreateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          delete: {
+            args: Prisma.CompanySettingsDeleteArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$CompanySettingsPayload>
+          }
+          update: {
+            args: Prisma.CompanySettingsUpdateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$CompanySettingsPayload>
+          }
+          deleteMany: {
+            args: Prisma.CompanySettingsDeleteManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateMany: {
+            args: Prisma.CompanySettingsUpdateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          upsert: {
+            args: Prisma.CompanySettingsUpsertArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$CompanySettingsPayload>
+          }
+          aggregate: {
+            args: Prisma.CompanySettingsAggregateArgs<ExtArgs>
+            result: $Utils.Optional<AggregateCompanySettings>
+          }
+          groupBy: {
+            args: Prisma.CompanySettingsGroupByArgs<ExtArgs>
+            result: $Utils.Optional<CompanySettingsGroupByOutputType>[]
+          }
+          findRaw: {
+            args: Prisma.CompanySettingsFindRawArgs<ExtArgs>
+            result: JsonObject
+          }
+          aggregateRaw: {
+            args: Prisma.CompanySettingsAggregateRawArgs<ExtArgs>
+            result: JsonObject
+          }
+          count: {
+            args: Prisma.CompanySettingsCountArgs<ExtArgs>
+            result: $Utils.Optional<CompanySettingsCountAggregateOutputType> | number
+          }
+        }
+      }
     }
   } & {
     other: {
@@ -2824,6 +2914,7 @@ export namespace Prisma {
     marketplaceOrder?: MarketplaceOrderOmit
     marketplaceOrderItem?: MarketplaceOrderItemOmit
     user?: UserOmit
+    companySettings?: CompanySettingsOmit
   }
 
   /* Types for Logging */
@@ -30313,6 +30404,1224 @@ export namespace Prisma {
 
 
   /**
+   * Model CompanySettings
+   */
+
+  export type AggregateCompanySettings = {
+    _count: CompanySettingsCountAggregateOutputType | null
+    _min: CompanySettingsMinAggregateOutputType | null
+    _max: CompanySettingsMaxAggregateOutputType | null
+  }
+
+  export type CompanySettingsMinAggregateOutputType = {
+    id: string | null
+    companyName: string | null
+    tagline: string | null
+    gstin: string | null
+    pan: string | null
+    cin: string | null
+    email: string | null
+    phone: string | null
+    alternatePhone: string | null
+    website: string | null
+    addressLine1: string | null
+    addressLine2: string | null
+    city: string | null
+    state: string | null
+    stateCode: string | null
+    pincode: string | null
+    country: string | null
+    bankName: string | null
+    accountName: string | null
+    accountNumber: string | null
+    ifscCode: string | null
+    branch: string | null
+    upiId: string | null
+    invoicePrefix: string | null
+    invoiceTerms: string | null
+    footerNote: string | null
+    authorizedSignatory: string | null
+    logoUrl: string | null
+    signatureUrl: string | null
+    createdAt: Date | null
+    updatedAt: Date | null
+  }
+
+  export type CompanySettingsMaxAggregateOutputType = {
+    id: string | null
+    companyName: string | null
+    tagline: string | null
+    gstin: string | null
+    pan: string | null
+    cin: string | null
+    email: string | null
+    phone: string | null
+    alternatePhone: string | null
+    website: string | null
+    addressLine1: string | null
+    addressLine2: string | null
+    city: string | null
+    state: string | null
+    stateCode: string | null
+    pincode: string | null
+    country: string | null
+    bankName: string | null
+    accountName: string | null
+    accountNumber: string | null
+    ifscCode: string | null
+    branch: string | null
+    upiId: string | null
+    invoicePrefix: string | null
+    invoiceTerms: string | null
+    footerNote: string | null
+    authorizedSignatory: string | null
+    logoUrl: string | null
+    signatureUrl: string | null
+    createdAt: Date | null
+    updatedAt: Date | null
+  }
+
+  export type CompanySettingsCountAggregateOutputType = {
+    id: number
+    companyName: number
+    tagline: number
+    gstin: number
+    pan: number
+    cin: number
+    email: number
+    phone: number
+    alternatePhone: number
+    website: number
+    addressLine1: number
+    addressLine2: number
+    city: number
+    state: number
+    stateCode: number
+    pincode: number
+    country: number
+    bankName: number
+    accountName: number
+    accountNumber: number
+    ifscCode: number
+    branch: number
+    upiId: number
+    invoicePrefix: number
+    invoiceTerms: number
+    footerNote: number
+    authorizedSignatory: number
+    logoUrl: number
+    signatureUrl: number
+    createdAt: number
+    updatedAt: number
+    _all: number
+  }
+
+
+  export type CompanySettingsMinAggregateInputType = {
+    id?: true
+    companyName?: true
+    tagline?: true
+    gstin?: true
+    pan?: true
+    cin?: true
+    email?: true
+    phone?: true
+    alternatePhone?: true
+    website?: true
+    addressLine1?: true
+    addressLine2?: true
+    city?: true
+    state?: true
+    stateCode?: true
+    pincode?: true
+    country?: true
+    bankName?: true
+    accountName?: true
+    accountNumber?: true
+    ifscCode?: true
+    branch?: true
+    upiId?: true
+    invoicePrefix?: true
+    invoiceTerms?: true
+    footerNote?: true
+    authorizedSignatory?: true
+    logoUrl?: true
+    signatureUrl?: true
+    createdAt?: true
+    updatedAt?: true
+  }
+
+  export type CompanySettingsMaxAggregateInputType = {
+    id?: true
+    companyName?: true
+    tagline?: true
+    gstin?: true
+    pan?: true
+    cin?: true
+    email?: true
+    phone?: true
+    alternatePhone?: true
+    website?: true
+    addressLine1?: true
+    addressLine2?: true
+    city?: true
+    state?: true
+    stateCode?: true
+    pincode?: true
+    country?: true
+    bankName?: true
+    accountName?: true
+    accountNumber?: true
+    ifscCode?: true
+    branch?: true
+    upiId?: true
+    invoicePrefix?: true
+    invoiceTerms?: true
+    footerNote?: true
+    authorizedSignatory?: true
+    logoUrl?: true
+    signatureUrl?: true
+    createdAt?: true
+    updatedAt?: true
+  }
+
+  export type CompanySettingsCountAggregateInputType = {
+    id?: true
+    companyName?: true
+    tagline?: true
+    gstin?: true
+    pan?: true
+    cin?: true
+    email?: true
+    phone?: true
+    alternatePhone?: true
+    website?: true
+    addressLine1?: true
+    addressLine2?: true
+    city?: true
+    state?: true
+    stateCode?: true
+    pincode?: true
+    country?: true
+    bankName?: true
+    accountName?: true
+    accountNumber?: true
+    ifscCode?: true
+    branch?: true
+    upiId?: true
+    invoicePrefix?: true
+    invoiceTerms?: true
+    footerNote?: true
+    authorizedSignatory?: true
+    logoUrl?: true
+    signatureUrl?: true
+    createdAt?: true
+    updatedAt?: true
+    _all?: true
+  }
+
+  export type CompanySettingsAggregateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which CompanySettings to aggregate.
+     */
+    where?: CompanySettingsWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of CompanySettings to fetch.
+     */
+    orderBy?: CompanySettingsOrderByWithRelationInput | CompanySettingsOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the start position
+     */
+    cursor?: CompanySettingsWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` CompanySettings from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` CompanySettings.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Count returned CompanySettings
+    **/
+    _count?: true | CompanySettingsCountAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the minimum value
+    **/
+    _min?: CompanySettingsMinAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the maximum value
+    **/
+    _max?: CompanySettingsMaxAggregateInputType
+  }
+
+  export type GetCompanySettingsAggregateType<T extends CompanySettingsAggregateArgs> = {
+        [P in keyof T & keyof AggregateCompanySettings]: P extends '_count' | 'count'
+      ? T[P] extends true
+        ? number
+        : GetScalarType<T[P], AggregateCompanySettings[P]>
+      : GetScalarType<T[P], AggregateCompanySettings[P]>
+  }
+
+
+
+
+  export type CompanySettingsGroupByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: CompanySettingsWhereInput
+    orderBy?: CompanySettingsOrderByWithAggregationInput | CompanySettingsOrderByWithAggregationInput[]
+    by: CompanySettingsScalarFieldEnum[] | CompanySettingsScalarFieldEnum
+    having?: CompanySettingsScalarWhereWithAggregatesInput
+    take?: number
+    skip?: number
+    _count?: CompanySettingsCountAggregateInputType | true
+    _min?: CompanySettingsMinAggregateInputType
+    _max?: CompanySettingsMaxAggregateInputType
+  }
+
+  export type CompanySettingsGroupByOutputType = {
+    id: string
+    companyName: string
+    tagline: string | null
+    gstin: string | null
+    pan: string | null
+    cin: string | null
+    email: string | null
+    phone: string | null
+    alternatePhone: string | null
+    website: string | null
+    addressLine1: string | null
+    addressLine2: string | null
+    city: string | null
+    state: string | null
+    stateCode: string | null
+    pincode: string | null
+    country: string | null
+    bankName: string | null
+    accountName: string | null
+    accountNumber: string | null
+    ifscCode: string | null
+    branch: string | null
+    upiId: string | null
+    invoicePrefix: string | null
+    invoiceTerms: string | null
+    footerNote: string | null
+    authorizedSignatory: string | null
+    logoUrl: string | null
+    signatureUrl: string | null
+    createdAt: Date
+    updatedAt: Date
+    _count: CompanySettingsCountAggregateOutputType | null
+    _min: CompanySettingsMinAggregateOutputType | null
+    _max: CompanySettingsMaxAggregateOutputType | null
+  }
+
+  type GetCompanySettingsGroupByPayload<T extends CompanySettingsGroupByArgs> = Prisma.PrismaPromise<
+    Array<
+      PickEnumerable<CompanySettingsGroupByOutputType, T['by']> &
+        {
+          [P in ((keyof T) & (keyof CompanySettingsGroupByOutputType))]: P extends '_count'
+            ? T[P] extends boolean
+              ? number
+              : GetScalarType<T[P], CompanySettingsGroupByOutputType[P]>
+            : GetScalarType<T[P], CompanySettingsGroupByOutputType[P]>
+        }
+      >
+    >
+
+
+  export type CompanySettingsSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    companyName?: boolean
+    tagline?: boolean
+    gstin?: boolean
+    pan?: boolean
+    cin?: boolean
+    email?: boolean
+    phone?: boolean
+    alternatePhone?: boolean
+    website?: boolean
+    addressLine1?: boolean
+    addressLine2?: boolean
+    city?: boolean
+    state?: boolean
+    stateCode?: boolean
+    pincode?: boolean
+    country?: boolean
+    bankName?: boolean
+    accountName?: boolean
+    accountNumber?: boolean
+    ifscCode?: boolean
+    branch?: boolean
+    upiId?: boolean
+    invoicePrefix?: boolean
+    invoiceTerms?: boolean
+    footerNote?: boolean
+    authorizedSignatory?: boolean
+    logoUrl?: boolean
+    signatureUrl?: boolean
+    createdAt?: boolean
+    updatedAt?: boolean
+  }, ExtArgs["result"]["companySettings"]>
+
+
+
+  export type CompanySettingsSelectScalar = {
+    id?: boolean
+    companyName?: boolean
+    tagline?: boolean
+    gstin?: boolean
+    pan?: boolean
+    cin?: boolean
+    email?: boolean
+    phone?: boolean
+    alternatePhone?: boolean
+    website?: boolean
+    addressLine1?: boolean
+    addressLine2?: boolean
+    city?: boolean
+    state?: boolean
+    stateCode?: boolean
+    pincode?: boolean
+    country?: boolean
+    bankName?: boolean
+    accountName?: boolean
+    accountNumber?: boolean
+    ifscCode?: boolean
+    branch?: boolean
+    upiId?: boolean
+    invoicePrefix?: boolean
+    invoiceTerms?: boolean
+    footerNote?: boolean
+    authorizedSignatory?: boolean
+    logoUrl?: boolean
+    signatureUrl?: boolean
+    createdAt?: boolean
+    updatedAt?: boolean
+  }
+
+  export type CompanySettingsOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "companyName" | "tagline" | "gstin" | "pan" | "cin" | "email" | "phone" | "alternatePhone" | "website" | "addressLine1" | "addressLine2" | "city" | "state" | "stateCode" | "pincode" | "country" | "bankName" | "accountName" | "accountNumber" | "ifscCode" | "branch" | "upiId" | "invoicePrefix" | "invoiceTerms" | "footerNote" | "authorizedSignatory" | "logoUrl" | "signatureUrl" | "createdAt" | "updatedAt", ExtArgs["result"]["companySettings"]>
+
+  export type $CompanySettingsPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    name: "CompanySettings"
+    objects: {}
+    scalars: $Extensions.GetPayloadResult<{
+      id: string
+      companyName: string
+      tagline: string | null
+      gstin: string | null
+      pan: string | null
+      cin: string | null
+      email: string | null
+      phone: string | null
+      alternatePhone: string | null
+      website: string | null
+      addressLine1: string | null
+      addressLine2: string | null
+      city: string | null
+      state: string | null
+      stateCode: string | null
+      pincode: string | null
+      country: string | null
+      bankName: string | null
+      accountName: string | null
+      accountNumber: string | null
+      ifscCode: string | null
+      branch: string | null
+      upiId: string | null
+      invoicePrefix: string | null
+      invoiceTerms: string | null
+      footerNote: string | null
+      authorizedSignatory: string | null
+      logoUrl: string | null
+      signatureUrl: string | null
+      createdAt: Date
+      updatedAt: Date
+    }, ExtArgs["result"]["companySettings"]>
+    composites: {}
+  }
+
+  type CompanySettingsGetPayload<S extends boolean | null | undefined | CompanySettingsDefaultArgs> = $Result.GetResult<Prisma.$CompanySettingsPayload, S>
+
+  type CompanySettingsCountArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> =
+    Omit<CompanySettingsFindManyArgs, 'select' | 'include' | 'distinct' | 'omit'> & {
+      select?: CompanySettingsCountAggregateInputType | true
+    }
+
+  export interface CompanySettingsDelegate<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> {
+    [K: symbol]: { types: Prisma.TypeMap<ExtArgs>['model']['CompanySettings'], meta: { name: 'CompanySettings' } }
+    /**
+     * Find zero or one CompanySettings that matches the filter.
+     * @param {CompanySettingsFindUniqueArgs} args - Arguments to find a CompanySettings
+     * @example
+     * // Get one CompanySettings
+     * const companySettings = await prisma.companySettings.findUnique({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUnique<T extends CompanySettingsFindUniqueArgs>(args: SelectSubset<T, CompanySettingsFindUniqueArgs<ExtArgs>>): Prisma__CompanySettingsClient<$Result.GetResult<Prisma.$CompanySettingsPayload<ExtArgs>, T, "findUnique", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find one CompanySettings that matches the filter or throw an error with `error.code='P2025'`
+     * if no matches were found.
+     * @param {CompanySettingsFindUniqueOrThrowArgs} args - Arguments to find a CompanySettings
+     * @example
+     * // Get one CompanySettings
+     * const companySettings = await prisma.companySettings.findUniqueOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUniqueOrThrow<T extends CompanySettingsFindUniqueOrThrowArgs>(args: SelectSubset<T, CompanySettingsFindUniqueOrThrowArgs<ExtArgs>>): Prisma__CompanySettingsClient<$Result.GetResult<Prisma.$CompanySettingsPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first CompanySettings that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {CompanySettingsFindFirstArgs} args - Arguments to find a CompanySettings
+     * @example
+     * // Get one CompanySettings
+     * const companySettings = await prisma.companySettings.findFirst({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirst<T extends CompanySettingsFindFirstArgs>(args?: SelectSubset<T, CompanySettingsFindFirstArgs<ExtArgs>>): Prisma__CompanySettingsClient<$Result.GetResult<Prisma.$CompanySettingsPayload<ExtArgs>, T, "findFirst", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first CompanySettings that matches the filter or
+     * throw `PrismaKnownClientError` with `P2025` code if no matches were found.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {CompanySettingsFindFirstOrThrowArgs} args - Arguments to find a CompanySettings
+     * @example
+     * // Get one CompanySettings
+     * const companySettings = await prisma.companySettings.findFirstOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirstOrThrow<T extends CompanySettingsFindFirstOrThrowArgs>(args?: SelectSubset<T, CompanySettingsFindFirstOrThrowArgs<ExtArgs>>): Prisma__CompanySettingsClient<$Result.GetResult<Prisma.$CompanySettingsPayload<ExtArgs>, T, "findFirstOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find zero or more CompanySettings that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {CompanySettingsFindManyArgs} args - Arguments to filter and select certain fields only.
+     * @example
+     * // Get all CompanySettings
+     * const companySettings = await prisma.companySettings.findMany()
+     * 
+     * // Get first 10 CompanySettings
+     * const companySettings = await prisma.companySettings.findMany({ take: 10 })
+     * 
+     * // Only select the `id`
+     * const companySettingsWithIdOnly = await prisma.companySettings.findMany({ select: { id: true } })
+     * 
+     */
+    findMany<T extends CompanySettingsFindManyArgs>(args?: SelectSubset<T, CompanySettingsFindManyArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$CompanySettingsPayload<ExtArgs>, T, "findMany", GlobalOmitOptions>>
+
+    /**
+     * Create a CompanySettings.
+     * @param {CompanySettingsCreateArgs} args - Arguments to create a CompanySettings.
+     * @example
+     * // Create one CompanySettings
+     * const CompanySettings = await prisma.companySettings.create({
+     *   data: {
+     *     // ... data to create a CompanySettings
+     *   }
+     * })
+     * 
+     */
+    create<T extends CompanySettingsCreateArgs>(args: SelectSubset<T, CompanySettingsCreateArgs<ExtArgs>>): Prisma__CompanySettingsClient<$Result.GetResult<Prisma.$CompanySettingsPayload<ExtArgs>, T, "create", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Create many CompanySettings.
+     * @param {CompanySettingsCreateManyArgs} args - Arguments to create many CompanySettings.
+     * @example
+     * // Create many CompanySettings
+     * const companySettings = await prisma.companySettings.createMany({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     *     
+     */
+    createMany<T extends CompanySettingsCreateManyArgs>(args?: SelectSubset<T, CompanySettingsCreateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Delete a CompanySettings.
+     * @param {CompanySettingsDeleteArgs} args - Arguments to delete one CompanySettings.
+     * @example
+     * // Delete one CompanySettings
+     * const CompanySettings = await prisma.companySettings.delete({
+     *   where: {
+     *     // ... filter to delete one CompanySettings
+     *   }
+     * })
+     * 
+     */
+    delete<T extends CompanySettingsDeleteArgs>(args: SelectSubset<T, CompanySettingsDeleteArgs<ExtArgs>>): Prisma__CompanySettingsClient<$Result.GetResult<Prisma.$CompanySettingsPayload<ExtArgs>, T, "delete", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Update one CompanySettings.
+     * @param {CompanySettingsUpdateArgs} args - Arguments to update one CompanySettings.
+     * @example
+     * // Update one CompanySettings
+     * const companySettings = await prisma.companySettings.update({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    update<T extends CompanySettingsUpdateArgs>(args: SelectSubset<T, CompanySettingsUpdateArgs<ExtArgs>>): Prisma__CompanySettingsClient<$Result.GetResult<Prisma.$CompanySettingsPayload<ExtArgs>, T, "update", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Delete zero or more CompanySettings.
+     * @param {CompanySettingsDeleteManyArgs} args - Arguments to filter CompanySettings to delete.
+     * @example
+     * // Delete a few CompanySettings
+     * const { count } = await prisma.companySettings.deleteMany({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     * 
+     */
+    deleteMany<T extends CompanySettingsDeleteManyArgs>(args?: SelectSubset<T, CompanySettingsDeleteManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more CompanySettings.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {CompanySettingsUpdateManyArgs} args - Arguments to update one or more rows.
+     * @example
+     * // Update many CompanySettings
+     * const companySettings = await prisma.companySettings.updateMany({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    updateMany<T extends CompanySettingsUpdateManyArgs>(args: SelectSubset<T, CompanySettingsUpdateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Create or update one CompanySettings.
+     * @param {CompanySettingsUpsertArgs} args - Arguments to update or create a CompanySettings.
+     * @example
+     * // Update or create a CompanySettings
+     * const companySettings = await prisma.companySettings.upsert({
+     *   create: {
+     *     // ... data to create a CompanySettings
+     *   },
+     *   update: {
+     *     // ... in case it already exists, update
+     *   },
+     *   where: {
+     *     // ... the filter for the CompanySettings we want to update
+     *   }
+     * })
+     */
+    upsert<T extends CompanySettingsUpsertArgs>(args: SelectSubset<T, CompanySettingsUpsertArgs<ExtArgs>>): Prisma__CompanySettingsClient<$Result.GetResult<Prisma.$CompanySettingsPayload<ExtArgs>, T, "upsert", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find zero or more CompanySettings that matches the filter.
+     * @param {CompanySettingsFindRawArgs} args - Select which filters you would like to apply.
+     * @example
+     * const companySettings = await prisma.companySettings.findRaw({
+     *   filter: { age: { $gt: 25 } }
+     * })
+     */
+    findRaw(args?: CompanySettingsFindRawArgs): Prisma.PrismaPromise<JsonObject>
+
+    /**
+     * Perform aggregation operations on a CompanySettings.
+     * @param {CompanySettingsAggregateRawArgs} args - Select which aggregations you would like to apply.
+     * @example
+     * const companySettings = await prisma.companySettings.aggregateRaw({
+     *   pipeline: [
+     *     { $match: { status: "registered" } },
+     *     { $group: { _id: "$country", total: { $sum: 1 } } }
+     *   ]
+     * })
+     */
+    aggregateRaw(args?: CompanySettingsAggregateRawArgs): Prisma.PrismaPromise<JsonObject>
+
+
+    /**
+     * Count the number of CompanySettings.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {CompanySettingsCountArgs} args - Arguments to filter CompanySettings to count.
+     * @example
+     * // Count the number of CompanySettings
+     * const count = await prisma.companySettings.count({
+     *   where: {
+     *     // ... the filter for the CompanySettings we want to count
+     *   }
+     * })
+    **/
+    count<T extends CompanySettingsCountArgs>(
+      args?: Subset<T, CompanySettingsCountArgs>,
+    ): Prisma.PrismaPromise<
+      T extends $Utils.Record<'select', any>
+        ? T['select'] extends true
+          ? number
+          : GetScalarType<T['select'], CompanySettingsCountAggregateOutputType>
+        : number
+    >
+
+    /**
+     * Allows you to perform aggregations operations on a CompanySettings.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {CompanySettingsAggregateArgs} args - Select which aggregations you would like to apply and on what fields.
+     * @example
+     * // Ordered by age ascending
+     * // Where email contains prisma.io
+     * // Limited to the 10 users
+     * const aggregations = await prisma.user.aggregate({
+     *   _avg: {
+     *     age: true,
+     *   },
+     *   where: {
+     *     email: {
+     *       contains: "prisma.io",
+     *     },
+     *   },
+     *   orderBy: {
+     *     age: "asc",
+     *   },
+     *   take: 10,
+     * })
+    **/
+    aggregate<T extends CompanySettingsAggregateArgs>(args: Subset<T, CompanySettingsAggregateArgs>): Prisma.PrismaPromise<GetCompanySettingsAggregateType<T>>
+
+    /**
+     * Group by CompanySettings.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {CompanySettingsGroupByArgs} args - Group by arguments.
+     * @example
+     * // Group by city, order by createdAt, get count
+     * const result = await prisma.user.groupBy({
+     *   by: ['city', 'createdAt'],
+     *   orderBy: {
+     *     createdAt: true
+     *   },
+     *   _count: {
+     *     _all: true
+     *   },
+     * })
+     * 
+    **/
+    groupBy<
+      T extends CompanySettingsGroupByArgs,
+      HasSelectOrTake extends Or<
+        Extends<'skip', Keys<T>>,
+        Extends<'take', Keys<T>>
+      >,
+      OrderByArg extends True extends HasSelectOrTake
+        ? { orderBy: CompanySettingsGroupByArgs['orderBy'] }
+        : { orderBy?: CompanySettingsGroupByArgs['orderBy'] },
+      OrderFields extends ExcludeUnderscoreKeys<Keys<MaybeTupleToUnion<T['orderBy']>>>,
+      ByFields extends MaybeTupleToUnion<T['by']>,
+      ByValid extends Has<ByFields, OrderFields>,
+      HavingFields extends GetHavingFields<T['having']>,
+      HavingValid extends Has<ByFields, HavingFields>,
+      ByEmpty extends T['by'] extends never[] ? True : False,
+      InputErrors extends ByEmpty extends True
+      ? `Error: "by" must not be empty.`
+      : HavingValid extends False
+      ? {
+          [P in HavingFields]: P extends ByFields
+            ? never
+            : P extends string
+            ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
+            : [
+                Error,
+                'Field ',
+                P,
+                ` in "having" needs to be provided in "by"`,
+              ]
+        }[HavingFields]
+      : 'take' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "take", you also need to provide "orderBy"'
+      : 'skip' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "skip", you also need to provide "orderBy"'
+      : ByValid extends True
+      ? {}
+      : {
+          [P in OrderFields]: P extends ByFields
+            ? never
+            : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+        }[OrderFields]
+    >(args: SubsetIntersection<T, CompanySettingsGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetCompanySettingsGroupByPayload<T> : Prisma.PrismaPromise<InputErrors>
+  /**
+   * Fields of the CompanySettings model
+   */
+  readonly fields: CompanySettingsFieldRefs;
+  }
+
+  /**
+   * The delegate class that acts as a "Promise-like" for CompanySettings.
+   * Why is this prefixed with `Prisma__`?
+   * Because we want to prevent naming conflicts as mentioned in
+   * https://github.com/prisma/prisma-client-js/issues/707
+   */
+  export interface Prisma__CompanySettingsClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
+    readonly [Symbol.toStringTag]: "PrismaPromise"
+    /**
+     * Attaches callbacks for the resolution and/or rejection of the Promise.
+     * @param onfulfilled The callback to execute when the Promise is resolved.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of which ever callback is executed.
+     */
+    then<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null): $Utils.JsPromise<TResult1 | TResult2>
+    /**
+     * Attaches a callback for only the rejection of the Promise.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of the callback.
+     */
+    catch<TResult = never>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null): $Utils.JsPromise<T | TResult>
+    /**
+     * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
+     * resolved value cannot be modified from the callback.
+     * @param onfinally The callback to execute when the Promise is settled (fulfilled or rejected).
+     * @returns A Promise for the completion of the callback.
+     */
+    finally(onfinally?: (() => void) | undefined | null): $Utils.JsPromise<T>
+  }
+
+
+
+
+  /**
+   * Fields of the CompanySettings model
+   */
+  interface CompanySettingsFieldRefs {
+    readonly id: FieldRef<"CompanySettings", 'String'>
+    readonly companyName: FieldRef<"CompanySettings", 'String'>
+    readonly tagline: FieldRef<"CompanySettings", 'String'>
+    readonly gstin: FieldRef<"CompanySettings", 'String'>
+    readonly pan: FieldRef<"CompanySettings", 'String'>
+    readonly cin: FieldRef<"CompanySettings", 'String'>
+    readonly email: FieldRef<"CompanySettings", 'String'>
+    readonly phone: FieldRef<"CompanySettings", 'String'>
+    readonly alternatePhone: FieldRef<"CompanySettings", 'String'>
+    readonly website: FieldRef<"CompanySettings", 'String'>
+    readonly addressLine1: FieldRef<"CompanySettings", 'String'>
+    readonly addressLine2: FieldRef<"CompanySettings", 'String'>
+    readonly city: FieldRef<"CompanySettings", 'String'>
+    readonly state: FieldRef<"CompanySettings", 'String'>
+    readonly stateCode: FieldRef<"CompanySettings", 'String'>
+    readonly pincode: FieldRef<"CompanySettings", 'String'>
+    readonly country: FieldRef<"CompanySettings", 'String'>
+    readonly bankName: FieldRef<"CompanySettings", 'String'>
+    readonly accountName: FieldRef<"CompanySettings", 'String'>
+    readonly accountNumber: FieldRef<"CompanySettings", 'String'>
+    readonly ifscCode: FieldRef<"CompanySettings", 'String'>
+    readonly branch: FieldRef<"CompanySettings", 'String'>
+    readonly upiId: FieldRef<"CompanySettings", 'String'>
+    readonly invoicePrefix: FieldRef<"CompanySettings", 'String'>
+    readonly invoiceTerms: FieldRef<"CompanySettings", 'String'>
+    readonly footerNote: FieldRef<"CompanySettings", 'String'>
+    readonly authorizedSignatory: FieldRef<"CompanySettings", 'String'>
+    readonly logoUrl: FieldRef<"CompanySettings", 'String'>
+    readonly signatureUrl: FieldRef<"CompanySettings", 'String'>
+    readonly createdAt: FieldRef<"CompanySettings", 'DateTime'>
+    readonly updatedAt: FieldRef<"CompanySettings", 'DateTime'>
+  }
+    
+
+  // Custom InputTypes
+  /**
+   * CompanySettings findUnique
+   */
+  export type CompanySettingsFindUniqueArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the CompanySettings
+     */
+    select?: CompanySettingsSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the CompanySettings
+     */
+    omit?: CompanySettingsOmit<ExtArgs> | null
+    /**
+     * Filter, which CompanySettings to fetch.
+     */
+    where: CompanySettingsWhereUniqueInput
+  }
+
+  /**
+   * CompanySettings findUniqueOrThrow
+   */
+  export type CompanySettingsFindUniqueOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the CompanySettings
+     */
+    select?: CompanySettingsSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the CompanySettings
+     */
+    omit?: CompanySettingsOmit<ExtArgs> | null
+    /**
+     * Filter, which CompanySettings to fetch.
+     */
+    where: CompanySettingsWhereUniqueInput
+  }
+
+  /**
+   * CompanySettings findFirst
+   */
+  export type CompanySettingsFindFirstArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the CompanySettings
+     */
+    select?: CompanySettingsSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the CompanySettings
+     */
+    omit?: CompanySettingsOmit<ExtArgs> | null
+    /**
+     * Filter, which CompanySettings to fetch.
+     */
+    where?: CompanySettingsWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of CompanySettings to fetch.
+     */
+    orderBy?: CompanySettingsOrderByWithRelationInput | CompanySettingsOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for CompanySettings.
+     */
+    cursor?: CompanySettingsWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` CompanySettings from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` CompanySettings.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of CompanySettings.
+     */
+    distinct?: CompanySettingsScalarFieldEnum | CompanySettingsScalarFieldEnum[]
+  }
+
+  /**
+   * CompanySettings findFirstOrThrow
+   */
+  export type CompanySettingsFindFirstOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the CompanySettings
+     */
+    select?: CompanySettingsSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the CompanySettings
+     */
+    omit?: CompanySettingsOmit<ExtArgs> | null
+    /**
+     * Filter, which CompanySettings to fetch.
+     */
+    where?: CompanySettingsWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of CompanySettings to fetch.
+     */
+    orderBy?: CompanySettingsOrderByWithRelationInput | CompanySettingsOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for CompanySettings.
+     */
+    cursor?: CompanySettingsWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` CompanySettings from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` CompanySettings.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of CompanySettings.
+     */
+    distinct?: CompanySettingsScalarFieldEnum | CompanySettingsScalarFieldEnum[]
+  }
+
+  /**
+   * CompanySettings findMany
+   */
+  export type CompanySettingsFindManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the CompanySettings
+     */
+    select?: CompanySettingsSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the CompanySettings
+     */
+    omit?: CompanySettingsOmit<ExtArgs> | null
+    /**
+     * Filter, which CompanySettings to fetch.
+     */
+    where?: CompanySettingsWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of CompanySettings to fetch.
+     */
+    orderBy?: CompanySettingsOrderByWithRelationInput | CompanySettingsOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for listing CompanySettings.
+     */
+    cursor?: CompanySettingsWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` CompanySettings from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` CompanySettings.
+     */
+    skip?: number
+    distinct?: CompanySettingsScalarFieldEnum | CompanySettingsScalarFieldEnum[]
+  }
+
+  /**
+   * CompanySettings create
+   */
+  export type CompanySettingsCreateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the CompanySettings
+     */
+    select?: CompanySettingsSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the CompanySettings
+     */
+    omit?: CompanySettingsOmit<ExtArgs> | null
+    /**
+     * The data needed to create a CompanySettings.
+     */
+    data: XOR<CompanySettingsCreateInput, CompanySettingsUncheckedCreateInput>
+  }
+
+  /**
+   * CompanySettings createMany
+   */
+  export type CompanySettingsCreateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to create many CompanySettings.
+     */
+    data: CompanySettingsCreateManyInput | CompanySettingsCreateManyInput[]
+  }
+
+  /**
+   * CompanySettings update
+   */
+  export type CompanySettingsUpdateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the CompanySettings
+     */
+    select?: CompanySettingsSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the CompanySettings
+     */
+    omit?: CompanySettingsOmit<ExtArgs> | null
+    /**
+     * The data needed to update a CompanySettings.
+     */
+    data: XOR<CompanySettingsUpdateInput, CompanySettingsUncheckedUpdateInput>
+    /**
+     * Choose, which CompanySettings to update.
+     */
+    where: CompanySettingsWhereUniqueInput
+  }
+
+  /**
+   * CompanySettings updateMany
+   */
+  export type CompanySettingsUpdateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to update CompanySettings.
+     */
+    data: XOR<CompanySettingsUpdateManyMutationInput, CompanySettingsUncheckedUpdateManyInput>
+    /**
+     * Filter which CompanySettings to update
+     */
+    where?: CompanySettingsWhereInput
+    /**
+     * Limit how many CompanySettings to update.
+     */
+    limit?: number
+  }
+
+  /**
+   * CompanySettings upsert
+   */
+  export type CompanySettingsUpsertArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the CompanySettings
+     */
+    select?: CompanySettingsSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the CompanySettings
+     */
+    omit?: CompanySettingsOmit<ExtArgs> | null
+    /**
+     * The filter to search for the CompanySettings to update in case it exists.
+     */
+    where: CompanySettingsWhereUniqueInput
+    /**
+     * In case the CompanySettings found by the `where` argument doesn't exist, create a new CompanySettings with this data.
+     */
+    create: XOR<CompanySettingsCreateInput, CompanySettingsUncheckedCreateInput>
+    /**
+     * In case the CompanySettings was found with the provided `where` argument, update it with this data.
+     */
+    update: XOR<CompanySettingsUpdateInput, CompanySettingsUncheckedUpdateInput>
+  }
+
+  /**
+   * CompanySettings delete
+   */
+  export type CompanySettingsDeleteArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the CompanySettings
+     */
+    select?: CompanySettingsSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the CompanySettings
+     */
+    omit?: CompanySettingsOmit<ExtArgs> | null
+    /**
+     * Filter which CompanySettings to delete.
+     */
+    where: CompanySettingsWhereUniqueInput
+  }
+
+  /**
+   * CompanySettings deleteMany
+   */
+  export type CompanySettingsDeleteManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which CompanySettings to delete
+     */
+    where?: CompanySettingsWhereInput
+    /**
+     * Limit how many CompanySettings to delete.
+     */
+    limit?: number
+  }
+
+  /**
+   * CompanySettings findRaw
+   */
+  export type CompanySettingsFindRawArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The query predicate filter. If unspecified, then all documents in the collection will match the predicate. ${@link https://docs.mongodb.com/manual/reference/operator/query MongoDB Docs}.
+     */
+    filter?: InputJsonValue
+    /**
+     * Additional options to pass to the `find` command ${@link https://docs.mongodb.com/manual/reference/command/find/#command-fields MongoDB Docs}.
+     */
+    options?: InputJsonValue
+  }
+
+  /**
+   * CompanySettings aggregateRaw
+   */
+  export type CompanySettingsAggregateRawArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * An array of aggregation stages to process and transform the document stream via the aggregation pipeline. ${@link https://docs.mongodb.com/manual/reference/operator/aggregation-pipeline MongoDB Docs}.
+     */
+    pipeline?: InputJsonValue[]
+    /**
+     * Additional options to pass to the `aggregate` command ${@link https://docs.mongodb.com/manual/reference/command/aggregate/#command-fields MongoDB Docs}.
+     */
+    options?: InputJsonValue
+  }
+
+  /**
+   * CompanySettings without action
+   */
+  export type CompanySettingsDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the CompanySettings
+     */
+    select?: CompanySettingsSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the CompanySettings
+     */
+    omit?: CompanySettingsOmit<ExtArgs> | null
+  }
+
+
+  /**
    * Enums
    */
 
@@ -30744,6 +32053,43 @@ export namespace Prisma {
   };
 
   export type UserScalarFieldEnum = (typeof UserScalarFieldEnum)[keyof typeof UserScalarFieldEnum]
+
+
+  export const CompanySettingsScalarFieldEnum: {
+    id: 'id',
+    companyName: 'companyName',
+    tagline: 'tagline',
+    gstin: 'gstin',
+    pan: 'pan',
+    cin: 'cin',
+    email: 'email',
+    phone: 'phone',
+    alternatePhone: 'alternatePhone',
+    website: 'website',
+    addressLine1: 'addressLine1',
+    addressLine2: 'addressLine2',
+    city: 'city',
+    state: 'state',
+    stateCode: 'stateCode',
+    pincode: 'pincode',
+    country: 'country',
+    bankName: 'bankName',
+    accountName: 'accountName',
+    accountNumber: 'accountNumber',
+    ifscCode: 'ifscCode',
+    branch: 'branch',
+    upiId: 'upiId',
+    invoicePrefix: 'invoicePrefix',
+    invoiceTerms: 'invoiceTerms',
+    footerNote: 'footerNote',
+    authorizedSignatory: 'authorizedSignatory',
+    logoUrl: 'logoUrl',
+    signatureUrl: 'signatureUrl',
+    createdAt: 'createdAt',
+    updatedAt: 'updatedAt'
+  };
+
+  export type CompanySettingsScalarFieldEnum = (typeof CompanySettingsScalarFieldEnum)[keyof typeof CompanySettingsScalarFieldEnum]
 
 
   export const SortOrder: {
@@ -33105,6 +34451,188 @@ export namespace Prisma {
     createdById?: StringNullableWithAggregatesFilter<"User"> | string | null
     createdAt?: DateTimeWithAggregatesFilter<"User"> | Date | string
     updatedAt?: DateTimeWithAggregatesFilter<"User"> | Date | string
+  }
+
+  export type CompanySettingsWhereInput = {
+    AND?: CompanySettingsWhereInput | CompanySettingsWhereInput[]
+    OR?: CompanySettingsWhereInput[]
+    NOT?: CompanySettingsWhereInput | CompanySettingsWhereInput[]
+    id?: StringFilter<"CompanySettings"> | string
+    companyName?: StringFilter<"CompanySettings"> | string
+    tagline?: StringNullableFilter<"CompanySettings"> | string | null
+    gstin?: StringNullableFilter<"CompanySettings"> | string | null
+    pan?: StringNullableFilter<"CompanySettings"> | string | null
+    cin?: StringNullableFilter<"CompanySettings"> | string | null
+    email?: StringNullableFilter<"CompanySettings"> | string | null
+    phone?: StringNullableFilter<"CompanySettings"> | string | null
+    alternatePhone?: StringNullableFilter<"CompanySettings"> | string | null
+    website?: StringNullableFilter<"CompanySettings"> | string | null
+    addressLine1?: StringNullableFilter<"CompanySettings"> | string | null
+    addressLine2?: StringNullableFilter<"CompanySettings"> | string | null
+    city?: StringNullableFilter<"CompanySettings"> | string | null
+    state?: StringNullableFilter<"CompanySettings"> | string | null
+    stateCode?: StringNullableFilter<"CompanySettings"> | string | null
+    pincode?: StringNullableFilter<"CompanySettings"> | string | null
+    country?: StringNullableFilter<"CompanySettings"> | string | null
+    bankName?: StringNullableFilter<"CompanySettings"> | string | null
+    accountName?: StringNullableFilter<"CompanySettings"> | string | null
+    accountNumber?: StringNullableFilter<"CompanySettings"> | string | null
+    ifscCode?: StringNullableFilter<"CompanySettings"> | string | null
+    branch?: StringNullableFilter<"CompanySettings"> | string | null
+    upiId?: StringNullableFilter<"CompanySettings"> | string | null
+    invoicePrefix?: StringNullableFilter<"CompanySettings"> | string | null
+    invoiceTerms?: StringNullableFilter<"CompanySettings"> | string | null
+    footerNote?: StringNullableFilter<"CompanySettings"> | string | null
+    authorizedSignatory?: StringNullableFilter<"CompanySettings"> | string | null
+    logoUrl?: StringNullableFilter<"CompanySettings"> | string | null
+    signatureUrl?: StringNullableFilter<"CompanySettings"> | string | null
+    createdAt?: DateTimeFilter<"CompanySettings"> | Date | string
+    updatedAt?: DateTimeFilter<"CompanySettings"> | Date | string
+  }
+
+  export type CompanySettingsOrderByWithRelationInput = {
+    id?: SortOrder
+    companyName?: SortOrder
+    tagline?: SortOrder
+    gstin?: SortOrder
+    pan?: SortOrder
+    cin?: SortOrder
+    email?: SortOrder
+    phone?: SortOrder
+    alternatePhone?: SortOrder
+    website?: SortOrder
+    addressLine1?: SortOrder
+    addressLine2?: SortOrder
+    city?: SortOrder
+    state?: SortOrder
+    stateCode?: SortOrder
+    pincode?: SortOrder
+    country?: SortOrder
+    bankName?: SortOrder
+    accountName?: SortOrder
+    accountNumber?: SortOrder
+    ifscCode?: SortOrder
+    branch?: SortOrder
+    upiId?: SortOrder
+    invoicePrefix?: SortOrder
+    invoiceTerms?: SortOrder
+    footerNote?: SortOrder
+    authorizedSignatory?: SortOrder
+    logoUrl?: SortOrder
+    signatureUrl?: SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+  }
+
+  export type CompanySettingsWhereUniqueInput = Prisma.AtLeast<{
+    id?: string
+    AND?: CompanySettingsWhereInput | CompanySettingsWhereInput[]
+    OR?: CompanySettingsWhereInput[]
+    NOT?: CompanySettingsWhereInput | CompanySettingsWhereInput[]
+    companyName?: StringFilter<"CompanySettings"> | string
+    tagline?: StringNullableFilter<"CompanySettings"> | string | null
+    gstin?: StringNullableFilter<"CompanySettings"> | string | null
+    pan?: StringNullableFilter<"CompanySettings"> | string | null
+    cin?: StringNullableFilter<"CompanySettings"> | string | null
+    email?: StringNullableFilter<"CompanySettings"> | string | null
+    phone?: StringNullableFilter<"CompanySettings"> | string | null
+    alternatePhone?: StringNullableFilter<"CompanySettings"> | string | null
+    website?: StringNullableFilter<"CompanySettings"> | string | null
+    addressLine1?: StringNullableFilter<"CompanySettings"> | string | null
+    addressLine2?: StringNullableFilter<"CompanySettings"> | string | null
+    city?: StringNullableFilter<"CompanySettings"> | string | null
+    state?: StringNullableFilter<"CompanySettings"> | string | null
+    stateCode?: StringNullableFilter<"CompanySettings"> | string | null
+    pincode?: StringNullableFilter<"CompanySettings"> | string | null
+    country?: StringNullableFilter<"CompanySettings"> | string | null
+    bankName?: StringNullableFilter<"CompanySettings"> | string | null
+    accountName?: StringNullableFilter<"CompanySettings"> | string | null
+    accountNumber?: StringNullableFilter<"CompanySettings"> | string | null
+    ifscCode?: StringNullableFilter<"CompanySettings"> | string | null
+    branch?: StringNullableFilter<"CompanySettings"> | string | null
+    upiId?: StringNullableFilter<"CompanySettings"> | string | null
+    invoicePrefix?: StringNullableFilter<"CompanySettings"> | string | null
+    invoiceTerms?: StringNullableFilter<"CompanySettings"> | string | null
+    footerNote?: StringNullableFilter<"CompanySettings"> | string | null
+    authorizedSignatory?: StringNullableFilter<"CompanySettings"> | string | null
+    logoUrl?: StringNullableFilter<"CompanySettings"> | string | null
+    signatureUrl?: StringNullableFilter<"CompanySettings"> | string | null
+    createdAt?: DateTimeFilter<"CompanySettings"> | Date | string
+    updatedAt?: DateTimeFilter<"CompanySettings"> | Date | string
+  }, "id">
+
+  export type CompanySettingsOrderByWithAggregationInput = {
+    id?: SortOrder
+    companyName?: SortOrder
+    tagline?: SortOrder
+    gstin?: SortOrder
+    pan?: SortOrder
+    cin?: SortOrder
+    email?: SortOrder
+    phone?: SortOrder
+    alternatePhone?: SortOrder
+    website?: SortOrder
+    addressLine1?: SortOrder
+    addressLine2?: SortOrder
+    city?: SortOrder
+    state?: SortOrder
+    stateCode?: SortOrder
+    pincode?: SortOrder
+    country?: SortOrder
+    bankName?: SortOrder
+    accountName?: SortOrder
+    accountNumber?: SortOrder
+    ifscCode?: SortOrder
+    branch?: SortOrder
+    upiId?: SortOrder
+    invoicePrefix?: SortOrder
+    invoiceTerms?: SortOrder
+    footerNote?: SortOrder
+    authorizedSignatory?: SortOrder
+    logoUrl?: SortOrder
+    signatureUrl?: SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+    _count?: CompanySettingsCountOrderByAggregateInput
+    _max?: CompanySettingsMaxOrderByAggregateInput
+    _min?: CompanySettingsMinOrderByAggregateInput
+  }
+
+  export type CompanySettingsScalarWhereWithAggregatesInput = {
+    AND?: CompanySettingsScalarWhereWithAggregatesInput | CompanySettingsScalarWhereWithAggregatesInput[]
+    OR?: CompanySettingsScalarWhereWithAggregatesInput[]
+    NOT?: CompanySettingsScalarWhereWithAggregatesInput | CompanySettingsScalarWhereWithAggregatesInput[]
+    id?: StringWithAggregatesFilter<"CompanySettings"> | string
+    companyName?: StringWithAggregatesFilter<"CompanySettings"> | string
+    tagline?: StringNullableWithAggregatesFilter<"CompanySettings"> | string | null
+    gstin?: StringNullableWithAggregatesFilter<"CompanySettings"> | string | null
+    pan?: StringNullableWithAggregatesFilter<"CompanySettings"> | string | null
+    cin?: StringNullableWithAggregatesFilter<"CompanySettings"> | string | null
+    email?: StringNullableWithAggregatesFilter<"CompanySettings"> | string | null
+    phone?: StringNullableWithAggregatesFilter<"CompanySettings"> | string | null
+    alternatePhone?: StringNullableWithAggregatesFilter<"CompanySettings"> | string | null
+    website?: StringNullableWithAggregatesFilter<"CompanySettings"> | string | null
+    addressLine1?: StringNullableWithAggregatesFilter<"CompanySettings"> | string | null
+    addressLine2?: StringNullableWithAggregatesFilter<"CompanySettings"> | string | null
+    city?: StringNullableWithAggregatesFilter<"CompanySettings"> | string | null
+    state?: StringNullableWithAggregatesFilter<"CompanySettings"> | string | null
+    stateCode?: StringNullableWithAggregatesFilter<"CompanySettings"> | string | null
+    pincode?: StringNullableWithAggregatesFilter<"CompanySettings"> | string | null
+    country?: StringNullableWithAggregatesFilter<"CompanySettings"> | string | null
+    bankName?: StringNullableWithAggregatesFilter<"CompanySettings"> | string | null
+    accountName?: StringNullableWithAggregatesFilter<"CompanySettings"> | string | null
+    accountNumber?: StringNullableWithAggregatesFilter<"CompanySettings"> | string | null
+    ifscCode?: StringNullableWithAggregatesFilter<"CompanySettings"> | string | null
+    branch?: StringNullableWithAggregatesFilter<"CompanySettings"> | string | null
+    upiId?: StringNullableWithAggregatesFilter<"CompanySettings"> | string | null
+    invoicePrefix?: StringNullableWithAggregatesFilter<"CompanySettings"> | string | null
+    invoiceTerms?: StringNullableWithAggregatesFilter<"CompanySettings"> | string | null
+    footerNote?: StringNullableWithAggregatesFilter<"CompanySettings"> | string | null
+    authorizedSignatory?: StringNullableWithAggregatesFilter<"CompanySettings"> | string | null
+    logoUrl?: StringNullableWithAggregatesFilter<"CompanySettings"> | string | null
+    signatureUrl?: StringNullableWithAggregatesFilter<"CompanySettings"> | string | null
+    createdAt?: DateTimeWithAggregatesFilter<"CompanySettings"> | Date | string
+    updatedAt?: DateTimeWithAggregatesFilter<"CompanySettings"> | Date | string
   }
 
   export type CategoryCreateInput = {
@@ -35598,6 +37126,240 @@ export namespace Prisma {
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
+  export type CompanySettingsCreateInput = {
+    id?: string
+    companyName?: string
+    tagline?: string | null
+    gstin?: string | null
+    pan?: string | null
+    cin?: string | null
+    email?: string | null
+    phone?: string | null
+    alternatePhone?: string | null
+    website?: string | null
+    addressLine1?: string | null
+    addressLine2?: string | null
+    city?: string | null
+    state?: string | null
+    stateCode?: string | null
+    pincode?: string | null
+    country?: string | null
+    bankName?: string | null
+    accountName?: string | null
+    accountNumber?: string | null
+    ifscCode?: string | null
+    branch?: string | null
+    upiId?: string | null
+    invoicePrefix?: string | null
+    invoiceTerms?: string | null
+    footerNote?: string | null
+    authorizedSignatory?: string | null
+    logoUrl?: string | null
+    signatureUrl?: string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+  }
+
+  export type CompanySettingsUncheckedCreateInput = {
+    id?: string
+    companyName?: string
+    tagline?: string | null
+    gstin?: string | null
+    pan?: string | null
+    cin?: string | null
+    email?: string | null
+    phone?: string | null
+    alternatePhone?: string | null
+    website?: string | null
+    addressLine1?: string | null
+    addressLine2?: string | null
+    city?: string | null
+    state?: string | null
+    stateCode?: string | null
+    pincode?: string | null
+    country?: string | null
+    bankName?: string | null
+    accountName?: string | null
+    accountNumber?: string | null
+    ifscCode?: string | null
+    branch?: string | null
+    upiId?: string | null
+    invoicePrefix?: string | null
+    invoiceTerms?: string | null
+    footerNote?: string | null
+    authorizedSignatory?: string | null
+    logoUrl?: string | null
+    signatureUrl?: string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+  }
+
+  export type CompanySettingsUpdateInput = {
+    companyName?: StringFieldUpdateOperationsInput | string
+    tagline?: NullableStringFieldUpdateOperationsInput | string | null
+    gstin?: NullableStringFieldUpdateOperationsInput | string | null
+    pan?: NullableStringFieldUpdateOperationsInput | string | null
+    cin?: NullableStringFieldUpdateOperationsInput | string | null
+    email?: NullableStringFieldUpdateOperationsInput | string | null
+    phone?: NullableStringFieldUpdateOperationsInput | string | null
+    alternatePhone?: NullableStringFieldUpdateOperationsInput | string | null
+    website?: NullableStringFieldUpdateOperationsInput | string | null
+    addressLine1?: NullableStringFieldUpdateOperationsInput | string | null
+    addressLine2?: NullableStringFieldUpdateOperationsInput | string | null
+    city?: NullableStringFieldUpdateOperationsInput | string | null
+    state?: NullableStringFieldUpdateOperationsInput | string | null
+    stateCode?: NullableStringFieldUpdateOperationsInput | string | null
+    pincode?: NullableStringFieldUpdateOperationsInput | string | null
+    country?: NullableStringFieldUpdateOperationsInput | string | null
+    bankName?: NullableStringFieldUpdateOperationsInput | string | null
+    accountName?: NullableStringFieldUpdateOperationsInput | string | null
+    accountNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    ifscCode?: NullableStringFieldUpdateOperationsInput | string | null
+    branch?: NullableStringFieldUpdateOperationsInput | string | null
+    upiId?: NullableStringFieldUpdateOperationsInput | string | null
+    invoicePrefix?: NullableStringFieldUpdateOperationsInput | string | null
+    invoiceTerms?: NullableStringFieldUpdateOperationsInput | string | null
+    footerNote?: NullableStringFieldUpdateOperationsInput | string | null
+    authorizedSignatory?: NullableStringFieldUpdateOperationsInput | string | null
+    logoUrl?: NullableStringFieldUpdateOperationsInput | string | null
+    signatureUrl?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type CompanySettingsUncheckedUpdateInput = {
+    companyName?: StringFieldUpdateOperationsInput | string
+    tagline?: NullableStringFieldUpdateOperationsInput | string | null
+    gstin?: NullableStringFieldUpdateOperationsInput | string | null
+    pan?: NullableStringFieldUpdateOperationsInput | string | null
+    cin?: NullableStringFieldUpdateOperationsInput | string | null
+    email?: NullableStringFieldUpdateOperationsInput | string | null
+    phone?: NullableStringFieldUpdateOperationsInput | string | null
+    alternatePhone?: NullableStringFieldUpdateOperationsInput | string | null
+    website?: NullableStringFieldUpdateOperationsInput | string | null
+    addressLine1?: NullableStringFieldUpdateOperationsInput | string | null
+    addressLine2?: NullableStringFieldUpdateOperationsInput | string | null
+    city?: NullableStringFieldUpdateOperationsInput | string | null
+    state?: NullableStringFieldUpdateOperationsInput | string | null
+    stateCode?: NullableStringFieldUpdateOperationsInput | string | null
+    pincode?: NullableStringFieldUpdateOperationsInput | string | null
+    country?: NullableStringFieldUpdateOperationsInput | string | null
+    bankName?: NullableStringFieldUpdateOperationsInput | string | null
+    accountName?: NullableStringFieldUpdateOperationsInput | string | null
+    accountNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    ifscCode?: NullableStringFieldUpdateOperationsInput | string | null
+    branch?: NullableStringFieldUpdateOperationsInput | string | null
+    upiId?: NullableStringFieldUpdateOperationsInput | string | null
+    invoicePrefix?: NullableStringFieldUpdateOperationsInput | string | null
+    invoiceTerms?: NullableStringFieldUpdateOperationsInput | string | null
+    footerNote?: NullableStringFieldUpdateOperationsInput | string | null
+    authorizedSignatory?: NullableStringFieldUpdateOperationsInput | string | null
+    logoUrl?: NullableStringFieldUpdateOperationsInput | string | null
+    signatureUrl?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type CompanySettingsCreateManyInput = {
+    id?: string
+    companyName?: string
+    tagline?: string | null
+    gstin?: string | null
+    pan?: string | null
+    cin?: string | null
+    email?: string | null
+    phone?: string | null
+    alternatePhone?: string | null
+    website?: string | null
+    addressLine1?: string | null
+    addressLine2?: string | null
+    city?: string | null
+    state?: string | null
+    stateCode?: string | null
+    pincode?: string | null
+    country?: string | null
+    bankName?: string | null
+    accountName?: string | null
+    accountNumber?: string | null
+    ifscCode?: string | null
+    branch?: string | null
+    upiId?: string | null
+    invoicePrefix?: string | null
+    invoiceTerms?: string | null
+    footerNote?: string | null
+    authorizedSignatory?: string | null
+    logoUrl?: string | null
+    signatureUrl?: string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+  }
+
+  export type CompanySettingsUpdateManyMutationInput = {
+    companyName?: StringFieldUpdateOperationsInput | string
+    tagline?: NullableStringFieldUpdateOperationsInput | string | null
+    gstin?: NullableStringFieldUpdateOperationsInput | string | null
+    pan?: NullableStringFieldUpdateOperationsInput | string | null
+    cin?: NullableStringFieldUpdateOperationsInput | string | null
+    email?: NullableStringFieldUpdateOperationsInput | string | null
+    phone?: NullableStringFieldUpdateOperationsInput | string | null
+    alternatePhone?: NullableStringFieldUpdateOperationsInput | string | null
+    website?: NullableStringFieldUpdateOperationsInput | string | null
+    addressLine1?: NullableStringFieldUpdateOperationsInput | string | null
+    addressLine2?: NullableStringFieldUpdateOperationsInput | string | null
+    city?: NullableStringFieldUpdateOperationsInput | string | null
+    state?: NullableStringFieldUpdateOperationsInput | string | null
+    stateCode?: NullableStringFieldUpdateOperationsInput | string | null
+    pincode?: NullableStringFieldUpdateOperationsInput | string | null
+    country?: NullableStringFieldUpdateOperationsInput | string | null
+    bankName?: NullableStringFieldUpdateOperationsInput | string | null
+    accountName?: NullableStringFieldUpdateOperationsInput | string | null
+    accountNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    ifscCode?: NullableStringFieldUpdateOperationsInput | string | null
+    branch?: NullableStringFieldUpdateOperationsInput | string | null
+    upiId?: NullableStringFieldUpdateOperationsInput | string | null
+    invoicePrefix?: NullableStringFieldUpdateOperationsInput | string | null
+    invoiceTerms?: NullableStringFieldUpdateOperationsInput | string | null
+    footerNote?: NullableStringFieldUpdateOperationsInput | string | null
+    authorizedSignatory?: NullableStringFieldUpdateOperationsInput | string | null
+    logoUrl?: NullableStringFieldUpdateOperationsInput | string | null
+    signatureUrl?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type CompanySettingsUncheckedUpdateManyInput = {
+    companyName?: StringFieldUpdateOperationsInput | string
+    tagline?: NullableStringFieldUpdateOperationsInput | string | null
+    gstin?: NullableStringFieldUpdateOperationsInput | string | null
+    pan?: NullableStringFieldUpdateOperationsInput | string | null
+    cin?: NullableStringFieldUpdateOperationsInput | string | null
+    email?: NullableStringFieldUpdateOperationsInput | string | null
+    phone?: NullableStringFieldUpdateOperationsInput | string | null
+    alternatePhone?: NullableStringFieldUpdateOperationsInput | string | null
+    website?: NullableStringFieldUpdateOperationsInput | string | null
+    addressLine1?: NullableStringFieldUpdateOperationsInput | string | null
+    addressLine2?: NullableStringFieldUpdateOperationsInput | string | null
+    city?: NullableStringFieldUpdateOperationsInput | string | null
+    state?: NullableStringFieldUpdateOperationsInput | string | null
+    stateCode?: NullableStringFieldUpdateOperationsInput | string | null
+    pincode?: NullableStringFieldUpdateOperationsInput | string | null
+    country?: NullableStringFieldUpdateOperationsInput | string | null
+    bankName?: NullableStringFieldUpdateOperationsInput | string | null
+    accountName?: NullableStringFieldUpdateOperationsInput | string | null
+    accountNumber?: NullableStringFieldUpdateOperationsInput | string | null
+    ifscCode?: NullableStringFieldUpdateOperationsInput | string | null
+    branch?: NullableStringFieldUpdateOperationsInput | string | null
+    upiId?: NullableStringFieldUpdateOperationsInput | string | null
+    invoicePrefix?: NullableStringFieldUpdateOperationsInput | string | null
+    invoiceTerms?: NullableStringFieldUpdateOperationsInput | string | null
+    footerNote?: NullableStringFieldUpdateOperationsInput | string | null
+    authorizedSignatory?: NullableStringFieldUpdateOperationsInput | string | null
+    logoUrl?: NullableStringFieldUpdateOperationsInput | string | null
+    signatureUrl?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
   export type StringFilter<$PrismaModel = never> = {
     equals?: string | StringFieldRefInput<$PrismaModel>
     in?: string[] | ListStringFieldRefInput<$PrismaModel>
@@ -37305,6 +39067,108 @@ export namespace Prisma {
     avatarUrl?: SortOrder
     lastLoginAt?: SortOrder
     createdById?: SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+  }
+
+  export type CompanySettingsCountOrderByAggregateInput = {
+    id?: SortOrder
+    companyName?: SortOrder
+    tagline?: SortOrder
+    gstin?: SortOrder
+    pan?: SortOrder
+    cin?: SortOrder
+    email?: SortOrder
+    phone?: SortOrder
+    alternatePhone?: SortOrder
+    website?: SortOrder
+    addressLine1?: SortOrder
+    addressLine2?: SortOrder
+    city?: SortOrder
+    state?: SortOrder
+    stateCode?: SortOrder
+    pincode?: SortOrder
+    country?: SortOrder
+    bankName?: SortOrder
+    accountName?: SortOrder
+    accountNumber?: SortOrder
+    ifscCode?: SortOrder
+    branch?: SortOrder
+    upiId?: SortOrder
+    invoicePrefix?: SortOrder
+    invoiceTerms?: SortOrder
+    footerNote?: SortOrder
+    authorizedSignatory?: SortOrder
+    logoUrl?: SortOrder
+    signatureUrl?: SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+  }
+
+  export type CompanySettingsMaxOrderByAggregateInput = {
+    id?: SortOrder
+    companyName?: SortOrder
+    tagline?: SortOrder
+    gstin?: SortOrder
+    pan?: SortOrder
+    cin?: SortOrder
+    email?: SortOrder
+    phone?: SortOrder
+    alternatePhone?: SortOrder
+    website?: SortOrder
+    addressLine1?: SortOrder
+    addressLine2?: SortOrder
+    city?: SortOrder
+    state?: SortOrder
+    stateCode?: SortOrder
+    pincode?: SortOrder
+    country?: SortOrder
+    bankName?: SortOrder
+    accountName?: SortOrder
+    accountNumber?: SortOrder
+    ifscCode?: SortOrder
+    branch?: SortOrder
+    upiId?: SortOrder
+    invoicePrefix?: SortOrder
+    invoiceTerms?: SortOrder
+    footerNote?: SortOrder
+    authorizedSignatory?: SortOrder
+    logoUrl?: SortOrder
+    signatureUrl?: SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+  }
+
+  export type CompanySettingsMinOrderByAggregateInput = {
+    id?: SortOrder
+    companyName?: SortOrder
+    tagline?: SortOrder
+    gstin?: SortOrder
+    pan?: SortOrder
+    cin?: SortOrder
+    email?: SortOrder
+    phone?: SortOrder
+    alternatePhone?: SortOrder
+    website?: SortOrder
+    addressLine1?: SortOrder
+    addressLine2?: SortOrder
+    city?: SortOrder
+    state?: SortOrder
+    stateCode?: SortOrder
+    pincode?: SortOrder
+    country?: SortOrder
+    bankName?: SortOrder
+    accountName?: SortOrder
+    accountNumber?: SortOrder
+    ifscCode?: SortOrder
+    branch?: SortOrder
+    upiId?: SortOrder
+    invoicePrefix?: SortOrder
+    invoiceTerms?: SortOrder
+    footerNote?: SortOrder
+    authorizedSignatory?: SortOrder
+    logoUrl?: SortOrder
+    signatureUrl?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
   }

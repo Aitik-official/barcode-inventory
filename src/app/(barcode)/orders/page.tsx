@@ -1,10 +1,11 @@
 import { prisma } from "@/lib/prisma";
+import { getCompanySettings } from "@/lib/companySettings";
 import OrdersClient from "./OrdersClient";
 
 export const revalidate = 0;
 
 export default async function OrdersPage() {
-  const [orders, marketplaceOrders, quotations, enquiries, invoices, customers] = await Promise.all([
+  const [orders, marketplaceOrders, quotations, enquiries, invoices, customers, companySettings] = await Promise.all([
     prisma.order.findMany({
       orderBy: { createdAt: "desc" },
       include: {
@@ -40,6 +41,7 @@ export default async function OrdersPage() {
     prisma.customer.findMany({
       orderBy: { name: "asc" },
     }),
+    getCompanySettings(),
   ]);
 
   return (
@@ -50,6 +52,7 @@ export default async function OrdersPage() {
       enquiries={enquiries}
       invoices={invoices}
       customers={customers}
+      initialCompanySettings={companySettings}
     />
   );
 }

@@ -12,6 +12,338 @@ const schema = z.object({
   lines: z.array(lineSchema).min(1),
 });
 
+// Helper to upsert a customer profile and reuse across orders
+export async function upsertCustomerRecord({
+  name,
+  email,
+  phone,
+  address,
+  city,
+  state,
+  zip,
+  company,
+  gstin,
+}: {
+  name: string;
+  email?: string | null;
+  phone?: string | null;
+  address?: string | null;
+  city?: string | null;
+  state?: string | null;
+  zip?: string | null;
+  company?: string | null;
+  gstin?: string | null;
+}) {
+  if (!name && !email && !phone) return null;
+
+  const cleanName = (name || "Valued Customer").trim();
+  const rawEmail = email?.trim().toLowerCase();
+  const cleanEmail =
+    rawEmail && !rawEmail.includes("@example")
+      ? rawEmail
+      : `${cleanName.toLowerCase().replace(/[^a-z0-9]/g, "") || "cust"}_${Date.now()}@customer.local`;
+  const cleanPhone = phone?.trim() || null;
+  const username = `${cleanName.toLowerCase().replace(/[^a-z0-9]/g, "") || "cust"}_${Math.floor(
+    1000 + Math.random() * 9000
+  )}`;
+
+  try {
+    // Check if customer exists by real email or phone
+    let existing = null;
+    if (cleanPhone || (rawEmail && !rawEmail.endsWith("@customer.local") && !rawEmail.endsWith("@dispatch.local"))) {
+      existing = await prisma.customer.findFirst({
+        where: {
+          OR: [
+            ...(rawEmail && !rawEmail.endsWith("@customer.local") && !rawEmail.endsWith("@dispatch.local")
+              ? [{ email: rawEmail }]
+              : []),
+            ...(cleanPhone ? [{ phone: cleanPhone }] : []),
+          ],
+        },
+      });
+    }
+
+    if (existing) {
+      existing = await prisma.customer.update({
+        where: { id: existing.id },
+        data: {
+          name: cleanName || existing.name,
+          phone: cleanPhone || existing.phone,
+          address: address || existing.address,
+          city: city || existing.city,
+          state: state || existing.state,
+          zip: zip || existing.zip,
+          company: company || existing.company,
+          gstin: gstin || existing.gstin,
+        },
+      });
+      return existing;
+    }
+
+    const created = await prisma.customer.create({
+      data: {
+        name: cleanName,
+        username,
+        email: cleanEmail,
+        phone: cleanPhone,
+        company: company || null,
+        address: address || null,
+        city: city || null,
+        state: state || null,
+        zip: zip || null,
+        gstin: gstin || null,
+        status: "ACTIVE",
+      },
+    });
+    return created;
+  } catch (err) {
+    console.warn("Could not upsert customer record:", err);
+    return null;
+  }
+}
+
+export async function GET(req: NextRequest) {
+  try {
+    const { searchParams } = new URL(req.url);
+    const orderId = searchParams.get("id");
+
+    if (orderId) {
+      const order = await prisma.order.findUnique({
+        where: { id: orderId },
+        include: {
+          items: {
+            include: {
+              productVariant: { include: { product: true } },
+              unitBarcode: true,
+            },
+          },
+          customer: true,
+          invoices: true,
+        },
+      });
+
+      if (!order) {
+        const mOrder = await prisma.marketplaceOrder.findUnique({
+          where: { id: orderId },
+          include: { items: true, credential: true },
+        });
+        if (!mOrder) {
+          return NextResponse.json({ error: "Order not found" }, { status: 404 });
+        }
+        return NextResponse.json({ order: mOrder, isMarketplace: true });
+      }
+
+      return NextResponse.json({ order, isMarketplace: false });
+    }
+
+    const [orders, marketplaceOrders] = await Promise.all([
+      prisma.order.findMany({
+        orderBy: { createdAt: "desc" },
+        include: {
+          items: {
+            include: {
+              productVariant: { include: { product: true } },
+              unitBarcode: true,
+            },
+          },
+          customer: true,
+          invoices: true,
+        },
+      }),
+      prisma.marketplaceOrder.findMany({
+        orderBy: { orderDate: "desc" },
+        include: { items: true, credential: true },
+      }),
+    ]);
+
+    return NextResponse.json({ orders, marketplaceOrders });
+  } catch (err: any) {
+    return NextResponse.json({ error: err.message }, { status: 500 });
+  }
+}
+
+export async function PATCH(req: NextRequest) {
+  try {
+    const body = await req.json();
+    const {
+      orderId,
+      orderNumber,
+      status,
+      customerName,
+      customerEmail,
+      customerPhone,
+      shippingAddress,
+      buyerCity,
+      buyerState,
+      buyerPincode,
+      trackingNumber,
+      courier,
+      notes,
+      saveCustomer,
+      company,
+      gstin,
+    } = body;
+
+    if (!orderId && !orderNumber) {
+      return NextResponse.json({ error: "orderId or orderNumber is required" }, { status: 400 });
+    }
+
+    // Try finding local Order first
+    const localOrder = await prisma.order.findFirst({
+      where: {
+        OR: [
+          ...(orderId ? [{ id: orderId }] : []),
+          ...(orderNumber ? [{ orderNumber }] : []),
+        ],
+      },
+      include: { customer: true },
+    });
+
+    if (localOrder) {
+      let linkedCustomerId = localOrder.customerId;
+
+      // If requested or customer info changed, upsert customer record
+      if (saveCustomer || !linkedCustomerId) {
+        const cust = await upsertCustomerRecord({
+          name: customerName || localOrder.customerName,
+          email: customerEmail || localOrder.customerEmail,
+          phone: customerPhone || localOrder.customerPhone,
+          address: shippingAddress || localOrder.shippingAddress,
+          city: buyerCity,
+          state: buyerState,
+          zip: buyerPincode,
+          company: company || localOrder.company,
+          gstin: gstin || localOrder.gstin,
+        });
+        if (cust) {
+          linkedCustomerId = cust.id;
+        }
+      }
+
+      // Update notes if courier/tracking changed
+      let updatedNotes = notes !== undefined ? notes : localOrder.notes;
+      if (trackingNumber || courier) {
+        if (!updatedNotes) updatedNotes = "";
+        if (courier && !updatedNotes.includes(`Courier: ${courier}`)) {
+          updatedNotes += ` | Courier: ${courier}`;
+        }
+        if (trackingNumber && !updatedNotes.includes(`AWB: ${trackingNumber}`)) {
+          updatedNotes += ` | AWB: ${trackingNumber}`;
+        }
+      }
+
+      const updated = await prisma.order.update({
+        where: { id: localOrder.id },
+        data: {
+          ...(status ? { status } : {}),
+          ...(customerName ? { customerName } : {}),
+          ...(customerEmail ? { customerEmail } : {}),
+          ...(customerPhone !== undefined ? { customerPhone } : {}),
+          ...(shippingAddress ? { shippingAddress } : {}),
+          ...(company !== undefined ? { company } : {}),
+          ...(gstin !== undefined ? { gstin } : {}),
+          ...(updatedNotes !== undefined ? { notes: updatedNotes } : {}),
+          ...(linkedCustomerId ? { customerId: linkedCustomerId } : {}),
+        },
+        include: {
+          items: {
+            include: {
+              productVariant: { include: { product: true } },
+              unitBarcode: true,
+            },
+          },
+          customer: true,
+        },
+      });
+
+      await writeAudit({
+        action: "ORDER_UPDATED",
+        entity: "Order",
+        entityId: updated.id,
+        details: JSON.stringify({
+          orderNumber: updated.orderNumber,
+          status: updated.status,
+          customerName: updated.customerName,
+        }),
+      });
+
+      return NextResponse.json({
+        success: true,
+        order: updated,
+        isMarketplace: false,
+        message: `Order #${updated.orderNumber} status updated to '${updated.status}'!`,
+      });
+    }
+
+    // Try finding Marketplace Order
+    const mOrder = await prisma.marketplaceOrder.findFirst({
+      where: {
+        OR: [
+          ...(orderId ? [{ id: orderId }] : []),
+          ...(orderNumber ? [{ channelOrderId: orderNumber }] : []),
+        ],
+      },
+      include: { items: true },
+    });
+
+    if (mOrder) {
+      // If saving customer
+      if (saveCustomer || customerName || mOrder.buyerName) {
+        await upsertCustomerRecord({
+          name: customerName || mOrder.buyerName || `${mOrder.channel} Customer`,
+          email: customerEmail || undefined,
+          phone: customerPhone || undefined,
+          address: shippingAddress || mOrder.shippingAddress,
+          city: buyerCity || mOrder.buyerCity,
+          state: buyerState || mOrder.buyerState,
+          zip: buyerPincode || mOrder.buyerPincode,
+          company: company || undefined,
+          gstin: gstin || undefined,
+        });
+      }
+
+      const updated = await prisma.marketplaceOrder.update({
+        where: { id: mOrder.id },
+        data: {
+          ...(status ? { orderStatus: status } : {}),
+          ...(customerName ? { buyerName: customerName } : {}),
+          ...(buyerCity ? { buyerCity } : {}),
+          ...(buyerState ? { buyerState } : {}),
+          ...(buyerPincode ? { buyerPincode } : {}),
+          ...(shippingAddress ? { shippingAddress } : {}),
+          ...(trackingNumber ? { trackingNumber } : {}),
+          ...(courier ? { courier } : {}),
+          ...(status === "SHIPPED" && !mOrder.dispatchedAt ? { dispatchedAt: new Date() } : {}),
+        },
+        include: { items: true, credential: true },
+      });
+
+      await writeAudit({
+        action: "MARKETPLACE_ORDER_UPDATED",
+        entity: "MarketplaceOrder",
+        entityId: updated.id,
+        details: JSON.stringify({
+          channelOrderId: updated.channelOrderId,
+          status: updated.orderStatus,
+          buyerName: updated.buyerName,
+        }),
+      });
+
+      return NextResponse.json({
+        success: true,
+        order: updated,
+        isMarketplace: true,
+        message: `Marketplace Order #${updated.channelOrderId} status updated to '${updated.orderStatus}'!`,
+      });
+    }
+
+    return NextResponse.json({ error: "Order not found" }, { status: 404 });
+  } catch (err: any) {
+    console.error("PATCH /api/orders error:", err);
+    return NextResponse.json({ error: err.message }, { status: 500 });
+  }
+}
+
 export async function POST(req: NextRequest) {
   try {
     const { lines } = schema.parse(await req.json());

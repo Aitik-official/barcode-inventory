@@ -11,6 +11,11 @@ const inter = Inter({
 export const metadata: Metadata = {
   title: "BarcodeZaa — Unified Inventory & Unit Barcode Platform",
   description: "Unified B2B Catalog, Inventory Ledger, and Per-Unit Serial Barcode Engine",
+  icons: {
+    icon: "/logo/favicon.png",
+    shortcut: "/logo/favicon.png",
+    apple: "/logo/favicon.png",
+  },
 };
 
 export default function RootLayout({

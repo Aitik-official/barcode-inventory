@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Users, Building2, Plus, Factory, X, UserCheck } from "lucide-react";
+import { Pagination } from "@/components/Pagination";
 
 export default function PartnersClient({
   customers,
@@ -11,6 +12,19 @@ export default function PartnersClient({
   suppliers: any[];
 }) {
   const [activeTab, setActiveTab] = useState<"customers" | "suppliers">("customers");
+
+  // Pagination states
+  const [custPage, setCustPage] = useState(1);
+  const [custPageSize, setCustPageSize] = useState(10);
+  const paginatedCustomers = useMemo(() => {
+    return customers.slice((custPage - 1) * custPageSize, custPage * custPageSize);
+  }, [customers, custPage, custPageSize]);
+
+  const [supPage, setSupPage] = useState(1);
+  const [supPageSize, setSupPageSize] = useState(10);
+  const paginatedSuppliers = useMemo(() => {
+    return suppliers.slice((supPage - 1) * supPageSize, supPage * supPageSize);
+  }, [suppliers, supPage, supPageSize]);
 
   // Customer Modal State
   const [custModalOpen, setCustModalOpen] = useState(false);
@@ -192,7 +206,7 @@ export default function PartnersClient({
                     </td>
                   </tr>
                 ) : (
-                  customers.map((c) => (
+                  paginatedCustomers.map((c) => (
                     <tr key={c.id} className="hover:bg-slate-50/70">
                       <td className="p-3.5 font-medium text-[#0b252c]">{c.name}</td>
                       <td className="p-3.5 text-[#056468]">
@@ -213,6 +227,15 @@ export default function PartnersClient({
               </tbody>
             </table>
           </div>
+
+          <Pagination
+            currentPage={custPage}
+            totalItems={customers.length}
+            pageSize={custPageSize}
+            pageSizeOptions={[10, 25, 50, 100]}
+            onPageChange={setCustPage}
+            onPageSizeChange={setCustPageSize}
+          />
         </div>
       )}
 
@@ -252,7 +275,7 @@ export default function PartnersClient({
                     </td>
                   </tr>
                 ) : (
-                  suppliers.map((s) => (
+                  paginatedSuppliers.map((s) => (
                     <tr key={s.id} className="hover:bg-slate-50/70">
                       <td className="p-3.5 font-medium text-[#0b252c]">{s.name}</td>
                       <td className="p-3.5 text-slate-700">{s.contact || "-"}</td>
@@ -268,6 +291,15 @@ export default function PartnersClient({
               </tbody>
             </table>
           </div>
+
+          <Pagination
+            currentPage={supPage}
+            totalItems={suppliers.length}
+            pageSize={supPageSize}
+            pageSizeOptions={[10, 25, 50, 100]}
+            onPageChange={setSupPage}
+            onPageSizeChange={setSupPageSize}
+          />
         </div>
       )}
 

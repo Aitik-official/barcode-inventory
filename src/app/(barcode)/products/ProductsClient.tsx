@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import Link from "next/link";
 import {
   Package,
@@ -25,6 +25,7 @@ import {
 import { PrintLabelDialog } from "@/components/PrintLabelDialog";
 import { DeleteConfirmationModal } from "@/components/DeleteConfirmationModal";
 import { BarcodeSvg } from "@/components/BarcodeSvg";
+import { Pagination } from "@/components/Pagination";
 
 export default function ProductsClient({
   products,
@@ -404,15 +405,67 @@ export default function ProductsClient({
   };
 
   // Level 1 Categories (Main Categories)
-  const mainCategories = categories.filter((c) => !c.parentId);
+  const mainCategories = useMemo(() => categories.filter((c) => !c.parentId), [categories]);
 
   // Level 2 Categories (Sub Categories)
-  const subCategories = categories.filter((c) => c.parentId && mainCategories.some((m) => m.id === c.parentId));
+  const subCategories = useMemo(
+    () => categories.filter((c) => c.parentId && mainCategories.some((m) => m.id === c.parentId)),
+    [categories, mainCategories]
+  );
 
   // Level 3 Categories (Level 2 Sub Categories)
-  const level2SubCategories = categories.filter((c) => c.parentId && subCategories.some((s) => s.id === c.parentId));
+  const level2SubCategories = useMemo(
+    () => categories.filter((c) => c.parentId && subCategories.some((s) => s.id === c.parentId)),
+    [categories, subCategories]
+  );
 
-  const serviceCategories = categories.filter((c) => c.mainUse === "service");
+  const serviceCategories = useMemo(() => categories.filter((c) => c.mainUse === "service"), [categories]);
+
+  // Pagination States
+  const [productPage, setProductPage] = useState(1);
+  const [productPageSize, setProductPageSize] = useState(12);
+
+  const [mainCatPage, setMainCatPage] = useState(1);
+  const [mainCatPageSize, setMainCatPageSize] = useState(10);
+
+  const [subCatPage, setSubCatPage] = useState(1);
+  const [subCatPageSize, setSubCatPageSize] = useState(10);
+
+  const [l2CatPage, setL2CatPage] = useState(1);
+  const [l2CatPageSize, setL2CatPageSize] = useState(10);
+
+  const [servicesPage, setServicesPage] = useState(1);
+  const [servicesPageSize, setServicesPageSize] = useState(12);
+
+  // Paginated Slices
+  const paginatedProducts = useMemo(() => {
+    const start = (productPage - 1) * productPageSize;
+    return productList.slice(start, start + productPageSize);
+  }, [productList, productPage, productPageSize]);
+
+  const paginatedMainCategories = useMemo(() => {
+    const start = (mainCatPage - 1) * mainCatPageSize;
+    return mainCategories.slice(start, start + mainCatPageSize);
+  }, [mainCategories, mainCatPage, mainCatPageSize]);
+
+  const paginatedSubCategories = useMemo(() => {
+    const start = (subCatPage - 1) * subCatPageSize;
+    return subCategories.slice(start, start + subCatPageSize);
+  }, [subCategories, subCatPage, subCatPageSize]);
+
+  const paginatedL2SubCategories = useMemo(() => {
+    const start = (l2CatPage - 1) * l2CatPageSize;
+    return level2SubCategories.slice(start, start + l2CatPageSize);
+  }, [level2SubCategories, l2CatPage, l2CatPageSize]);
+
+  const serviceProducts = useMemo(() => {
+    return products.filter((p) => p.productType === "SERVICE");
+  }, [products]);
+
+  const paginatedServices = useMemo(() => {
+    const start = (servicesPage - 1) * servicesPageSize;
+    return serviceProducts.slice(start, start + servicesPageSize);
+  }, [serviceProducts, servicesPage, servicesPageSize]);
 
   return (
     <div className="space-y-6 py-2">
@@ -547,152 +600,164 @@ export default function ProductsClient({
               </Link>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-              {productList.map((product) => {
-                const variant = product.variants[0];
-                const stockQty = variant?.inventory?.quantity ?? 0;
-                const unitBarcodes = variant?.unitBarcodes || [];
+            <div>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                {paginatedProducts.map((product) => {
+                  const variant = product.variants[0];
+                  const stockQty = variant?.inventory?.quantity ?? 0;
+                  const unitBarcodes = variant?.unitBarcodes || [];
 
-                return (
-                  <div
-                    key={product.id}
-                    className="bg-[#056468] text-white rounded-xl p-5 shadow-md hover:shadow-lg transition-all border border-[#044e51] flex flex-col justify-between space-y-4"
-                  >
-                    <div className="space-y-3">
-                      {/* Product Header & Image */}
-                      <div className="flex items-start gap-3">
-                        {product.imageUrl ? (
-                          <img
-                            src={product.imageUrl}
-                            alt={product.name}
-                            className="w-13 h-13 object-cover rounded-lg border border-white/20 shrink-0 bg-white/10"
-                          />
-                        ) : (
-                          <div className="w-13 h-13 rounded-lg bg-white/10 border border-white/20 flex items-center justify-center text-emerald-200 shrink-0">
-                            <Package className="w-6 h-6" />
-                          </div>
-                        )}
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-1.5 flex-wrap">
-                            <span className="text-[10px] font-medium bg-white/15 px-2 py-0.5 rounded text-emerald-100 border border-white/10">
-                              {product.category?.name || "General"}
-                            </span>
-                            {product.productType === "SERVICE" && (
-                              <span className="text-[10px] font-medium bg-amber-400/20 text-amber-200 px-2 py-0.5 rounded border border-amber-300/30">
-                                Service
-                              </span>
-                            )}
-                          </div>
-                          <h2 className="text-base font-semibold text-white mt-1 leading-snug truncate">
-                            {product.name}
-                          </h2>
-                        </div>
-                      </div>
-
-                      {/* Website Visibility Toggle Button */}
-                      <button
-                        type="button"
-                        onClick={() => toggleWebsiteVisibility(product.id, product.showOnWebsite ?? true)}
-                        disabled={toggleLoading === product.id}
-                        className={`w-full py-1.5 px-3 rounded-lg text-xs font-medium transition-all flex items-center justify-between border ${
-                          (product.showOnWebsite ?? true)
-                            ? "bg-white/15 border-white/20 text-white hover:bg-white/25"
-                            : "bg-rose-950/40 border-rose-400/40 text-rose-200 hover:bg-rose-950/60"
-                        }`}
-                      >
-                        <span className="flex items-center gap-1.5">
-                          <Globe className="w-3.5 h-3.5 text-emerald-200" />
-                          <span>Website Status:</span>
-                        </span>
-                        <span className="font-semibold text-[11px] flex items-center gap-1">
-                          {toggleLoading === product.id ? (
-                            "Updating..."
-                          ) : (product.showOnWebsite ?? true) ? (
-                            <>
-                              <Eye className="w-3 h-3 text-emerald-300" /> Visible
-                            </>
+                  return (
+                    <div
+                      key={product.id}
+                      className="bg-[#056468] text-white rounded-xl p-5 shadow-md hover:shadow-lg transition-all border border-[#044e51] flex flex-col justify-between space-y-4"
+                    >
+                      <div className="space-y-3">
+                        {/* Product Header & Image */}
+                        <div className="flex items-start gap-3">
+                          {product.imageUrl ? (
+                            <img
+                              src={product.imageUrl}
+                              alt={product.name}
+                              className="w-13 h-13 object-cover rounded-lg border border-white/20 shrink-0 bg-white/10"
+                            />
                           ) : (
-                            <>
-                              <EyeOff className="w-3 h-3 text-rose-300" /> Hidden
-                            </>
-                          )}
-                        </span>
-                      </button>
-
-                      {/* Price & Stock Container */}
-                      <div className="grid grid-cols-2 gap-2 bg-black/15 p-3 rounded-lg border border-white/10 text-xs">
-                        <div>
-                          <div className="text-emerald-100/70 text-[10px] font-normal">Offer Price</div>
-                          <div className="font-bold text-white text-base">
-                            ₹{(product.offerPrice || variant?.sellingPrice || 0).toFixed(2)}
-                          </div>
-                          {product.mrp > product.offerPrice && (
-                            <div className="line-through text-emerald-200/60 text-[10px]">
-                              MRP ₹{product.mrp}
+                            <div className="w-13 h-13 rounded-lg bg-white/10 border border-white/20 flex items-center justify-center text-emerald-200 shrink-0">
+                              <Package className="w-6 h-6" />
                             </div>
                           )}
-                        </div>
-                        <div>
-                          <div className="text-emerald-100/70 text-[10px] font-normal">In Stock</div>
-                          <div className="font-bold text-emerald-200 text-base">
-                            {stockQty} Units
-                          </div>
-                          <div className="text-emerald-100/70 text-[10px]">Per-Unit Serialized</div>
-                        </div>
-                      </div>
-
-                      {/* SKU Info */}
-                      {variant && (
-                        <div className="space-y-1 text-xs text-emerald-100/90 font-normal">
-                          <div className="flex items-center justify-between">
-                            <span>SKU Code:</span>
-                            <span className="font-mono font-medium text-white">{variant.sku}</span>
-                          </div>
-                          <div className="flex items-center justify-between">
-                            <span>Barcode Tag:</span>
-                            <span className="font-mono text-[11px] text-emerald-200 truncate max-w-[170px]">
-                              {unitBarcodes.length > 0
-                                ? `${unitBarcodes[0].barcode}..`
-                                : "No units generated"}
-                            </span>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              <span className="text-[10px] font-medium bg-white/15 px-2 py-0.5 rounded text-emerald-100 border border-white/10">
+                                {product.category?.name || "General"}
+                              </span>
+                              {product.productType === "SERVICE" && (
+                                <span className="text-[10px] font-medium bg-amber-400/20 text-amber-200 px-2 py-0.5 rounded border border-amber-300/30">
+                                  Service
+                                </span>
+                              )}
+                            </div>
+                            <h2 className="text-base font-semibold text-white mt-1 leading-snug truncate">
+                              {product.name}
+                            </h2>
                           </div>
                         </div>
-                      )}
-                    </div>
 
-                    {/* Card Action */}
-                    <div className="pt-3 border-t border-white/15 flex items-center justify-between gap-2">
-                      <button
-                        type="button"
-                        onClick={() => openRefillStock(product)}
-                        className="px-3 py-1.5 rounded-lg bg-emerald-400 hover:bg-emerald-300 text-[#043e41] font-bold text-xs transition-all flex items-center gap-1.5 shadow-sm"
-                      >
-                        <Zap className="w-3.5 h-3.5 fill-current" />
-                        <span>Refill</span>
-                      </button>
-
-                      <div className="flex items-center gap-1.5">
-                        <Link
-                          href={`/products/${product.id}`}
-                          className="px-2.5 py-1.5 rounded-lg bg-white/15 hover:bg-white text-white hover:text-[#056468] font-semibold text-xs transition-all flex items-center gap-1 border border-white/20"
-                        >
-                          <span>Details</span>
-                          <ChevronRight className="w-3.5 h-3.5" />
-                        </Link>
-
+                        {/* Website Visibility Toggle Button */}
                         <button
                           type="button"
-                          onClick={() => setProductToDelete(product)}
-                          className="p-1.5 rounded-lg bg-rose-500/20 hover:bg-rose-500 text-white font-semibold text-xs transition-all border border-rose-400/30"
-                          title="Delete Product"
+                          onClick={() => toggleWebsiteVisibility(product.id, product.showOnWebsite ?? true)}
+                          disabled={toggleLoading === product.id}
+                          className={`w-full py-1.5 px-3 rounded-lg text-xs font-medium transition-all flex items-center justify-between border ${
+                            (product.showOnWebsite ?? true)
+                              ? "bg-white/15 border-white/20 text-white hover:bg-white/25"
+                              : "bg-rose-950/40 border-rose-400/40 text-rose-200 hover:bg-rose-950/60"
+                          }`}
                         >
-                          <Trash2 className="w-3.5 h-3.5" />
+                          <span className="flex items-center gap-1.5">
+                            <Globe className="w-3.5 h-3.5 text-emerald-200" />
+                            <span>Website Status:</span>
+                          </span>
+                          <span className="font-semibold text-[11px] flex items-center gap-1">
+                            {toggleLoading === product.id ? (
+                              "Updating..."
+                            ) : (product.showOnWebsite ?? true) ? (
+                              <>
+                                <Eye className="w-3 h-3 text-emerald-300" /> Visible
+                              </>
+                            ) : (
+                              <>
+                                <EyeOff className="w-3 h-3 text-rose-300" /> Hidden
+                              </>
+                            )}
+                          </span>
                         </button>
+
+                        {/* Price & Stock Container */}
+                        <div className="grid grid-cols-2 gap-2 bg-black/15 p-3 rounded-lg border border-white/10 text-xs">
+                          <div>
+                            <div className="text-emerald-100/70 text-[10px] font-normal">Offer Price</div>
+                            <div className="font-bold text-white text-base">
+                              ₹{(product.offerPrice || variant?.sellingPrice || 0).toFixed(2)}
+                            </div>
+                            {product.mrp > product.offerPrice && (
+                              <div className="line-through text-emerald-200/60 text-[10px]">
+                                MRP ₹{product.mrp}
+                              </div>
+                            )}
+                          </div>
+                          <div>
+                            <div className="text-emerald-100/70 text-[10px] font-normal">In Stock</div>
+                            <div className="font-bold text-emerald-200 text-base">
+                              {stockQty} Units
+                            </div>
+                            <div className="text-emerald-100/70 text-[10px]">Per-Unit Serialized</div>
+                          </div>
+                        </div>
+
+                        {/* SKU Info */}
+                        {variant && (
+                          <div className="space-y-1 text-xs text-emerald-100/90 font-normal">
+                            <div className="flex items-center justify-between">
+                              <span>SKU Code:</span>
+                              <span className="font-mono font-medium text-white">{variant.sku}</span>
+                            </div>
+                            <div className="flex items-center justify-between">
+                              <span>Barcode Tag:</span>
+                              <span className="font-mono text-[11px] text-emerald-200 truncate max-w-[170px]">
+                                {unitBarcodes.length > 0
+                                  ? `${unitBarcodes[0].barcode}..`
+                                  : "No units generated"}
+                              </span>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Card Action */}
+                      <div className="pt-3 border-t border-white/15 flex items-center justify-between gap-2">
+                        <button
+                          type="button"
+                          onClick={() => openRefillStock(product)}
+                          className="px-3 py-1.5 rounded-lg bg-emerald-400 hover:bg-emerald-300 text-[#043e41] font-bold text-xs transition-all flex items-center gap-1.5 shadow-sm"
+                        >
+                          <Zap className="w-3.5 h-3.5 fill-current" />
+                          <span>Refill</span>
+                        </button>
+
+                        <div className="flex items-center gap-1.5">
+                          <Link
+                            href={`/products/${product.id}`}
+                            className="px-2.5 py-1.5 rounded-lg bg-white/15 hover:bg-white text-white hover:text-[#056468] font-semibold text-xs transition-all flex items-center gap-1 border border-white/20"
+                          >
+                            <span>Details</span>
+                            <ChevronRight className="w-3.5 h-3.5" />
+                          </Link>
+
+                          <button
+                            type="button"
+                            onClick={() => setProductToDelete(product)}
+                            className="p-1.5 rounded-lg bg-rose-500/20 hover:bg-rose-500 text-white font-semibold text-xs transition-all border border-rose-400/30"
+                            title="Delete Product"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                );
-              })}
+                  );
+                })}
+              </div>
+              <Pagination
+                currentPage={productPage}
+                totalItems={productList.length}
+                pageSize={productPageSize}
+                onPageChange={setProductPage}
+                onPageSizeChange={setProductPageSize}
+                pageSizeOptions={[9, 12, 24, 48, 96]}
+                itemLabel="products"
+                className="mt-4 border border-[#cce7ed] rounded-xl shadow-xs"
+              />
             </div>
           )}
         </div>
@@ -749,7 +814,7 @@ export default function ProductsClient({
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-[#cce7ed] text-[#0b252c] font-normal">
-                  {mainCategories.map((c) => {
+                  {paginatedMainCategories.map((c) => {
                     const subCount = subCategories.filter((s) => s.parentId === c.id).length;
                     return (
                       <tr key={c.id} className="hover:bg-[#f8fcfe]">
@@ -780,6 +845,14 @@ export default function ProductsClient({
                   })}
                 </tbody>
               </table>
+              <Pagination
+                currentPage={mainCatPage}
+                totalItems={mainCategories.length}
+                pageSize={mainCatPageSize}
+                onPageChange={setMainCatPage}
+                onPageSizeChange={setMainCatPageSize}
+                itemLabel="main categories"
+              />
             </div>
           </div>
 
@@ -807,7 +880,7 @@ export default function ProductsClient({
                       </td>
                     </tr>
                   ) : (
-                    subCategories.map((sc) => {
+                    paginatedSubCategories.map((sc) => {
                       const parentCat = mainCategories.find((m) => m.id === sc.parentId);
                       return (
                         <tr key={sc.id} className="hover:bg-[#f8fcfe]">
@@ -830,6 +903,14 @@ export default function ProductsClient({
                   )}
                 </tbody>
               </table>
+              <Pagination
+                currentPage={subCatPage}
+                totalItems={subCategories.length}
+                pageSize={subCatPageSize}
+                onPageChange={setSubCatPage}
+                onPageSizeChange={setSubCatPageSize}
+                itemLabel="sub-categories"
+              />
             </div>
           </div>
 
@@ -856,7 +937,7 @@ export default function ProductsClient({
                       </td>
                     </tr>
                   ) : (
-                    level2SubCategories.map((l2) => {
+                    paginatedL2SubCategories.map((l2) => {
                       const parentSub = subCategories.find((s) => s.id === l2.parentId);
                       return (
                         <tr key={l2.id} className="hover:bg-[#f8fcfe]">
@@ -871,6 +952,14 @@ export default function ProductsClient({
                   )}
                 </tbody>
               </table>
+              <Pagination
+                currentPage={l2CatPage}
+                totalItems={level2SubCategories.length}
+                pageSize={l2CatPageSize}
+                onPageChange={setL2CatPage}
+                onPageSizeChange={setL2CatPageSize}
+                itemLabel="level 2 sub-categories"
+              />
             </div>
           </div>
         </div>
@@ -900,7 +989,7 @@ export default function ProductsClient({
 
           {/* Services Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-            {products.filter((p) => p.productType === "SERVICE").length === 0 ? (
+            {serviceProducts.length === 0 ? (
               <div className="col-span-3 bg-white border border-[#cce7ed] rounded-xl p-12 text-center space-y-4 shadow-sm">
                 <Wrench className="w-12 h-12 text-[#056468] mx-auto opacity-70" />
                 <h3 className="text-base font-semibold text-[#0b252c]">No custom services created yet</h3>
@@ -915,92 +1004,99 @@ export default function ProductsClient({
                 </button>
               </div>
             ) : (
-              products
-                .filter((p) => p.productType === "SERVICE")
-                .map((srv) => (
-                  <div
-                    key={srv.id}
-                    className="bg-[#056468] text-white rounded-xl p-5 shadow-md hover:shadow-lg transition-all border border-[#044e51] flex flex-col justify-between space-y-4"
-                  >
-                    <div className="space-y-3">
-                      <div className="flex items-start gap-3">
-                        {srv.imageUrl ? (
-                          <img
-                            src={srv.imageUrl}
-                            alt={srv.name}
-                            className="w-13 h-13 object-cover rounded-lg border border-white/20 shrink-0 bg-white/10"
-                          />
-                        ) : (
-                          <div className="w-13 h-13 rounded-lg bg-white/10 border border-white/20 flex items-center justify-center text-emerald-200 shrink-0">
-                            <Wrench className="w-6 h-6" />
-                          </div>
-                        )}
-                        <div className="flex-1 min-w-0">
-                          <span className="text-[10px] font-medium bg-amber-400/20 text-amber-200 px-2 py-0.5 rounded border border-amber-300/30">
-                            {srv.category?.name || "Printing Service"}
-                          </span>
-                          <h3 className="text-base font-semibold text-white mt-1 leading-snug truncate">
-                            {srv.name}
-                          </h3>
+              paginatedServices.map((srv) => (
+                <div
+                  key={srv.id}
+                  className="bg-[#056468] text-white rounded-xl p-5 shadow-md hover:shadow-lg transition-all border border-[#044e51] flex flex-col justify-between space-y-4"
+                >
+                  <div className="space-y-3">
+                    <div className="flex items-start gap-3">
+                      {srv.imageUrl ? (
+                        <img
+                          src={srv.imageUrl}
+                          alt={srv.name}
+                          className="w-13 h-13 object-cover rounded-lg border border-white/20 shrink-0 bg-white/10"
+                        />
+                      ) : (
+                        <div className="w-13 h-13 rounded-lg bg-white/10 border border-white/20 flex items-center justify-center text-emerald-200 shrink-0">
+                          <Wrench className="w-6 h-6" />
                         </div>
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <span className="text-[10px] font-medium bg-amber-400/20 text-amber-200 px-2 py-0.5 rounded border border-amber-300/30">
+                          {srv.category?.name || "Printing Service"}
+                        </span>
+                        <h3 className="text-base font-semibold text-white mt-1 leading-snug truncate">
+                          {srv.name}
+                        </h3>
                       </div>
-
-                      <p className="text-xs text-emerald-100/80 line-clamp-2 font-normal">
-                        {srv.description || "Custom printing, die-cutting, & office labeling services."}
-                      </p>
-
-                      <div className="bg-black/15 p-3 rounded-lg border border-white/10 flex items-center justify-between text-xs">
-                        <span className="text-emerald-100/70 font-normal">Estimated Price:</span>
-                        <span className="font-bold text-white text-sm">
-                          ₹{srv.offerPrice || srv.mrp || 0} / job
-                        </span>
-                      </div>
-
-                      {/* Live Website Toggle */}
-                      <button
-                        type="button"
-                        onClick={() => toggleWebsiteVisibility(srv.id, srv.showOnWebsite ?? true)}
-                        disabled={toggleLoading === srv.id}
-                        className={`w-full py-1.5 px-3 rounded-lg text-xs font-medium transition-all flex items-center justify-between border ${
-                          (srv.showOnWebsite ?? true)
-                            ? "bg-white/15 border-white/20 text-white hover:bg-white/25"
-                            : "bg-rose-950/40 border-rose-400/40 text-rose-200 hover:bg-rose-950/60"
-                        }`}
-                      >
-                        <span className="flex items-center gap-1.5">
-                          <Globe className="w-3.5 h-3.5 text-emerald-200" />
-                          <span>Website Status:</span>
-                        </span>
-                        <span className="font-semibold text-[11px] flex items-center gap-1">
-                          {toggleLoading === srv.id ? (
-                            "Updating..."
-                          ) : (srv.showOnWebsite ?? true) ? (
-                            <>
-                              <Eye className="w-3 h-3 text-emerald-300" /> Visible
-                            </>
-                          ) : (
-                            <>
-                              <EyeOff className="w-3 h-3 text-rose-300" /> Hidden
-                            </>
-                          )}
-                        </span>
-                      </button>
                     </div>
 
-                    <div className="pt-3 border-t border-white/15 flex items-center justify-between">
-                      <span className="text-[11px] text-emerald-100/70 font-normal">Enquiry Based</span>
-                      <Link
-                        href="/orders"
-                        className="px-3 py-1.5 bg-white text-[#056468] hover:bg-emerald-50 font-semibold text-xs rounded-lg transition-all flex items-center gap-1"
-                      >
-                        <span>Create Enquiry</span>
-                        <ChevronRight className="w-3.5 h-3.5" />
-                      </Link>
+                    <p className="text-xs text-emerald-100/80 line-clamp-2 font-normal">
+                      {srv.description || "Custom printing, die-cutting, & office labeling services."}
+                    </p>
+
+                    <div className="bg-black/15 p-3 rounded-lg border border-white/10 flex items-center justify-between text-xs">
+                      <span className="text-emerald-100/70 font-normal">Estimated Price:</span>
+                      <span className="font-bold text-white text-sm">
+                        ₹{srv.offerPrice || srv.mrp || 0} / job
+                      </span>
                     </div>
+
+                    {/* Live Website Toggle */}
+                    <button
+                      type="button"
+                      onClick={() => toggleWebsiteVisibility(srv.id, srv.showOnWebsite ?? true)}
+                      disabled={toggleLoading === srv.id}
+                      className={`w-full py-1.5 px-3 rounded-lg text-xs font-medium transition-all flex items-center justify-between border ${
+                        (srv.showOnWebsite ?? true)
+                          ? "bg-white/15 border-white/20 text-white hover:bg-white/25"
+                          : "bg-rose-950/40 border-rose-400/40 text-rose-200 hover:bg-rose-950/60"
+                      }`}
+                    >
+                      <span className="flex items-center gap-1.5">
+                        <Globe className="w-3.5 h-3.5 text-emerald-200" />
+                        <span>Website Status:</span>
+                      </span>
+                      <span className="font-semibold text-[11px] flex items-center gap-1">
+                        {toggleLoading === srv.id ? (
+                          "Updating..."
+                        ) : (srv.showOnWebsite ?? true) ? (
+                          <>
+                            <Eye className="w-3 h-3 text-emerald-300" /> Visible
+                          </>
+                        ) : (
+                          <>
+                            <EyeOff className="w-3 h-3 text-rose-300" /> Hidden
+                          </>
+                        )}
+                      </span>
+                    </button>
                   </div>
-                ))
+
+                  <div className="pt-3 border-t border-white/15 flex items-center justify-between">
+                    <span className="text-[11px] text-emerald-100/70 font-normal">Enquiry Based</span>
+                    <Link
+                      href="/orders"
+                      className="px-3 py-1.5 bg-white text-[#056468] hover:bg-emerald-50 font-semibold text-xs rounded-lg transition-all flex items-center gap-1"
+                    >
+                      <span>Create Enquiry</span>
+                      <ChevronRight className="w-3.5 h-3.5" />
+                    </Link>
+                  </div>
+                </div>
+              ))
             )}
           </div>
+
+          <Pagination
+            currentPage={servicesPage}
+            totalItems={serviceProducts.length}
+            pageSize={servicesPageSize}
+            pageSizeOptions={[6, 12, 24, 48]}
+            onPageChange={setServicesPage}
+            onPageSizeChange={setServicesPageSize}
+          />
         </div>
       )}
 

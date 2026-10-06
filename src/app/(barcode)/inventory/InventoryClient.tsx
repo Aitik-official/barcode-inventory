@@ -19,6 +19,7 @@ import {
   AlertCircle,
   CheckCircle2,
 } from "lucide-react";
+import { Pagination } from "@/components/Pagination";
 
 export default function InventoryClient({
   inventories = [],
@@ -41,6 +42,19 @@ export default function InventoryClient({
   const [stockBatchFilter, setStockBatchFilter] = useState<"ALL" | "WEBSITE" | "AMAZON" | "FLIPKART">("ALL");
   const [searchQuery, setSearchQuery] = useState("");
   const [syncingVariantId, setSyncingVariantId] = useState<string | null>(null);
+
+  // Pagination states
+  const [stockPage, setStockPage] = useState(1);
+  const [stockPageSize, setStockPageSize] = useState(10);
+
+  const [ledgerPage, setLedgerPage] = useState(1);
+  const [ledgerPageSize, setLedgerPageSize] = useState(10);
+
+  const [poPage, setPoPage] = useState(1);
+  const [poPageSize, setPoPageSize] = useState(10);
+
+  const [wastePage, setWastePage] = useState(1);
+  const [wastePageSize, setWastePageSize] = useState(10);
 
   // Create PO Modal State
   const [poModalOpen, setPoModalOpen] = useState(false);
@@ -127,6 +141,23 @@ export default function InventoryClient({
       flipkartItems,
     };
   }, [inventories, enrichedInventories]);
+
+  // Paginated Slices
+  const paginatedInventories = useMemo(() => {
+    return filteredInventories.slice((stockPage - 1) * stockPageSize, stockPage * stockPageSize);
+  }, [filteredInventories, stockPage, stockPageSize]);
+
+  const paginatedTransactions = useMemo(() => {
+    return transactions.slice((ledgerPage - 1) * ledgerPageSize, ledgerPage * ledgerPageSize);
+  }, [transactions, ledgerPage, ledgerPageSize]);
+
+  const paginatedPOs = useMemo(() => {
+    return purchaseOrders.slice((poPage - 1) * poPageSize, poPage * poPageSize);
+  }, [purchaseOrders, poPage, poPageSize]);
+
+  const paginatedWastes = useMemo(() => {
+    return wastes.slice((wastePage - 1) * wastePageSize, wastePage * wastePageSize);
+  }, [wastes, wastePage, wastePageSize]);
 
   // Push stock to marketplaces
   const handlePushStock = async (productVariantId: string) => {
@@ -455,7 +486,7 @@ export default function InventoryClient({
                       </td>
                     </tr>
                   ) : (
-                    filteredInventories.map((inv) => (
+                    paginatedInventories.map((inv) => (
                       <tr key={inv.id} className="hover:bg-[#f8fcfe] transition-colors">
                         {/* Product Name */}
                         <td className="p-3">
@@ -574,6 +605,15 @@ export default function InventoryClient({
                 </tbody>
               </table>
             </div>
+
+            <Pagination
+              currentPage={stockPage}
+              totalItems={filteredInventories.length}
+              pageSize={stockPageSize}
+              pageSizeOptions={[10, 25, 50, 100]}
+              onPageChange={setStockPage}
+              onPageSizeChange={setStockPageSize}
+            />
           </div>
         </div>
       )}
@@ -600,47 +640,64 @@ export default function InventoryClient({
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#cce7ed] font-normal text-[#0b252c]">
-                {transactions.map((tx) => (
-                  <tr key={tx.id} className="hover:bg-[#f8fcfe]">
-                    <td className="p-3 text-[#5f818b] text-[11px]">
-                      {new Date(tx.createdAt).toLocaleString()}
+                {transactions.length === 0 ? (
+                  <tr>
+                    <td colSpan={7} className="p-8 text-center text-[#5f818b]">
+                      No stock transactions recorded.
                     </td>
-                    <td className="p-3">
-                      <span className="font-semibold text-[#0b252c] block">{tx.productVariant?.product?.name}</span>
-                      <span className="text-[#5f818b] font-mono text-[11px]">{tx.productVariant?.sku}</span>
-                    </td>
-                    <td className="p-3 font-mono">
-                      {tx.unitBarcode ? (
-                        <span className="bg-[#e3f2f5] border border-[#b2dce5] text-[#056468] px-2 py-0.5 rounded font-semibold text-[11px]">
-                          {tx.unitBarcode.barcode}
-                        </span>
-                      ) : (
-                        <span className="text-[#89a8b1]">-</span>
-                      )}
-                    </td>
-                    <td className="p-3">
-                      <span
-                        className={`px-2 py-0.5 rounded text-[10px] font-medium ${
-                          tx.transactionType === "RECEIVE"
-                            ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
-                            : tx.transactionType === "SALE"
-                            ? "bg-purple-50 text-purple-700 border border-purple-200"
-                            : "bg-amber-50 text-amber-700 border border-amber-200"
-                        }`}
-                      >
-                        {tx.transactionType}
-                      </span>
-                    </td>
-                    <td className="p-3 font-bold">
-                      {tx.quantity > 0 ? `+${tx.quantity}` : tx.quantity}
-                    </td>
-                    <td className="p-3 font-bold text-[#056468]">{tx.newStock} Units</td>
-                    <td className="p-3 text-[#4a6870] max-w-xs truncate">{tx.note || "-"}</td>
                   </tr>
-                ))}
+                ) : (
+                  paginatedTransactions.map((tx) => (
+                    <tr key={tx.id} className="hover:bg-[#f8fcfe]">
+                      <td className="p-3 text-[#5f818b] text-[11px]">
+                        {new Date(tx.createdAt).toLocaleString()}
+                      </td>
+                      <td className="p-3">
+                        <span className="font-semibold text-[#0b252c] block">{tx.productVariant?.product?.name}</span>
+                        <span className="text-[#5f818b] font-mono text-[11px]">{tx.productVariant?.sku}</span>
+                      </td>
+                      <td className="p-3 font-mono">
+                        {tx.unitBarcode ? (
+                          <span className="bg-[#e3f2f5] border border-[#b2dce5] text-[#056468] px-2 py-0.5 rounded font-semibold text-[11px]">
+                            {tx.unitBarcode.barcode}
+                          </span>
+                        ) : (
+                          <span className="text-[#89a8b1]">-</span>
+                        )}
+                      </td>
+                      <td className="p-3">
+                        <span
+                          className={`px-2 py-0.5 rounded text-[10px] font-medium ${
+                            tx.transactionType === "RECEIVE"
+                              ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                              : tx.transactionType === "SALE"
+                              ? "bg-purple-50 text-purple-700 border border-purple-200"
+                              : "bg-amber-50 text-amber-700 border border-amber-200"
+                          }`}
+                        >
+                          {tx.transactionType}
+                        </span>
+                      </td>
+                      <td className="p-3 font-bold">
+                        {tx.quantity > 0 ? `+${tx.quantity}` : tx.quantity}
+                      </td>
+                      <td className="p-3 font-bold text-[#056468]">{tx.newStock} Units</td>
+                      <td className="p-3 text-[#4a6870] max-w-xs truncate">{tx.note || "-"}</td>
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
           </div>
+
+          <Pagination
+            currentPage={ledgerPage}
+            totalItems={transactions.length}
+            pageSize={ledgerPageSize}
+            pageSizeOptions={[10, 25, 50, 100]}
+            onPageChange={setLedgerPage}
+            onPageSizeChange={setLedgerPageSize}
+          />
         </div>
       )}
 
@@ -685,7 +742,7 @@ export default function InventoryClient({
                     </td>
                   </tr>
                 ) : (
-                  purchaseOrders.map((po) => (
+                  paginatedPOs.map((po) => (
                     <tr key={po.id} className="hover:bg-[#f8fcfe]">
                       <td className="p-3 font-mono font-semibold text-[#056468]">{po.poNumber}</td>
                       <td className="p-3 font-semibold text-[#0b252c]">{po.supplier?.name}</td>
@@ -704,6 +761,15 @@ export default function InventoryClient({
               </tbody>
             </table>
           </div>
+
+          <Pagination
+            currentPage={poPage}
+            totalItems={purchaseOrders.length}
+            pageSize={poPageSize}
+            pageSizeOptions={[10, 25, 50, 100]}
+            onPageChange={setPoPage}
+            onPageSizeChange={setPoPageSize}
+          />
         </div>
       )}
 
@@ -748,7 +814,7 @@ export default function InventoryClient({
                     </td>
                   </tr>
                 ) : (
-                  wastes.map((w) => (
+                  paginatedWastes.map((w) => (
                     <tr key={w.id} className="hover:bg-[#f8fcfe]">
                       <td className="p-3 font-semibold text-[#0b252c]">
                         {w.productVariant?.product?.name}
@@ -769,6 +835,15 @@ export default function InventoryClient({
               </tbody>
             </table>
           </div>
+
+          <Pagination
+            currentPage={wastePage}
+            totalItems={wastes.length}
+            pageSize={wastePageSize}
+            pageSizeOptions={[10, 25, 50, 100]}
+            onPageChange={setWastePage}
+            onPageSizeChange={setWastePageSize}
+          />
         </div>
       )}
 

@@ -101,11 +101,53 @@ export async function POST() {
       }
     }
 
-    // 4. Create Sample Orders
+    // 4. Create Sample Orders & Save Customers into directory
     const sampleAmzOrderId = `404-${Math.floor(1000000 + Math.random() * 9000000)}-${Math.floor(1000000 + Math.random() * 9000000)}`;
     const sampleFkOrderId = `OD${Math.floor(1110000000000000 + Math.random() * 8880000000000000)}`;
 
     const targetVariant = variants[0];
+
+    // Save Amazon Customer into Customer Directory
+    try {
+      const existingCust = await prisma.customer.findFirst({ where: { email: "rajesh.kumar@amazon-buyer.in" } });
+      if (!existingCust) {
+        await prisma.customer.create({
+          data: {
+            name: "Rajesh Kumar",
+            username: "rajesh_kumar",
+            email: "rajesh.kumar@amazon-buyer.in",
+            phone: "+91 98101 23456",
+            address: "House 24, Block C, Connaught Place",
+            city: "New Delhi",
+            state: "Delhi",
+            zip: "110001",
+            company: "Amazon Retail Direct",
+            status: "ACTIVE",
+          },
+        });
+      }
+    } catch (_) {}
+
+    // Save Flipkart Customer into Customer Directory
+    try {
+      const existingCust2 = await prisma.customer.findFirst({ where: { email: "ananya.iyer@flipkart-buyer.in" } });
+      if (!existingCust2) {
+        await prisma.customer.create({
+          data: {
+            name: "Ananya Iyer",
+            username: "ananya_iyer",
+            email: "ananya.iyer@flipkart-buyer.in",
+            phone: "+91 98450 78901",
+            address: "Flat 304, Palm Grove Heights, Koramangala 4th Block",
+            city: "Bengaluru",
+            state: "Karnataka",
+            zip: "560034",
+            company: "Flipkart Consumer Direct",
+            status: "ACTIVE",
+          },
+        });
+      }
+    } catch (_) {}
 
     await prisma.marketplaceOrder.create({
       data: {

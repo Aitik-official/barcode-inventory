@@ -3,6 +3,7 @@
 import { useState, useMemo, useEffect } from "react";
 import { PrintLabelDialog } from "@/components/PrintLabelDialog";
 import { BarcodeSvg } from "@/components/BarcodeSvg";
+import { Pagination } from "@/components/Pagination";
 import {
   ScanBarcode,
   Printer,
@@ -11,10 +12,6 @@ import {
   CheckCircle2,
   ShoppingBag,
   Layers,
-  ChevronLeft,
-  ChevronRight,
-  ChevronsLeft,
-  ChevronsRight,
 } from "lucide-react";
 
 export default function UnitBarcodesClient({
@@ -32,7 +29,7 @@ export default function UnitBarcodesClient({
   const [isPrintOpen, setIsPrintOpen] = useState(false);
 
   // Pagination state
-  const [pageSize, setPageSize] = useState<number | "ALL">(10);
+  const [pageSize, setPageSize] = useState<number>(10);
   const [currentPage, setCurrentPage] = useState<number>(1);
 
   // Reset page to 1 if filter or unitBarcodes list changes
@@ -40,59 +37,14 @@ export default function UnitBarcodesClient({
     setCurrentPage(1);
   }, [initialSearch, initialStatus, unitBarcodes.length]);
 
-  const totalItems = unitBarcodes.length;
-  const totalPages =
-    pageSize === "ALL"
-      ? 1
-      : Math.max(1, Math.ceil(totalItems / (typeof pageSize === "number" ? pageSize : 10)));
-
-  // Clamp current page
-  const safePage = Math.min(Math.max(1, currentPage), totalPages);
-
-  const startIndex =
-    pageSize === "ALL" ? 0 : (safePage - 1) * (pageSize as number);
-  const endIndex =
-    pageSize === "ALL"
-      ? totalItems
-      : Math.min(startIndex + (pageSize as number), totalItems);
-
   const paginatedUnits = useMemo(() => {
-    if (pageSize === "ALL") return unitBarcodes;
-    return unitBarcodes.slice(startIndex, endIndex);
-  }, [unitBarcodes, startIndex, endIndex, pageSize]);
+    const startIndex = (currentPage - 1) * pageSize;
+    return unitBarcodes.slice(startIndex, startIndex + pageSize);
+  }, [unitBarcodes, currentPage, pageSize]);
 
   const handlePrint = (unit: any) => {
     setSelectedUnit(unit);
     setIsPrintOpen(true);
-  };
-
-  const handlePageSizeChange = (newSize: string) => {
-    if (newSize === "ALL") {
-      setPageSize("ALL");
-    } else {
-      setPageSize(Number(newSize));
-    }
-    setCurrentPage(1);
-  };
-
-  // Generate page numbers to show
-  const getPageNumbers = () => {
-    if (totalPages <= 5) {
-      return Array.from({ length: totalPages }, (_, i) => i + 1);
-    }
-    if (safePage <= 3) {
-      return [1, 2, 3, 4, 5];
-    }
-    if (safePage >= totalPages - 2) {
-      return [
-        totalPages - 4,
-        totalPages - 3,
-        totalPages - 2,
-        totalPages - 1,
-        totalPages,
-      ];
-    }
-    return [safePage - 2, safePage - 1, safePage, safePage + 1, safePage + 2];
   };
 
   return (
@@ -179,22 +131,6 @@ export default function UnitBarcodesClient({
             <span>Filter</span>
           </button>
         </form>
-
-        {/* Page Size Selector */}
-        <div className="flex items-center gap-2 self-end md:self-auto bg-white border border-[#cce7ed] rounded-lg px-3 py-1.5 shadow-xs text-xs">
-          <span className="text-[#4a6870] font-medium">Show:</span>
-          <select
-            value={pageSize}
-            onChange={(e) => handlePageSizeChange(e.target.value)}
-            className="bg-transparent font-semibold text-[#056468] focus:outline-none cursor-pointer"
-          >
-            <option value={10}>10 per page</option>
-            <option value={25}>25 per page</option>
-            <option value={50}>50 per page</option>
-            <option value={100}>100 per page</option>
-            <option value="ALL">Show All ({totalItems})</option>
-          </select>
-        </div>
       </div>
 
       {/* Barcodes Registry Table */}
@@ -267,81 +203,14 @@ export default function UnitBarcodesClient({
         </div>
 
         {/* Pagination Footer Controls */}
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-2 border-t border-[#cce7ed] text-xs">
-          <div className="text-[#4a6870]">
-            Showing{" "}
-            <span className="font-bold text-[#0b252c]">
-              {totalItems === 0 ? 0 : startIndex + 1}
-            </span>{" "}
-            to{" "}
-            <span className="font-bold text-[#0b252c]">{endIndex}</span> of{" "}
-            <span className="font-bold text-[#0b252c]">{totalItems}</span> barcodes
-          </div>
-
-          {pageSize !== "ALL" && totalPages > 1 && (
-            <div className="flex items-center gap-1.5">
-              {/* First Page */}
-              <button
-                type="button"
-                onClick={() => setCurrentPage(1)}
-                disabled={safePage === 1}
-                className="p-1.5 rounded-lg border border-[#cce7ed] bg-white text-[#0b252c] hover:bg-[#f0f8fa] disabled:opacity-40 disabled:cursor-not-allowed transition-all"
-                title="First Page"
-              >
-                <ChevronsLeft className="w-4 h-4" />
-              </button>
-
-              {/* Prev Page */}
-              <button
-                type="button"
-                onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                disabled={safePage === 1}
-                className="p-1.5 rounded-lg border border-[#cce7ed] bg-white text-[#0b252c] hover:bg-[#f0f8fa] disabled:opacity-40 disabled:cursor-not-allowed transition-all"
-                title="Previous Page"
-              >
-                <ChevronLeft className="w-4 h-4" />
-              </button>
-
-              {/* Numbered Page Buttons */}
-              {getPageNumbers().map((num) => (
-                <button
-                  key={num}
-                  type="button"
-                  onClick={() => setCurrentPage(num)}
-                  className={`min-w-[32px] h-8 px-2 rounded-lg font-semibold text-xs transition-all ${
-                    safePage === num
-                      ? "bg-[#056468] text-white shadow-xs"
-                      : "bg-white border border-[#cce7ed] text-[#0b252c] hover:bg-[#f0f8fa]"
-                  }`}
-                >
-                  {num}
-                </button>
-              ))}
-
-              {/* Next Page */}
-              <button
-                type="button"
-                onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-                disabled={safePage === totalPages}
-                className="p-1.5 rounded-lg border border-[#cce7ed] bg-white text-[#0b252c] hover:bg-[#f0f8fa] disabled:opacity-40 disabled:cursor-not-allowed transition-all"
-                title="Next Page"
-              >
-                <ChevronRight className="w-4 h-4" />
-              </button>
-
-              {/* Last Page */}
-              <button
-                type="button"
-                onClick={() => setCurrentPage(totalPages)}
-                disabled={safePage === totalPages}
-                className="p-1.5 rounded-lg border border-[#cce7ed] bg-white text-[#0b252c] hover:bg-[#f0f8fa] disabled:opacity-40 disabled:cursor-not-allowed transition-all"
-                title="Last Page"
-              >
-                <ChevronsRight className="w-4 h-4" />
-              </button>
-            </div>
-          )}
-        </div>
+        <Pagination
+          currentPage={currentPage}
+          totalItems={unitBarcodes.length}
+          pageSize={pageSize}
+          pageSizeOptions={[10, 25, 50, 100]}
+          onPageChange={setCurrentPage}
+          onPageSizeChange={setPageSize}
+        />
       </div>
 
       {/* Label Print Dialog */}

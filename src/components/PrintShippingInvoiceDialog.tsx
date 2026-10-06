@@ -15,6 +15,8 @@ import {
   Download,
 } from "lucide-react";
 
+import { CompanySettingsData, DEFAULT_COMPANY_SETTINGS } from "@/lib/companySettingsTypes";
+
 export interface ShippingInvoiceData {
   orderId: string;
   orderDbId?: string;
@@ -58,6 +60,7 @@ interface Props {
   onClose: () => void;
   data: ShippingInvoiceData;
   initialMode?: "A4_INVOICE" | "THERMAL_LABEL";
+  companySettings?: CompanySettingsData;
   onInvoiceSaved?: (newInv: any) => void;
 }
 
@@ -142,6 +145,7 @@ export function PrintShippingInvoiceDialog({
   onClose,
   data,
   initialMode = "A4_INVOICE",
+  companySettings,
   onInvoiceSaved,
 }: Props) {
   const [docMode, setDocMode] = useState<"A4_INVOICE" | "THERMAL_LABEL">(
@@ -151,20 +155,71 @@ export function PrintShippingInvoiceDialog({
   const [showSettings, setShowSettings] = useState(false);
   const [isSavedInDb, setIsSavedInDb] = useState(data.isSavedInDb || false);
   const [savingToDb, setSavingToDb] = useState(false);
+  const [savingSettings, setSavingSettings] = useState(false);
+  const [settingsSavedToast, setSettingsSavedToast] = useState(false);
   const [savedInvoiceNum, setSavedInvoiceNum] = useState(data.invoiceNumber || "");
 
-  // Editable Seller Details (Auto-loaded from localStorage default brand)
-  const [sellerName, setSellerName] = useState("Stealth Sight Inventory");
-  const [sellerGstin, setSellerGstin] = useState("27AABCU9603R1ZN");
-  const [sellerAddress, setSellerAddress] = useState(
-    "Industrial Hub, Unit 4B, MIDC, Andheri East, Mumbai, MH - 400093"
+  // Editable Seller Details (Auto-loaded from companySettings / API)
+  const [sellerName, setSellerName] = useState(
+    companySettings?.companyName || "Stealth Sight Inventory"
   );
-  const [sellerPhone, setSellerPhone] = useState("+91 98200 12345");
-  const [sellerEmail, setSellerEmail] = useState("billing@stealthsight.com");
-  const [bankName, setBankName] = useState("HDFC Bank");
-  const [bankAccount, setBankAccount] = useState("50200012345678");
-  const [bankIfsc, setBankIfsc] = useState("HDFC0001234");
-  const [bankBranch, setBankBranch] = useState("Andheri East, Mumbai");
+  const [sellerTagline, setSellerTagline] = useState(
+    companySettings?.tagline || "Professional Barcode, Thermal Labeling & Logistics"
+  );
+  const [sellerGstin, setSellerGstin] = useState(
+    companySettings?.gstin || "27AABCU9603R1ZN"
+  );
+  const [sellerPan, setSellerPan] = useState(
+    companySettings?.pan || "AABCU9603R"
+  );
+  const [sellerAddress, setSellerAddress] = useState(
+    companySettings
+      ? `${companySettings.addressLine1}${companySettings.addressLine2 ? ", " + companySettings.addressLine2 : ""}, ${companySettings.city}, ${companySettings.state} - ${companySettings.pincode}`
+      : "Industrial Hub, Unit 4B, MIDC, Andheri East, Mumbai, MH - 400093"
+  );
+  const [sellerPhone, setSellerPhone] = useState(
+    companySettings?.phone || "+91 98200 12345"
+  );
+  const [sellerEmail, setSellerEmail] = useState(
+    companySettings?.email || "billing@stealthsight.com"
+  );
+  const [sellerWebsite, setSellerWebsite] = useState(
+    companySettings?.website || "www.stealthsight.com"
+  );
+  const [sellerStateName, setSellerStateName] = useState(
+    companySettings?.state ? `${companySettings.state} (${companySettings.stateCode || "27"})` : "Maharashtra (27)"
+  );
+  const [bankName, setBankName] = useState(
+    companySettings?.bankName || "HDFC Bank"
+  );
+  const [bankAccount, setBankAccount] = useState(
+    companySettings?.accountNumber || "50200012345678"
+  );
+  const [bankIfsc, setBankIfsc] = useState(
+    companySettings?.ifscCode || "HDFC0001234"
+  );
+  const [bankBranch, setBankBranch] = useState(
+    companySettings?.branch || "Andheri East, Mumbai"
+  );
+  const [bankUpi, setBankUpi] = useState(
+    companySettings?.upiId || "stealthsight@hdfcbank"
+  );
+  const [showUpi, setShowUpi] = useState(
+    companySettings?.showUpi ?? true
+  );
+  const [logoUrl, setLogoUrl] = useState(
+    companySettings?.logoUrl || "/logo/1-01.png"
+  );
+  const [invoiceTerms, setInvoiceTerms] = useState(
+    companySettings?.invoiceTerms ||
+      "1. Goods once sold are covered under standard manufacturer warranty.\n2. Payment is due within agreed terms.\n3. Subject to Mumbai Jurisdiction."
+  );
+  const [signatoryName, setSignatoryName] = useState(
+    companySettings?.authorizedSignatory || "Rushabh Gandhi"
+  );
+  const [signatoryDesignation, setSignatoryDesignation] = useState(
+    companySettings?.signatoryDesignation || "Authorized Signatory"
+  );
 
   useEffect(() => {
     setIsSavedInDb(data.isSavedInDb || false);
@@ -172,17 +227,112 @@ export function PrintShippingInvoiceDialog({
   }, [data.isSavedInDb, data.invoiceNumber]);
 
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      const savedBrand = localStorage.getItem("barcodezaa_default_brand");
-      if (savedBrand) {
-        setSellerName(savedBrand);
-      }
-      const savedGstin = localStorage.getItem("barcodezaa_seller_gstin");
-      if (savedGstin) setSellerGstin(savedGstin);
-      const savedAddr = localStorage.getItem("barcodezaa_seller_address");
-      if (savedAddr) setSellerAddress(savedAddr);
+    if (companySettings) {
+      setSellerName(companySettings.companyName || "Stealth Sight Inventory");
+      setSellerTagline(companySettings.tagline || "");
+      setSellerGstin(companySettings.gstin || "27AABCU9603R1ZN");
+      setSellerPan(companySettings.pan || "AABCU9603R");
+      setSellerAddress(
+        `${companySettings.addressLine1 || ""}${companySettings.addressLine2 ? ", " + companySettings.addressLine2 : ""}, ${companySettings.city || ""}, ${companySettings.state || ""} - ${companySettings.pincode || ""}`
+      );
+      setSellerPhone(companySettings.phone || "+91 98200 12345");
+      setSellerEmail(companySettings.email || "billing@stealthsight.com");
+      setSellerWebsite(companySettings.website || "www.stealthsight.com");
+      setSellerStateName(
+        companySettings.state
+          ? `${companySettings.state} (${companySettings.stateCode || "27"})`
+          : "Maharashtra (27)"
+      );
+      setBankName(companySettings.bankName || "HDFC Bank");
+      setBankAccount(companySettings.accountNumber || "50200012345678");
+      setBankIfsc(companySettings.ifscCode || "HDFC0001234");
+      setBankBranch(companySettings.branch || "MIDC Andheri East Branch, Mumbai");
+      setBankUpi(companySettings.upiId || "");
+      setShowUpi(companySettings.showUpi ?? true);
+      setLogoUrl(companySettings.logoUrl || "/logo/1-01.png");
+      setInvoiceTerms(
+        companySettings.invoiceTerms ||
+          "1. Goods once sold are covered under standard manufacturer warranty.\n2. Subject to Mumbai Jurisdiction."
+      );
+      setSignatoryName(companySettings.authorizedSignatory || "Rushabh Gandhi");
+      setSignatoryDesignation(companySettings.signatoryDesignation || "Authorized Signatory");
+    } else {
+      // Fetch dynamic settings from API
+      fetch("/api/settings/company")
+        .then((res) => res.json())
+        .then((cfg: CompanySettingsData) => {
+          if (cfg) {
+            setSellerName(cfg.companyName || "Stealth Sight Inventory");
+            setSellerTagline(cfg.tagline || "");
+            setSellerGstin(cfg.gstin || "27AABCU9603R1ZN");
+            setSellerPan(cfg.pan || "AABCU9603R");
+            setSellerAddress(
+              `${cfg.addressLine1 || ""}${cfg.addressLine2 ? ", " + cfg.addressLine2 : ""}, ${cfg.city || ""}, ${cfg.state || ""} - ${cfg.pincode || ""}`
+            );
+            setSellerPhone(cfg.phone || "+91 98200 12345");
+            setSellerEmail(cfg.email || "billing@stealthsight.com");
+            setSellerWebsite(cfg.website || "www.stealthsight.com");
+            setSellerStateName(
+              cfg.state ? `${cfg.state} (${cfg.stateCode || "27"})` : "Maharashtra (27)"
+            );
+            setBankName(cfg.bankName || "HDFC Bank");
+            setBankAccount(cfg.accountNumber || "50200012345678");
+            setBankIfsc(cfg.ifscCode || "HDFC0001234");
+            setBankBranch(cfg.branch || "Andheri East, Mumbai");
+            setBankUpi(cfg.upiId || "");
+            setShowUpi(cfg.showUpi ?? true);
+            setLogoUrl(cfg.logoUrl || "/logo/1-01.png");
+            setInvoiceTerms(
+              cfg.invoiceTerms ||
+                "1. Goods once sold are covered under standard manufacturer warranty.\n2. Subject to Mumbai Jurisdiction."
+            );
+            setSignatoryName(cfg.authorizedSignatory || "Rushabh Gandhi");
+            setSignatoryDesignation(cfg.signatoryDesignation || "Authorized Signatory");
+          }
+        })
+        .catch(() => {});
     }
-  }, []);
+  }, [companySettings]);
+
+  const handleSaveCompanyDetails = async () => {
+    setSavingSettings(true);
+    try {
+      const res = await fetch("/api/settings/company", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          companyName: sellerName,
+          tagline: sellerTagline,
+          gstin: sellerGstin,
+          pan: sellerPan,
+          phone: sellerPhone,
+          email: sellerEmail,
+          website: sellerWebsite,
+          bankName,
+          accountNumber: bankAccount,
+          ifscCode: bankIfsc,
+          branch: bankBranch,
+          upiId: bankUpi,
+          showUpi,
+          logoUrl,
+          invoiceTerms,
+          authorizedSignatory: signatoryName,
+          signatoryDesignation,
+        }),
+      });
+
+      if (!res.ok) {
+        throw new Error("Failed to save company details");
+      }
+
+      setSettingsSavedToast(true);
+      setTimeout(() => setSettingsSavedToast(false), 4000);
+    } catch (e: any) {
+      alert(e.message || "Failed to save company settings");
+    } finally {
+      setSavingSettings(false);
+    }
+  };
 
   // Update mode if initialMode changes
   useEffect(() => {
@@ -309,14 +459,18 @@ export function PrintShippingInvoiceDialog({
         <div class="a4-page">
           <!-- TOP HEADER -->
           <div style="display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #056468; padding-bottom: 8px;">
-            <div>
-              <div style="font-size: 22px; font-weight: 900; color: #056468; letter-spacing: -0.5px;">${sellerName}</div>
-              <div style="font-size: 10px; color: #334155; margin-top: 2px; max-width: 320px; line-height: 1.35;">
-                ${sellerAddress}<br/>
-                Tel: <strong>${sellerPhone}</strong> | Email: <strong>${sellerEmail}</strong>
-              </div>
-              <div style="margin-top: 4px; font-size: 10px; color: #0f172a; font-weight: 700;">
-                GSTIN: <span style="font-family: monospace; font-size: 11px; color: #056468;">${sellerGstin}</span> | State: <strong>Maharashtra (27)</strong>
+            <div style="display: flex; align-items: flex-start; gap: 12px;">
+              ${logoUrl ? `<img src="${logoUrl}" alt="Logo" style="max-height: 48px; max-width: 130px; object-fit: contain; margin-top: 2px;" onerror="this.style.display='none'" />` : ""}
+              <div>
+                <div style="font-size: 20px; font-weight: 900; color: #056468; letter-spacing: -0.5px;">${sellerName}</div>
+                ${sellerTagline ? `<div style="font-size: 9px; font-weight: 700; color: #475569; margin-bottom: 2px;">${sellerTagline}</div>` : ""}
+                <div style="font-size: 9.5px; color: #334155; margin-top: 1px; max-width: 320px; line-height: 1.35;">
+                  ${sellerAddress}<br/>
+                  Tel: <strong>${sellerPhone}</strong> | Email: <strong>${sellerEmail}</strong>
+                </div>
+                <div style="margin-top: 3px; font-size: 9.5px; color: #0f172a; font-weight: 700;">
+                  GSTIN: <span style="font-family: monospace; font-size: 10.5px; color: #056468;">${sellerGstin}</span> | State: <strong>${sellerStateName}</strong> | PAN: <span style="font-family: monospace;">${sellerPan}</span>
+                </div>
               </div>
             </div>
             <div style="text-align: right;">
@@ -437,13 +591,14 @@ export function PrintShippingInvoiceDialog({
                   grandTotal
                 )}</span>
               </div>
-              <div style="border-top: 1px dashed #cbd5e1; padding-top: 6px; font-size: 9px; color: #475569; line-height: 1.35;">
-                <strong>Bank & Payment Details for Settlement:</strong><br/>
+              <div style="border-top: 1px dashed #cbd5e1; padding-top: 6px; font-size: 9px; color: #475569; line-height: 1.4;">
+                <strong style="color: #056468;">Bank & Payment Details for Settlement:</strong><br/>
                 Bank: <strong>${bankName}</strong> | Branch: <strong>${bankBranch}</strong><br/>
-                A/C No: <strong style="font-family: monospace;">${bankAccount}</strong> | IFSC: <strong style="font-family: monospace;">${bankIfsc}</strong>
+                A/C No: <strong style="font-family: monospace; font-size: 10px; color: #0f172a;">${bankAccount}</strong> | IFSC: <strong style="font-family: monospace; font-size: 10px; color: #0f172a;">${bankIfsc}</strong>
+                ${showUpi && bankUpi ? `<br/>UPI ID / VPA: <strong style="font-family: monospace; color: #056468;">${bankUpi}</strong>` : ""}
               </div>
-              <div style="border-top: 1px dashed #cbd5e1; margin-top: 6px; padding-top: 4px; font-size: 8px; color: #64748b;">
-                <strong>Terms & Conditions:</strong> Goods once sold are covered under standard manufacturer warranty. Subject to Mumbai Jurisdiction.
+              <div style="border-top: 1px dashed #cbd5e1; margin-top: 6px; padding-top: 4px; font-size: 8px; color: #64748b; line-height: 1.35;">
+                <strong style="color: #334155;">Terms & Conditions:</strong> ${invoiceTerms.replace(/\n/g, "<br/>")}
               </div>
             </div>
 
@@ -471,8 +626,9 @@ export function PrintShippingInvoiceDialog({
               </div>
               <div style="text-align: right; margin-top: 18px;">
                 <div style="font-size: 9px; font-weight: 800; color: #0f172a;">For ${sellerName}</div>
-                <div style="margin-top: 22px; font-size: 8.5px; color: #64748b; border-top: 1px solid #94a3b8; display: inline-block; padding-top: 2px;">
-                  Authorized Signatory
+                <div style="margin-top: 18px; font-size: 8.5px; color: #475569; border-top: 1px solid #94a3b8; display: inline-block; padding-top: 2px;">
+                  <strong>${signatoryName}</strong><br/>
+                  <span style="font-size: 7.5px; color: #64748b;">${signatoryDesignation}</span>
                 </div>
               </div>
             </div>
@@ -1138,7 +1294,7 @@ export function PrintShippingInvoiceDialog({
                 </table>
               </div>
 
-              {/* Amount In Words & Footer Details */}
+              {/* Bank & Signatory Footer */}
               <div className="p-3 bg-white rounded-lg border border-slate-200 flex flex-col sm:flex-row justify-between gap-3 text-xs">
                 <div>
                   <span className="text-[10px] text-slate-500 font-semibold uppercase">
@@ -1150,15 +1306,15 @@ export function PrintShippingInvoiceDialog({
                   <div className="text-[10px] text-slate-500 mt-1">
                     Bank: <strong>{bankName}</strong> • A/C:{" "}
                     <strong>{bankAccount}</strong> • IFSC:{" "}
-                    <strong>{bankIfsc}</strong>
+                    <strong>{bankIfsc}</strong> • Branch: <strong>{bankBranch}</strong>
                   </div>
                 </div>
                 <div className="text-right">
                   <div className="text-slate-500 text-[10px]">
-                    Authorized Signatory
+                    {signatoryDesignation || "Authorized Signatory"}
                   </div>
                   <div className="font-bold text-[#056468] text-xs mt-3">
-                    For {sellerName}
+                    {signatoryName ? `${signatoryName} (For ${sellerName})` : `For ${sellerName}`}
                   </div>
                 </div>
               </div>
@@ -1278,7 +1434,7 @@ export function PrintShippingInvoiceDialog({
           )}
 
           {/* Quick Customization Collapsible */}
-          <div className="border border-slate-200 rounded-xl p-3 bg-slate-50/60">
+          <div className="border border-[#cce7ed] rounded-xl p-3 bg-gradient-to-r from-slate-50 to-[#e3f2f5]/30">
             <button
               type="button"
               onClick={() => setShowSettings(!showSettings)}
@@ -1286,61 +1442,227 @@ export function PrintShippingInvoiceDialog({
             >
               <span className="flex items-center gap-1.5">
                 <SlidersHorizontal className="w-3.5 h-3.5" />
-                <span>Customise Seller GSTIN & Invoice Header Details</span>
+                <span>Customise Business Profile, GSTIN & Bank Settlement Info</span>
               </span>
-              <span className="text-[11px] font-normal text-slate-500">
-                {showSettings ? "Hide Settings" : "Edit Details"}
+              <span className="text-[11px] font-semibold text-[#056468] hover:underline">
+                {showSettings ? "Hide Settings ▲" : "Edit Details ▼"}
               </span>
             </button>
 
             {showSettings && (
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-3 pt-3 border-t border-slate-200 text-xs">
-                <div>
-                  <label className="block text-[10px] font-bold text-slate-600 mb-1">
-                    Seller / Brand Name:
-                  </label>
-                  <input
-                    type="text"
-                    value={sellerName}
-                    onChange={(e) => setSellerName(e.target.value)}
-                    className="w-full bg-white border border-slate-200 rounded-lg px-2.5 py-1 text-xs"
-                  />
+              <div className="space-y-3 mt-3 pt-3 border-t border-[#cce7ed] text-xs">
+                {settingsSavedToast && (
+                  <div className="p-2 bg-emerald-100 border border-emerald-300 text-emerald-900 rounded-lg text-xs font-bold flex items-center gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-700" />
+                    <span>Company & Invoice details saved permanently to system settings!</span>
+                  </div>
+                )}
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-600 mb-1">
+                      Business / Brand Name:
+                    </label>
+                    <input
+                      type="text"
+                      value={sellerName}
+                      onChange={(e) => setSellerName(e.target.value)}
+                      className="w-full bg-white border border-slate-200 rounded-lg px-2.5 py-1 text-xs"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-600 mb-1">
+                      GSTIN Number:
+                    </label>
+                    <input
+                      type="text"
+                      value={sellerGstin}
+                      onChange={(e) => setSellerGstin(e.target.value)}
+                      className="w-full bg-white border border-slate-200 rounded-lg px-2.5 py-1 text-xs font-mono"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-600 mb-1">
+                      PAN Number:
+                    </label>
+                    <input
+                      type="text"
+                      value={sellerPan}
+                      onChange={(e) => setSellerPan(e.target.value)}
+                      className="w-full bg-white border border-slate-200 rounded-lg px-2.5 py-1 text-xs font-mono"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-600 mb-1">
+                      Contact Phone:
+                    </label>
+                    <input
+                      type="text"
+                      value={sellerPhone}
+                      onChange={(e) => setSellerPhone(e.target.value)}
+                      className="w-full bg-white border border-slate-200 rounded-lg px-2.5 py-1 text-xs"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-600 mb-1">
+                      Billing Email:
+                    </label>
+                    <input
+                      type="text"
+                      value={sellerEmail}
+                      onChange={(e) => setSellerEmail(e.target.value)}
+                      className="w-full bg-white border border-slate-200 rounded-lg px-2.5 py-1 text-xs"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-600 mb-1">
+                      Website URL:
+                    </label>
+                    <input
+                      type="text"
+                      value={sellerWebsite}
+                      onChange={(e) => setSellerWebsite(e.target.value)}
+                      className="w-full bg-white border border-slate-200 rounded-lg px-2.5 py-1 text-xs"
+                    />
+                  </div>
+
+                  <div className="sm:col-span-3">
+                    <label className="block text-[10px] font-bold text-slate-600 mb-1">
+                      Registered Business Address:
+                    </label>
+                    <input
+                      type="text"
+                      value={sellerAddress}
+                      onChange={(e) => setSellerAddress(e.target.value)}
+                      className="w-full bg-white border border-slate-200 rounded-lg px-2.5 py-1 text-xs"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-600 mb-1">
+                      Bank Name:
+                    </label>
+                    <input
+                      type="text"
+                      value={bankName}
+                      onChange={(e) => setBankName(e.target.value)}
+                      className="w-full bg-white border border-slate-200 rounded-lg px-2.5 py-1 text-xs"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-600 mb-1">
+                      Bank Account No:
+                    </label>
+                    <input
+                      type="text"
+                      value={bankAccount}
+                      onChange={(e) => setBankAccount(e.target.value)}
+                      className="w-full bg-white border border-slate-200 rounded-lg px-2.5 py-1 text-xs font-mono"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-600 mb-1">
+                      IFSC Code & Branch:
+                    </label>
+                    <div className="grid grid-cols-2 gap-1">
+                      <input
+                        type="text"
+                        value={bankIfsc}
+                        onChange={(e) => setBankIfsc(e.target.value)}
+                        placeholder="IFSC"
+                        className="bg-white border border-slate-200 rounded-lg px-2 py-1 text-xs font-mono uppercase"
+                      />
+                      <input
+                        type="text"
+                        value={bankBranch}
+                        onChange={(e) => setBankBranch(e.target.value)}
+                        placeholder="Branch"
+                        className="bg-white border border-slate-200 rounded-lg px-2 py-1 text-xs"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <div className="flex items-center justify-between mb-1">
+                      <label className="text-[10px] font-bold text-slate-600">
+                        UPI ID / VPA Handler:
+                      </label>
+                      <label className="flex items-center gap-1 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={showUpi}
+                          onChange={(e) => setShowUpi(e.target.checked)}
+                          className="rounded border-slate-300 text-[#056468] focus:ring-0 w-3 h-3 cursor-pointer"
+                        />
+                        <span className="text-[9.5px] font-bold text-[#056468]">
+                          {showUpi ? "Print on Invoice" : "Hidden"}
+                        </span>
+                      </label>
+                    </div>
+                    <input
+                      type="text"
+                      value={bankUpi}
+                      onChange={(e) => setBankUpi(e.target.value)}
+                      placeholder="e.g. stealthsight@hdfcbank"
+                      className="w-full bg-white border border-slate-200 rounded-lg px-2.5 py-1 text-xs font-mono"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-600 mb-1">
+                      Invoice & App Logo Path:
+                    </label>
+                    <input
+                      type="text"
+                      value={logoUrl}
+                      onChange={(e) => setLogoUrl(e.target.value)}
+                      placeholder="/logo/1-01.png"
+                      className="w-full bg-white border border-slate-200 rounded-lg px-2.5 py-1 text-xs font-mono"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-600 mb-1">
+                      Authorized Signatory Name:
+                    </label>
+                    <input
+                      type="text"
+                      value={signatoryName}
+                      onChange={(e) => setSignatoryName(e.target.value)}
+                      className="w-full bg-white border border-slate-200 rounded-lg px-2.5 py-1 text-xs"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-600 mb-1">
+                      Signatory Designation:
+                    </label>
+                    <input
+                      type="text"
+                      value={signatoryDesignation}
+                      onChange={(e) => setSignatoryDesignation(e.target.value)}
+                      className="w-full bg-white border border-slate-200 rounded-lg px-2.5 py-1 text-xs"
+                    />
+                  </div>
                 </div>
 
-                <div>
-                  <label className="block text-[10px] font-bold text-slate-600 mb-1">
-                    GSTIN Number:
-                  </label>
-                  <input
-                    type="text"
-                    value={sellerGstin}
-                    onChange={(e) => setSellerGstin(e.target.value)}
-                    className="w-full bg-white border border-slate-200 rounded-lg px-2.5 py-1 text-xs font-mono"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-[10px] font-bold text-slate-600 mb-1">
-                    Contact Phone:
-                  </label>
-                  <input
-                    type="text"
-                    value={sellerPhone}
-                    onChange={(e) => setSellerPhone(e.target.value)}
-                    className="w-full bg-white border border-slate-200 rounded-lg px-2.5 py-1 text-xs"
-                  />
-                </div>
-
-                <div className="sm:col-span-3">
-                  <label className="block text-[10px] font-bold text-slate-600 mb-1">
-                    Registered Business Address:
-                  </label>
-                  <input
-                    type="text"
-                    value={sellerAddress}
-                    onChange={(e) => setSellerAddress(e.target.value)}
-                    className="w-full bg-white border border-slate-200 rounded-lg px-2.5 py-1 text-xs"
-                  />
+                <div className="flex items-center justify-end gap-2 pt-2 border-t border-[#cce7ed]">
+                  <button
+                    type="button"
+                    onClick={handleSaveCompanyDetails}
+                    disabled={savingSettings}
+                    className="px-3.5 py-1.5 bg-[#056468] hover:bg-[#044e51] text-white rounded-lg text-xs font-bold shadow-sm transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+                  >
+                    <Building2 className="w-3.5 h-3.5" />
+                    <span>{savingSettings ? "Saving Settings..." : "Save as Default Business Info"}</span>
+                  </button>
                 </div>
               </div>
             )}

@@ -29,6 +29,7 @@ import {
 } from "lucide-react";
 import { PermissionDefinition, RoleType, getDefaultPermissionsForRole } from "@/lib/permissions";
 import { DeleteConfirmationModal } from "@/components/DeleteConfirmationModal";
+import { Pagination } from "@/components/Pagination";
 
 interface UserItem {
   id: string;
@@ -92,6 +93,11 @@ export default function UsersClient({ initialUsers, allPermissions }: Props) {
     }
     return true;
   });
+
+  // Pagination states
+  const [userPage, setUserPage] = useState(1);
+  const [userPageSize, setUserPageSize] = useState(10);
+  const paginatedUsers = filteredUsers.slice((userPage - 1) * userPageSize, userPage * userPageSize);
 
   // Metrics
   const superAdminsCount = users.filter((u) => u.isSuperAdmin || u.role === "SUPER_ADMIN").length;
@@ -477,7 +483,7 @@ export default function UsersClient({ initialUsers, allPermissions }: Props) {
                     </td>
                   </tr>
                 ) : (
-                  filteredUsers.map((u) => {
+                  paginatedUsers.map((u) => {
                     const isSuper = u.isSuperAdmin || u.role === "SUPER_ADMIN";
                     const isStaff = u.role === "STAFF";
                     const isAdmin = u.role === "ADMIN";
@@ -618,6 +624,15 @@ export default function UsersClient({ initialUsers, allPermissions }: Props) {
               </tbody>
             </table>
           </div>
+
+          <Pagination
+            currentPage={userPage}
+            totalItems={filteredUsers.length}
+            pageSize={userPageSize}
+            pageSizeOptions={[10, 25, 50, 100]}
+            onPageChange={setUserPage}
+            onPageSizeChange={setUserPageSize}
+          />
         </div>
       </div>
 

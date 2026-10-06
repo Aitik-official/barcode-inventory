@@ -6,6 +6,7 @@ import Link from "next/link";
 import { PrintLabelDialog } from "@/components/PrintLabelDialog";
 import { DeleteConfirmationModal } from "@/components/DeleteConfirmationModal";
 import { BarcodeSvg } from "@/components/BarcodeSvg";
+import { Pagination } from "@/components/Pagination";
 import {
   Package,
   ScanBarcode,
@@ -65,6 +66,14 @@ export default function ProductDetailClient({
   const soldUnits = unitBarcodes.filter((u: any) => u.status === "SOLD");
   const soldCount = soldUnits.length;
   const damagedCount = unitBarcodes.filter((u: any) => u.status === "DAMAGED").length;
+
+  // Pagination for Unit Barcodes
+  const [barcodePage, setBarcodePage] = useState(1);
+  const [barcodePageSize, setBarcodePageSize] = useState(24);
+  const paginatedUnits = unitBarcodes.slice(
+    (barcodePage - 1) * barcodePageSize,
+    barcodePage * barcodePageSize
+  );
 
   // Edit Modal State
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -848,119 +857,130 @@ export default function ProductDetailClient({
             </button>
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3.5">
-            {unitBarcodes.map((unit: any) => {
-              const isSelected = selectedIds.has(unit.id);
-              const isAvailable = unit.status === "AVAILABLE";
-              const isSold = unit.status === "SOLD";
+          <div className="space-y-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3.5">
+              {paginatedUnits.map((unit: any) => {
+                const isSelected = selectedIds.has(unit.id);
+                const isAvailable = unit.status === "AVAILABLE";
+                const isSold = unit.status === "SOLD";
 
-              return (
-                <div
-                  key={unit.id}
-                  onClick={() => toggleSelect(unit.id)}
-                  className={`p-3 rounded-xl border transition-all cursor-pointer select-none relative flex flex-col justify-between space-y-2 ${
-                    isSelected
-                      ? "bg-[#e3f2f5] border-[#056468] shadow-xs"
-                      : "bg-[#f8fcfe] border-[#cce7ed] hover:border-[#056468]/50"
-                  }`}
-                >
-                  {/* Card Header */}
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-1.5">
-                      <div
-                        className={`w-4 h-4 rounded flex items-center justify-center border ${
-                          isSelected
-                            ? "bg-[#056468] border-[#056468] text-white"
-                            : "border-[#5f818b] bg-white"
+                return (
+                  <div
+                    key={unit.id}
+                    onClick={() => toggleSelect(unit.id)}
+                    className={`p-3 rounded-xl border transition-all cursor-pointer select-none relative flex flex-col justify-between space-y-2 ${
+                      isSelected
+                        ? "bg-[#e3f2f5] border-[#056468] shadow-xs"
+                        : "bg-[#f8fcfe] border-[#cce7ed] hover:border-[#056468]/50"
+                    }`}
+                  >
+                    {/* Card Header */}
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-1.5">
+                        <div
+                          className={`w-4 h-4 rounded flex items-center justify-center border ${
+                            isSelected
+                              ? "bg-[#056468] border-[#056468] text-white"
+                              : "border-[#5f818b] bg-white"
+                          }`}
+                        >
+                          {isSelected && <CheckCircle2 className="w-3.5 h-3.5" />}
+                        </div>
+                        <span className="font-mono text-xs font-bold text-[#056468]">
+                          #{unit.serialNumber}
+                        </span>
+                      </div>
+
+                      <span
+                        className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                          isAvailable
+                            ? "bg-emerald-100 text-emerald-800"
+                            : isSold
+                            ? "bg-purple-100 text-purple-800"
+                            : "bg-slate-200 text-slate-700"
                         }`}
                       >
-                        {isSelected && <CheckCircle2 className="w-3.5 h-3.5" />}
-                      </div>
-                      <span className="font-mono text-xs font-bold text-[#056468]">
-                        #{unit.serialNumber}
+                        {unit.status}
                       </span>
                     </div>
 
-                    <span
-                      className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                        isAvailable
-                          ? "bg-emerald-100 text-emerald-800"
-                          : isSold
-                          ? "bg-purple-100 text-purple-800"
-                          : "bg-slate-200 text-slate-700"
-                      }`}
-                    >
-                      {unit.status}
-                    </span>
-                  </div>
+                    {/* Visual Code 128 Barcode */}
+                    <div className="py-1">
+                      <BarcodeSvg
+                        value={unit.barcode}
+                        width={1.2}
+                        height={36}
+                        fontSize={11}
+                        displayValue={true}
+                      />
+                    </div>
 
-                  {/* Visual Code 128 Barcode */}
-                  <div className="py-1">
-                    <BarcodeSvg
-                      value={unit.barcode}
-                      width={1.2}
-                      height={36}
-                      fontSize={11}
-                      displayValue={true}
-                    />
-                  </div>
+                    {/* Actions & Timestamps */}
+                    <div className="pt-2 border-t border-[#cce7ed] flex items-center justify-between text-[11px] text-[#4a6870]">
+                      <span>
+                        {unit.printedCount > 0 ? `Printed (${unit.printedCount}x)` : "Not Printed"}
+                      </span>
 
-                  {/* Actions & Timestamps */}
-                  <div className="pt-2 border-t border-[#cce7ed] flex items-center justify-between text-[11px] text-[#4a6870]">
-                    <span>
-                      {unit.printedCount > 0 ? `Printed (${unit.printedCount}x)` : "Not Printed"}
-                    </span>
+                      <div className="flex items-center gap-1">
+                        {/* Reopen button if SOLD or DAMAGED */}
+                        {!isAvailable && (
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleResetUnitStatus(unit.id, "AVAILABLE");
+                            }}
+                            className="px-2 py-1 rounded bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 font-bold text-[10px] flex items-center gap-1 transition-all"
+                            title="Reopen and make this serial barcode AVAILABLE again"
+                          >
+                            <RotateCcw className="w-3 h-3" />
+                            <span>Reopen</span>
+                          </button>
+                        )}
 
-                    <div className="flex items-center gap-1">
-                      {/* Reopen button if SOLD or DAMAGED */}
-                      {!isAvailable && (
+                        {/* Print button */}
                         <button
                           type="button"
                           onClick={(e) => {
                             e.stopPropagation();
-                            handleResetUnitStatus(unit.id, "AVAILABLE");
+                            handleOpenPrintSingle(unit);
                           }}
-                          className="px-2 py-1 rounded bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 font-bold text-[10px] flex items-center gap-1 transition-all"
-                          title="Reopen and make this serial barcode AVAILABLE again"
+                          className="px-2 py-1 rounded bg-white hover:bg-[#e3f2f5] text-[#056468] border border-[#cce7ed] font-medium text-[10px] flex items-center gap-1 transition-all"
+                          title="Print Single Thermal Label"
                         >
-                          <RotateCcw className="w-3 h-3" />
-                          <span>Reopen</span>
+                          <Printer className="w-3 h-3" />
+                          <span>Print</span>
                         </button>
-                      )}
 
-                      {/* Print button */}
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleOpenPrintSingle(unit);
-                        }}
-                        className="px-2 py-1 rounded bg-white hover:bg-[#e3f2f5] text-[#056468] border border-[#cce7ed] font-medium text-[10px] flex items-center gap-1 transition-all"
-                        title="Print Single Thermal Label"
-                      >
-                        <Printer className="w-3 h-3" />
-                        <span>Print</span>
-                      </button>
-
-                      {/* Delete individual available unit */}
-                      {isAvailable && (
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleDeleteSingleUnit(unit);
-                          }}
-                          className="p-1 rounded bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 text-[10px] transition-all"
-                          title="Remove this extra barcode and release serial number"
-                        >
-                          <Trash2 className="w-3 h-3" />
-                        </button>
-                      )}
+                        {/* Delete individual available unit */}
+                        {isAvailable && (
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDeleteSingleUnit(unit);
+                            }}
+                            className="p-1 rounded bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 text-[10px] transition-all"
+                            title="Remove this extra barcode and release serial number"
+                          >
+                            <Trash2 className="w-3 h-3" />
+                          </button>
+                        )}
+                      </div>
                     </div>
                   </div>
-                </div>
-              );
-            })}
+                );
+              })}
+            </div>
+
+            <Pagination
+              currentPage={barcodePage}
+              totalItems={unitBarcodes.length}
+              pageSize={barcodePageSize}
+              pageSizeOptions={[12, 24, 48, 96]}
+              onPageChange={setBarcodePage}
+              onPageSizeChange={setBarcodePageSize}
+            />
           </div>
         )}
       </div>

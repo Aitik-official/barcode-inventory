@@ -260,16 +260,12 @@ export function AppNav() {
         <div className="flex items-center justify-between h-15 gap-2">
           {/* Brand Logo */}
           <Link href="/products" className="flex items-center gap-2 shrink-0 group mr-2">
-            <div className="w-8 h-8 rounded-xl bg-white/10 border border-white/20 flex items-center justify-center text-white shadow group-hover:bg-white/20 transition-all">
-              <ScanBarcode className="w-4 h-4 text-emerald-200" />
-            </div>
-            <div className="flex flex-col">
-              <span className="font-extrabold text-sm tracking-tight text-white leading-tight">
-                BarcodeZaa
-              </span>
-              <span className="text-[8px] font-bold text-emerald-200 tracking-wider uppercase">
-                Inventory Hub
-              </span>
+            <div className="h-10 px-2 py-1 flex items-center justify-center bg-white/10 hover:bg-white/20 rounded-xl transition-all border border-white/15 shadow-xs">
+              <img
+                src="/logo/1-01.png"
+                alt="BarcodeZaa Logo"
+                className="h-8 max-h-8 w-auto object-contain brightness-0 invert"
+              />
             </div>
           </Link>
 

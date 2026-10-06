@@ -202,9 +202,26 @@ export async function POST(req: Request) {
         ? "Ekart Logistics Hub"
         : "Direct Online Shipping");
 
+    let linkedCustomerId: string | null = null;
+    try {
+      const { upsertCustomerRecord } = await import("@/app/api/orders/route");
+      const cust = await upsertCustomerRecord({
+        name: customerName || `${channel} Customer`,
+        email: customerEmail,
+        phone: customerPhone,
+        address: defaultAddress,
+      });
+      if (cust) {
+        linkedCustomerId = cust.id;
+      }
+    } catch (custErr) {
+      console.warn("Could not auto-link customer record:", custErr);
+    }
+
     const order = await prisma.order.create({
       data: {
         orderNumber: finalOrderNumber,
+        customerId: linkedCustomerId,
         customerName: customerName || `${channel} Customer`,
         customerEmail: customerEmail || `${channel.toLowerCase()}@dispatch.local`,
         customerPhone: customerPhone || null,

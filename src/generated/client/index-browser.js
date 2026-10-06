@@ -472,6 +472,40 @@ exports.Prisma.UserScalarFieldEnum = {
   updatedAt: 'updatedAt'
 };
 
+exports.Prisma.CompanySettingsScalarFieldEnum = {
+  id: 'id',
+  companyName: 'companyName',
+  tagline: 'tagline',
+  gstin: 'gstin',
+  pan: 'pan',
+  cin: 'cin',
+  email: 'email',
+  phone: 'phone',
+  alternatePhone: 'alternatePhone',
+  website: 'website',
+  addressLine1: 'addressLine1',
+  addressLine2: 'addressLine2',
+  city: 'city',
+  state: 'state',
+  stateCode: 'stateCode',
+  pincode: 'pincode',
+  country: 'country',
+  bankName: 'bankName',
+  accountName: 'accountName',
+  accountNumber: 'accountNumber',
+  ifscCode: 'ifscCode',
+  branch: 'branch',
+  upiId: 'upiId',
+  invoicePrefix: 'invoicePrefix',
+  invoiceTerms: 'invoiceTerms',
+  footerNote: 'footerNote',
+  authorizedSignatory: 'authorizedSignatory',
+  logoUrl: 'logoUrl',
+  signatureUrl: 'signatureUrl',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+};
+
 exports.Prisma.SortOrder = {
   asc: 'asc',
   desc: 'desc'
@@ -507,7 +541,8 @@ exports.Prisma.ModelName = {
   MarketplaceMapping: 'MarketplaceMapping',
   MarketplaceOrder: 'MarketplaceOrder',
   MarketplaceOrderItem: 'MarketplaceOrderItem',
-  User: 'User'
+  User: 'User',
+  CompanySettings: 'CompanySettings'
 };
 
 /**
