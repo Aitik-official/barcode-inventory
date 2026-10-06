@@ -459,22 +459,20 @@ export function PrintShippingInvoiceDialog({
         <div class="a4-page">
           <!-- TOP HEADER -->
           <div style="display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #056468; padding-bottom: 8px;">
-            <div style="display: flex; align-items: flex-start; gap: 12px;">
-              ${logoUrl ? `<img src="${logoUrl}" alt="Logo" style="max-height: 48px; max-width: 130px; object-fit: contain; margin-top: 2px;" onerror="this.style.display='none'" />` : ""}
-              <div>
-                <div style="font-size: 20px; font-weight: 900; color: #056468; letter-spacing: -0.5px;">${sellerName}</div>
-                ${sellerTagline ? `<div style="font-size: 9px; font-weight: 700; color: #475569; margin-bottom: 2px;">${sellerTagline}</div>` : ""}
-                <div style="font-size: 9.5px; color: #334155; margin-top: 1px; max-width: 320px; line-height: 1.35;">
-                  ${sellerAddress}<br/>
-                  Tel: <strong>${sellerPhone}</strong> | Email: <strong>${sellerEmail}</strong>
-                </div>
-                <div style="margin-top: 3px; font-size: 9.5px; color: #0f172a; font-weight: 700;">
-                  GSTIN: <span style="font-family: monospace; font-size: 10.5px; color: #056468;">${sellerGstin}</span> | State: <strong>${sellerStateName}</strong> | PAN: <span style="font-family: monospace;">${sellerPan}</span>
-                </div>
+            <div style="max-width: 62%;">
+              ${logoUrl ? `<div style="margin-bottom: 4px;"><img src="${logoUrl}" alt="Logo" style="max-height: 34px; max-width: 140px; object-fit: contain; display: block;" onerror="this.style.display='none'" /></div>` : ""}
+              <div style="font-size: 18px; font-weight: 900; color: #056468; letter-spacing: -0.4px; line-height: 1.2;">${sellerName}</div>
+              ${sellerTagline ? `<div style="font-size: 9px; font-weight: 700; color: #475569; margin-top: 1px; margin-bottom: 2px;">${sellerTagline}</div>` : ""}
+              <div style="font-size: 9px; color: #334155; margin-top: 2px; max-width: 440px; line-height: 1.35;">
+                ${sellerAddress}<br/>
+                Tel: <strong>${sellerPhone}</strong> | Email: <strong>${sellerEmail}</strong>
+              </div>
+              <div style="margin-top: 3px; font-size: 9px; color: #0f172a; font-weight: 700;">
+                GSTIN: <span style="font-family: monospace; font-size: 10px; color: #056468;">${sellerGstin}</span> | State: <strong>${sellerStateName}</strong> | PAN: <span style="font-family: monospace;">${sellerPan}</span>
               </div>
             </div>
-            <div style="text-align: right;">
-              <div style="background: #056468; color: #fff; display: inline-block; padding: 4px 12px; font-weight: 800; font-size: 13px; border-radius: 4px; letter-spacing: 0.5px;">
+            <div style="text-align: right; min-width: 160px;">
+              <div style="background: #056468; color: #fff; display: inline-block; padding: 3px 10px; font-weight: 800; font-size: 12px; border-radius: 4px; letter-spacing: 0.5px;">
                 TAX INVOICE
               </div>
               <div style="font-size: 9px; font-weight: 700; color: #64748b; margin-top: 3px; text-transform: uppercase;">
@@ -1138,11 +1136,26 @@ export function PrintShippingInvoiceDialog({
             <div className="bg-slate-50 border border-slate-300 rounded-xl p-5 text-xs shadow-inner space-y-4 font-sans">
               {/* Top Seller & Invoice Header */}
               <div className="flex justify-between items-start border-b-2 border-[#056468] pb-3">
-                <div>
-                  <h4 className="text-xl font-black text-[#056468]">
+                <div className="max-w-[65%]">
+                  {logoUrl && (
+                    <img
+                      src={logoUrl}
+                      alt="Logo"
+                      className="h-7 max-h-7 max-w-[130px] object-contain mb-1.5 block"
+                      onError={(e) => {
+                        (e.target as HTMLElement).style.display = "none";
+                      }}
+                    />
+                  )}
+                  <h4 className="text-lg font-black text-[#056468] tracking-tight leading-tight">
                     {sellerName}
                   </h4>
-                  <p className="text-[11px] text-slate-600 mt-0.5 max-w-sm">
+                  {sellerTagline && (
+                    <p className="text-[10px] font-semibold text-slate-600 mt-0.5">
+                      {sellerTagline}
+                    </p>
+                  )}
+                  <p className="text-[11px] text-slate-600 mt-1 max-w-sm leading-tight">
                     {sellerAddress}
                   </p>
                   <p className="text-[10px] text-slate-800 font-medium mt-1">
@@ -1150,14 +1163,15 @@ export function PrintShippingInvoiceDialog({
                     <span className="font-mono font-bold text-[#056468]">
                       {sellerGstin}
                     </span>{" "}
-                    • State: <strong>Maharashtra (27)</strong>
+                    • State: <strong>{sellerStateName}</strong> • PAN:{" "}
+                    <span className="font-mono font-bold">{sellerPan}</span>
                   </p>
                 </div>
-                <div className="text-right">
+                <div className="text-right shrink-0">
                   <span className="px-3 py-1 bg-[#056468] text-white font-bold text-xs rounded uppercase tracking-wider">
                     TAX INVOICE
                   </span>
-                  <div className="mt-2 text-[11px] font-mono">
+                  <div className="mt-2 text-[11px] font-mono leading-tight">
                     <div>
                       Inv: <strong>{invoiceNum}</strong>
                     </div>

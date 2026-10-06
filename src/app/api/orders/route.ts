@@ -397,3 +397,94 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: message }, { status: 400 });
   }
 }
+
+export async function DELETE(req: NextRequest) {
+  try {
+    const { searchParams } = new URL(req.url);
+    const queryId = searchParams.get("id");
+    let body: any = {};
+    try {
+      body = await req.json();
+    } catch (e) {
+      // Body is optional if query param is passed
+    }
+
+    const targetIds: string[] = body?.ids || (queryId ? [queryId] : body?.id ? [body.id] : []);
+
+    if (targetIds.length === 0) {
+      return NextResponse.json({ error: "No order ID provided for deletion." }, { status: 400 });
+    }
+
+    let deletedCount = 0;
+
+    for (const orderId of targetIds) {
+      // 1. Try standard Order
+      const standardOrder = await prisma.order.findFirst({
+        where: { OR: [{ id: orderId }, { orderNumber: orderId }] },
+        include: { items: true },
+      });
+
+      if (standardOrder) {
+        // Free sold unit barcodes associated with this order
+        const unitBarcodeIds = standardOrder.items
+          .map((i) => i.unitBarcodeId)
+          .filter(Boolean) as string[];
+
+        if (unitBarcodeIds.length > 0) {
+          await prisma.unitBarcode.updateMany({
+            where: { id: { in: unitBarcodeIds } },
+            data: { status: "AVAILABLE", soldAt: null },
+          });
+        }
+
+        // Delete order invoices & items & order
+        await prisma.invoice.deleteMany({
+          where: { OR: [{ orderId: standardOrder.id }, { orderId: standardOrder.orderNumber }] },
+        });
+        await prisma.orderItem.deleteMany({ where: { orderId: standardOrder.id } });
+        await prisma.order.delete({ where: { id: standardOrder.id } });
+
+        deletedCount++;
+        continue;
+      }
+
+      // 2. Try MarketplaceOrder
+      const mpOrder = await prisma.marketplaceOrder.findFirst({
+        where: { OR: [{ id: orderId }, { channelOrderId: orderId }] },
+        include: { items: true },
+      });
+
+      if (mpOrder) {
+        await prisma.invoice.deleteMany({
+          where: { OR: [{ orderId: mpOrder.id }, { orderId: mpOrder.channelOrderId }] },
+        });
+        await prisma.marketplaceOrderItem.deleteMany({
+          where: { marketplaceOrderId: mpOrder.id },
+        });
+        await prisma.marketplaceOrder.delete({ where: { id: mpOrder.id } });
+
+        deletedCount++;
+      }
+    }
+
+    await writeAudit({
+      action: "ORDERS_DELETED",
+      entity: "Order",
+      entityId: targetIds.join(", "),
+      details: JSON.stringify({ deletedCount, targetIds }),
+    });
+
+    return NextResponse.json({
+      success: true,
+      deletedCount,
+      message: `Successfully deleted ${deletedCount} order(s).`,
+    });
+  } catch (err: any) {
+    console.error("DELETE /api/orders error:", err);
+    return NextResponse.json(
+      { error: err.message || "Failed to delete order(s)." },
+      { status: 500 }
+    );
+  }
+}
+

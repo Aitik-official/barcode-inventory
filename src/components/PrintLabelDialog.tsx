@@ -145,10 +145,10 @@ export function PrintLabelDialog({
         (item, idx) => `
         JsBarcode("#bc-svg-${idx}", "${item.barcode}", {
           format: "CODE128",
-          width: ${is50x50 ? 1.4 : labelSize === "50x30" ? 1.25 : labelSize === "50x25" ? 1.15 : 1.5},
-          height: ${is50x50 ? 25 : labelSize === "50x30" ? 18 : labelSize === "50x25" ? 15 : 30},
+          width: ${is50x50 ? 1.35 : labelSize === "50x30" ? 1.2 : labelSize === "50x25" ? 1.1 : 1.4},
+          height: ${is50x50 ? 21 : labelSize === "50x30" ? 16 : labelSize === "50x25" ? 13 : 26},
           displayValue: true,
-          fontSize: ${is50x50 ? 8.5 : 7.5},
+          fontSize: ${is50x50 ? 8 : 7},
           font: "monospace",
           textMargin: 0,
           margin: 0
@@ -173,22 +173,23 @@ export function PrintLabelDialog({
               padding: 0;
             }
             html, body {
-              width: ${s.w}mm;
-              height: ${s.h}mm;
+              width: 100% !important;
+              height: auto !important;
               margin: 0 !important;
               padding: 0 !important;
               font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
               background: #fff;
               color: #000;
               -webkit-print-color-adjust: exact;
-              overflow: hidden !important;
+              print-color-adjust: exact;
             }
             .label-page {
               width: ${s.w}mm !important;
               height: ${s.h}mm !important;
               max-height: ${s.h}mm !important;
+              min-height: ${s.h}mm !important;
               box-sizing: border-box !important;
-              padding: ${is50x50 ? "4mm 3mm 4.5mm 3mm" : "2mm 2mm 2.5mm 2mm"} !important;
+              padding: ${is50x50 ? "2.5mm 2mm 2.5mm 2mm" : "1.5mm 1.5mm 1.5mm 1.5mm"} !important;
               margin: 0 auto !important;
               display: flex !important;
               flex-direction: column !important;
@@ -197,16 +198,14 @@ export function PrintLabelDialog({
               text-align: center !important;
               page-break-inside: avoid !important;
               break-inside: avoid !important;
+              page-break-after: always !important;
+              break-after: page !important;
               overflow: hidden !important;
               border: none !important;
             }
-            .label-page:not(:last-child) {
-              page-break-after: always !important;
-              break-after: page !important;
-            }
             .label-page:last-child {
-              page-break-after: avoid !important;
-              break-after: avoid !important;
+              page-break-after: auto !important;
+              break-after: auto !important;
             }
             .brand-header {
               font-size: 8px;

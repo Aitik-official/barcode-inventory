@@ -39,6 +39,8 @@ import {
   CreditCard,
   Sparkles,
   SlidersHorizontal,
+  Trash2,
+  AlertTriangle,
 } from "lucide-react";
 import {
   PrintShippingInvoiceDialog,
@@ -160,6 +162,104 @@ export default function OrdersClient({
   const [enqMessage, setEnqMessage] = useState("");
   const [enqPhone, setEnqPhone] = useState("");
   const [enqLoading, setEnqLoading] = useState(false);
+
+  // Double Verification Delete Modal State
+  const [deleteModal, setDeleteModal] = useState<{
+    open: boolean;
+    orders: UnifiedOrder[];
+    isBatch: boolean;
+    isDemoReset?: boolean;
+  } | null>(null);
+  const [deleteConfirmText, setDeleteConfirmText] = useState("");
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [deleteFeedback, setDeleteFeedback] = useState<string | null>(null);
+
+  const handleOpenDeleteModal = (ord: UnifiedOrder) => {
+    setDeleteModal({
+      open: true,
+      orders: [ord],
+      isBatch: false,
+    });
+    setDeleteConfirmText("");
+    setDeleteFeedback(null);
+  };
+
+  const handleOpenBatchDeleteModal = () => {
+    const selected = unifiedOrders.filter((o) => selectedOrderIds.includes(o.id));
+    if (selected.length === 0) return;
+    setDeleteModal({
+      open: true,
+      orders: selected,
+      isBatch: true,
+    });
+    setDeleteConfirmText("");
+    setDeleteFeedback(null);
+  };
+
+  const handleOpenDemoResetModal = () => {
+    setDeleteModal({
+      open: true,
+      orders: unifiedOrders,
+      isBatch: true,
+      isDemoReset: true,
+    });
+    setDeleteConfirmText("");
+    setDeleteFeedback(null);
+  };
+
+  const handleExecuteDelete = async () => {
+    if (!deleteModal) return;
+    setIsDeleting(true);
+    setDeleteFeedback(null);
+
+    try {
+      if (deleteModal.isDemoReset) {
+        const res = await fetch("/api/admin/reset-demo", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            action: "CLEAR_TRANSACTIONS",
+            confirmText: "RESET",
+          }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || "Failed to clear demo data");
+
+        setLocalOrders([]);
+        setLocalMarketplaceOrders([]);
+        setSelectedOrderIds([]);
+        setDeleteModal(null);
+        alert("✅ All demo/test sales data, orders, and invoices have been cleared successfully!");
+        window.location.reload();
+        return;
+      }
+
+      const orderIdsToDelete = deleteModal.orders.map((o) => o.id);
+      const res = await fetch("/api/orders", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ids: orderIdsToDelete }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to delete order(s)");
+
+      // Remove from local state
+      setLocalOrders((prev) =>
+        prev.filter((o) => !orderIdsToDelete.includes(o.id) && !orderIdsToDelete.includes(o.orderNumber))
+      );
+      setLocalMarketplaceOrders((prev) =>
+        prev.filter((o) => !orderIdsToDelete.includes(o.id) && !orderIdsToDelete.includes(o.channelOrderId))
+      );
+      setSelectedOrderIds((prev) => prev.filter((id) => !orderIdsToDelete.includes(id)));
+
+      setDeleteModal(null);
+    } catch (err: any) {
+      setDeleteFeedback(err.message || "Failed to execute deletion.");
+    } finally {
+      setIsDeleting(false);
+    }
+  };
 
   // Unify standard orders and marketplace orders
   const unifiedOrders: UnifiedOrder[] = useMemo(() => {
@@ -980,14 +1080,24 @@ export default function OrdersClient({
                 <div className="flex items-center gap-2">
                   <button
                     onClick={handleBatchPrintSelected}
-                    className="px-3.5 py-1.5 rounded-lg bg-[#056468] hover:bg-[#044e51] text-white text-xs font-bold shadow-xs flex items-center gap-1.5 transition-all"
+                    className="px-3.5 py-1.5 rounded-lg bg-[#056468] hover:bg-[#044e51] text-white text-xs font-bold shadow-xs flex items-center gap-1.5 transition-all cursor-pointer"
                   >
                     <Printer className="w-3.5 h-3.5" />
                     <span>Batch Print 100×150mm Shipping Invoices</span>
                   </button>
+
+                  <button
+                    onClick={handleOpenBatchDeleteModal}
+                    className="px-3 py-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs font-bold border border-rose-200 flex items-center gap-1.5 transition-colors cursor-pointer"
+                    title="Delete all selected orders with double verification"
+                  >
+                    <Trash2 className="w-3.5 h-3.5 text-rose-600" />
+                    <span>Delete Selected ({selectedOrderIds.length})</span>
+                  </button>
+
                   <button
                     onClick={() => setSelectedOrderIds([])}
-                    className="px-2.5 py-1.5 text-xs text-slate-500 hover:text-slate-800 font-medium"
+                    className="px-2.5 py-1.5 text-xs text-slate-500 hover:text-slate-800 font-medium cursor-pointer"
                   >
                     Deselect
                   </button>
@@ -997,14 +1107,14 @@ export default function OrdersClient({
 
             {/* Orders Table */}
             <div className="overflow-x-auto rounded-xl border border-[#cce7ed]">
-              <table className="w-full text-left text-xs">
+              <table className="w-full text-left text-xs table-auto">
                 <thead className="bg-[#f2f9fa] text-[#0b252c] font-semibold uppercase tracking-wider border-b border-[#cce7ed]">
                   <tr>
-                    <th className="p-3 w-8">
+                    <th className="py-2.5 px-2 w-7 text-center">
                       <button
                         type="button"
                         onClick={selectAllFiltered}
-                        className="text-slate-500 hover:text-slate-800"
+                        className="text-slate-500 hover:text-slate-800 inline-flex items-center justify-center"
                         title="Select All Filtered"
                       >
                         {selectedOrderIds.length === filteredOrders.length && filteredOrders.length > 0 ? (
@@ -1014,13 +1124,13 @@ export default function OrdersClient({
                         )}
                       </button>
                     </th>
-                    <th className="p-3">Channel</th>
-                    <th className="p-3">Order ID / Date</th>
-                    <th className="p-3">Buyer & Details</th>
-                    <th className="p-3">Items & SKUs</th>
-                    <th className="p-3">Amount</th>
-                    <th className="p-3 min-w-[150px]">Status (Click to Change)</th>
-                    <th className="p-3 text-right whitespace-nowrap min-w-[260px]">Actions</th>
+                    <th className="py-2.5 px-2 whitespace-nowrap">Channel</th>
+                    <th className="py-2.5 px-2 whitespace-nowrap">Order ID / Date</th>
+                    <th className="py-2.5 px-2">Buyer & Details</th>
+                    <th className="py-2.5 px-2">Items & SKUs</th>
+                    <th className="py-2.5 px-2 whitespace-nowrap">Amount</th>
+                    <th className="py-2.5 px-2 whitespace-nowrap">Status</th>
+                    <th className="py-2.5 px-2 text-right whitespace-nowrap">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 font-sans">
@@ -1056,11 +1166,11 @@ export default function OrdersClient({
                           }`}
                         >
                           {/* Checkbox */}
-                          <td className="p-3">
+                          <td className="py-2.5 px-2 text-center">
                             <button
                               type="button"
                               onClick={() => toggleSelectOrder(ord.id)}
-                              className="text-slate-400 hover:text-slate-700"
+                              className="text-slate-400 hover:text-slate-700 inline-flex items-center justify-center"
                             >
                               {isSelected ? (
                                 <CheckSquare className="w-4 h-4 text-[#056468]" />
@@ -1071,37 +1181,37 @@ export default function OrdersClient({
                           </td>
 
                           {/* Channel Badge */}
-                          <td className="p-3">
+                          <td className="py-2.5 px-2 whitespace-nowrap">
                             {ord.channel === "AMAZON" ? (
-                              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-[10px] font-bold bg-amber-50 text-amber-900 border border-amber-300 shadow-2xs">
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold bg-amber-50 text-amber-900 border border-amber-300">
                                 <Store className="w-3 h-3 text-amber-600" />
-                                <span>Amazon ATS</span>
+                                <span>Amazon</span>
                               </span>
                             ) : ord.channel === "FLIPKART" ? (
-                              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-[10px] font-bold bg-blue-50 text-blue-900 border border-blue-300 shadow-2xs">
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold bg-blue-50 text-blue-900 border border-blue-300">
                                 <PackageCheck className="w-3 h-3 text-blue-600" />
-                                <span>Flipkart Ekart</span>
+                                <span>Flipkart</span>
                               </span>
                             ) : ord.channel === "POS" ? (
-                              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-[10px] font-bold bg-purple-50 text-purple-900 border border-purple-300 shadow-2xs">
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold bg-purple-50 text-purple-900 border border-purple-300">
                                 <QrCode className="w-3 h-3 text-purple-600" />
-                                <span>POS Quick Scan</span>
+                                <span>POS Scan</span>
                               </span>
                             ) : (
-                              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-[10px] font-bold bg-emerald-50 text-emerald-900 border border-emerald-300 shadow-2xs">
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-50 text-emerald-900 border border-emerald-300">
                                 <Globe className="w-3 h-3 text-emerald-700" />
-                                <span>Website Store</span>
+                                <span>Website</span>
                               </span>
                             )}
                           </td>
 
                           {/* Order ID & Date */}
-                          <td className="p-3 font-medium">
+                          <td className="py-2.5 px-2 whitespace-nowrap">
                             <button
                               type="button"
                               onClick={() => handleOpenOrderDetail(ord)}
-                              className="font-mono text-xs text-[#056468] hover:text-[#044e51] font-bold block text-left hover:underline"
-                              title="Click to view complete order & customer details"
+                              className="font-mono text-xs text-[#056468] hover:text-[#044e51] font-bold block text-left hover:underline truncate max-w-[135px]"
+                              title={`Click to view complete order ${ord.orderNumber}`}
                             >
                               {ord.orderNumber}
                             </button>
@@ -1113,57 +1223,67 @@ export default function OrdersClient({
                               <button
                                 type="button"
                                 onClick={() => setActiveTab("invoices")}
-                                className="mt-1 inline-flex items-center gap-1 text-[9.5px] font-bold text-emerald-800 bg-emerald-50 border border-emerald-300 px-1.5 py-0.5 rounded hover:bg-emerald-100 transition-colors cursor-pointer"
+                                className="mt-0.5 inline-flex items-center gap-1 text-[9px] font-bold text-emerald-800 bg-emerald-50 border border-emerald-300 px-1.5 py-0.5 rounded hover:bg-emerald-100 transition-colors cursor-pointer"
                                 title="Click to view in Invoices Tab"
                               >
-                                <Receipt className="w-3 h-3 text-emerald-600" />
+                                <Receipt className="w-2.5 h-2.5 text-emerald-600" />
                                 <span>{existingInv.invoiceNumber}</span>
                               </button>
                             )}
                           </td>
 
                           {/* Buyer & Destination */}
-                          <td className="p-3">
+                          <td className="py-2.5 px-2 max-w-[150px]">
                             <button
                               type="button"
                               onClick={() => handleOpenOrderDetail(ord)}
-                              className="font-semibold text-slate-900 block truncate max-w-[170px] text-left hover:text-[#056468] hover:underline"
+                              className="font-semibold text-slate-900 block truncate text-left hover:text-[#056468] hover:underline"
+                              title={ord.customerName}
                             >
                               {ord.customerName}
                             </button>
-                            <span className="text-[11px] text-slate-500 block truncate max-w-[180px]">
+                            <span className="text-[10.5px] text-slate-500 block truncate" title={ord.shippingAddress}>
                               {ord.shippingAddress}
                             </span>
                             {ord.customerPhone && (
-                              <span className="text-[10px] text-slate-400 font-mono block">
+                              <span className="text-[9.5px] text-slate-400 font-mono block">
                                 {ord.customerPhone}
                               </span>
                             )}
                           </td>
 
                           {/* Items & SKU */}
-                          <td className="p-3">
-                            <div className="space-y-0.5">
+                          <td className="py-2.5 px-2 max-w-[210px]">
+                            <div className="space-y-1">
                               {ord.items.slice(0, 2).map((itm, idx) => (
-                                <div key={idx} className="text-[11px] flex items-center gap-1.5 text-slate-700">
-                                  <span className="font-bold text-[#056468]">{itm.quantity}x</span>
-                                  <span className="font-mono font-medium text-slate-900 bg-slate-100 px-1 rounded text-[10px]">
-                                    {itm.sku}
+                                <div key={idx} className="flex items-center gap-1.5 whitespace-nowrap text-[11px] leading-tight">
+                                  <span className="font-bold text-[#056468] shrink-0 text-[10.5px]">{itm.quantity}x</span>
+                                  <span
+                                    className="font-mono font-semibold text-slate-800 bg-slate-100 border border-slate-200 px-1.5 py-0.5 rounded text-[10px] truncate max-w-[110px] inline-block shrink-0"
+                                    title={itm.sku || itm.title}
+                                  >
+                                    {itm.sku || itm.title}
                                   </span>
                                   {itm.asinOrFsn && (
-                                    <span className="text-[9px] font-mono text-amber-700 bg-amber-50 px-1 rounded border border-amber-200">
+                                    <span
+                                      className="text-[9px] font-mono font-semibold text-amber-800 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200 truncate max-w-[85px] inline-block shrink-0"
+                                      title={`ASIN/FSN: ${itm.asinOrFsn}`}
+                                    >
                                       {itm.asinOrFsn}
                                     </span>
                                   )}
                                   {itm.unitBarcode && (
-                                    <span className="text-[9px] font-mono text-emerald-700 bg-emerald-50 px-1 rounded border border-emerald-200">
+                                    <span
+                                      className="text-[9px] font-mono font-semibold text-emerald-800 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200 truncate max-w-[85px] inline-block shrink-0"
+                                      title={`Barcode: ${itm.unitBarcode}`}
+                                    >
                                       {itm.unitBarcode}
                                     </span>
                                   )}
                                 </div>
                               ))}
                               {ord.items.length > 2 && (
-                                <span className="text-[10px] text-slate-400 italic">
+                                <span className="text-[9.5px] text-slate-400 italic block">
                                   +{ord.items.length - 2} more item(s)
                                 </span>
                               )}
@@ -1171,17 +1291,17 @@ export default function OrdersClient({
                           </td>
 
                           {/* Amount */}
-                          <td className="p-3 font-bold text-slate-900">
+                          <td className="py-2.5 px-2 whitespace-nowrap font-mono font-bold text-slate-900 text-xs">
                             ₹{ord.totalAmount.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
                           </td>
 
                           {/* Status - Interactive Selector */}
-                          <td className="p-3">
-                            <div className="space-y-1">
+                          <td className="py-2.5 px-2 whitespace-nowrap">
+                            <div className="space-y-0.5">
                               <select
                                 value={ord.status}
                                 onChange={(e) => handleDirectStatusChange(ord, e.target.value)}
-                                className={`px-2 py-1 rounded text-[11px] font-bold border cursor-pointer focus:outline-none focus:ring-1 focus:ring-[#056468] ${currentStatusColor}`}
+                                className={`px-2 py-1 rounded-md text-[10.5px] font-bold border cursor-pointer focus:outline-none focus:ring-1 focus:ring-[#056468] ${currentStatusColor}`}
                               >
                                 {ORDER_STATUS_OPTIONS.map((opt) => (
                                   <option key={opt.value} value={opt.value}>
@@ -1191,25 +1311,25 @@ export default function OrdersClient({
                               </select>
 
                               {ord.trackingNumber && (
-                                <span className="text-[10px] font-mono text-slate-500 flex items-center gap-1">
-                                  <Truck className="w-3 h-3 text-slate-400" />
-                                  <span className="truncate max-w-[110px]">{ord.trackingNumber}</span>
+                                <span className="text-[9.5px] font-mono text-slate-500 flex items-center gap-1">
+                                  <Truck className="w-2.5 h-2.5 text-slate-400" />
+                                  <span className="truncate max-w-[95px]" title={ord.trackingNumber}>{ord.trackingNumber}</span>
                                 </span>
                               )}
                             </div>
                           </td>
 
                           {/* Action Buttons */}
-                          <td className="p-3 text-right whitespace-nowrap">
-                            <div className="flex items-center justify-end gap-1.5 flex-nowrap">
+                          <td className="py-2.5 px-2 text-right whitespace-nowrap">
+                            <div className="flex items-center justify-end gap-1 flex-nowrap">
                               {/* View / Edit Details Modal */}
                               <button
                                 type="button"
                                 onClick={() => handleOpenOrderDetail(ord)}
-                                className="px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-xs rounded-lg inline-flex items-center gap-1 whitespace-nowrap shrink-0 transition-all cursor-pointer"
+                                className="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-[11px] rounded-md inline-flex items-center gap-1 whitespace-nowrap shrink-0 transition-colors cursor-pointer"
                                 title="View Complete Customer & Order Details"
                               >
-                                <Eye className="w-3.5 h-3.5 text-slate-600" />
+                                <Eye className="w-3.5 h-3.5 text-slate-500" />
                                 <span>Details</span>
                               </button>
 
@@ -1217,7 +1337,7 @@ export default function OrdersClient({
                               <button
                                 type="button"
                                 onClick={() => handleOpenSingleInvoice(ord, "A4_INVOICE")}
-                                className="px-2.5 py-1.5 bg-[#056468] hover:bg-[#044e51] text-white font-bold text-xs rounded-lg shadow-2xs inline-flex items-center gap-1 whitespace-nowrap shrink-0 transition-all cursor-pointer"
+                                className="px-2 py-1 bg-[#056468] hover:bg-[#044e51] text-white font-semibold text-[11px] rounded-md shadow-2xs inline-flex items-center gap-1 whitespace-nowrap shrink-0 transition-colors cursor-pointer"
                                 title="View & Print Full Professional A4 GST Tax Invoice"
                               >
                                 <FileText className="w-3.5 h-3.5" />
@@ -1228,11 +1348,21 @@ export default function OrdersClient({
                               <button
                                 type="button"
                                 onClick={() => handleOpenSingleInvoice(ord, "THERMAL_LABEL")}
-                                className="px-2.5 py-1.5 bg-white border border-[#cce7ed] hover:bg-[#f0f8fa] text-[#056468] font-bold text-xs rounded-lg shadow-2xs inline-flex items-center gap-1 whitespace-nowrap shrink-0 transition-all cursor-pointer"
+                                className="px-2 py-1 bg-white border border-[#cce7ed] hover:bg-[#f0f8fa] text-[#056468] font-semibold text-[11px] rounded-md shadow-2xs inline-flex items-center gap-1 whitespace-nowrap shrink-0 transition-colors cursor-pointer"
                                 title="Print 100x150mm (4x6) Thermal Courier Shipping Label"
                               >
                                 <Printer className="w-3.5 h-3.5 text-[#056468]" />
                                 <span>100×150mm</span>
+                              </button>
+
+                              {/* Delete Order Option */}
+                              <button
+                                type="button"
+                                onClick={() => handleOpenDeleteModal(ord)}
+                                className="p-1 hover:bg-rose-50 text-slate-400 hover:text-rose-600 rounded transition-colors shrink-0 cursor-pointer ml-0.5"
+                                title="Delete Order (Double Verification)"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
                               </button>
                             </div>
                           </td>
@@ -2131,40 +2261,38 @@ export default function OrdersClient({
                 <div className="bg-slate-50/90 border border-slate-300 rounded-2xl p-4 text-[10.5px] space-y-3 shadow-inner">
                   {/* Top Company Header */}
                   <div className="flex justify-between items-start border-b-2 border-[#056468] pb-2.5">
-                    <div className="flex items-start gap-2.5">
+                    <div className="max-w-[65%]">
                       <img
                         src={companySettings.logoUrl || "/logo/1-01.png"}
                         alt="Logo"
-                        className="h-10 max-h-10 w-auto object-contain mt-0.5 rounded shrink-0"
+                        className="h-7 max-h-7 max-w-[130px] object-contain mb-1.5 block"
                         onError={(e) => {
                           (e.target as HTMLElement).style.display = "none";
                         }}
                       />
-                      <div>
-                        <div className="text-base font-black text-[#056468] tracking-tight">
-                          {companySettings.companyName || "Your Company Name"}
+                      <div className="text-base font-black text-[#056468] tracking-tight leading-snug">
+                        {companySettings.companyName || "Your Company Name"}
+                      </div>
+                      {companySettings.tagline && (
+                        <div className="text-[9.5px] font-semibold text-slate-600 mt-0.5 max-w-sm">
+                          {companySettings.tagline}
                         </div>
-                        {companySettings.tagline && (
-                          <div className="text-[9.5px] font-semibold text-slate-600 mt-0.5 max-w-[220px]">
-                            {companySettings.tagline}
-                          </div>
-                        )}
-                        <div className="text-[9px] text-slate-600 mt-1 max-w-[220px] leading-tight">
-                          {companySettings.addressLine1}
-                          {companySettings.addressLine2 ? `, ${companySettings.addressLine2}` : ""},{" "}
-                          {companySettings.city}, {companySettings.state} - {companySettings.pincode}
-                        </div>
-                        <div className="text-[9px] text-slate-700 mt-0.5">
-                          Tel: <strong>{companySettings.phone}</strong> | Email:{" "}
-                          <strong>{companySettings.email}</strong>
-                        </div>
-                        <div className="mt-1 text-[9px] font-bold text-slate-900">
-                          GSTIN:{" "}
-                          <span className="font-mono text-[#056468]">{companySettings.gstin}</span> | State:{" "}
-                          <strong>
-                            {companySettings.state} ({companySettings.stateCode})
-                          </strong>
-                        </div>
+                      )}
+                      <div className="text-[9px] text-slate-600 mt-1 max-w-sm leading-tight">
+                        {companySettings.addressLine1}
+                        {companySettings.addressLine2 ? `, ${companySettings.addressLine2}` : ""},{" "}
+                        {companySettings.city}, {companySettings.state} - {companySettings.pincode}
+                      </div>
+                      <div className="text-[9px] text-slate-700 mt-0.5">
+                        Tel: <strong>{companySettings.phone}</strong> | Email:{" "}
+                        <strong>{companySettings.email}</strong>
+                      </div>
+                      <div className="mt-1 text-[9px] font-bold text-slate-900">
+                        GSTIN:{" "}
+                        <span className="font-mono text-[#056468]">{companySettings.gstin}</span> | State:{" "}
+                        <strong>
+                          {companySettings.state} ({companySettings.stateCode})
+                        </strong>
                       </div>
                     </div>
 
@@ -2845,6 +2973,123 @@ export default function OrdersClient({
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Double Verification Delete Confirmation Modal */}
+      {deleteModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-xs animate-in fade-in">
+          <div className="bg-white border border-slate-200 rounded-2xl shadow-2xl max-w-lg w-full overflow-hidden animate-in zoom-in-95">
+            {/* Modal Header */}
+            <div className="bg-rose-50 border-b border-rose-100 p-4 flex items-center justify-between">
+              <div className="flex items-center gap-2.5 text-rose-800">
+                <div className="w-8 h-8 rounded-lg bg-rose-100 flex items-center justify-center text-rose-700">
+                  <AlertTriangle className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-base leading-tight">
+                    {deleteModal.isDemoReset
+                      ? "Wipe All Demo & Test Orders"
+                      : deleteModal.isBatch
+                      ? `Delete ${deleteModal.orders.length} Selected Orders`
+                      : `Delete Order #${deleteModal.orders[0]?.orderNumber}`}
+                  </h3>
+                  <p className="text-xs text-rose-600 font-medium">Double-Verification Required</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setDeleteModal(null)}
+                className="text-slate-400 hover:text-slate-700 p-1 rounded-lg hover:bg-white/50 cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div className="p-5 space-y-4 text-xs text-slate-700">
+              <p className="text-slate-600 leading-relaxed">
+                {deleteModal.isDemoReset
+                  ? "This will permanently clear all demo/test orders, customer invoices, and sales transactions. Any unit barcodes recorded as 'SOLD' will be released back to 'AVAILABLE' stock automatically."
+                  : deleteModal.isBatch
+                  ? `You are about to permanently delete ${deleteModal.orders.length} orders and their generated invoices. Any physical serial barcodes will be released back to AVAILABLE stock.`
+                  : `You are about to permanently delete order #${deleteModal.orders[0]?.orderNumber} (${deleteModal.orders[0]?.customerName}, ₹${deleteModal.orders[0]?.totalAmount.toFixed(2)}). Any sold item barcodes in this order will be released back to AVAILABLE inventory.`}
+              </p>
+
+              {/* Order Details Preview Box */}
+              {!deleteModal.isDemoReset && deleteModal.orders.length <= 4 && (
+                <div className="bg-slate-50 border border-slate-200 rounded-xl p-3 space-y-1.5 max-h-44 overflow-y-auto">
+                  {deleteModal.orders.map((ord) => (
+                    <div
+                      key={ord.id}
+                      className="flex justify-between items-center text-[11px] py-1 border-b border-slate-100 last:border-none"
+                    >
+                      <div>
+                        <span className="font-mono font-bold text-slate-900">{ord.orderNumber}</span>
+                        <span className="text-slate-500 ml-2">({ord.customerName})</span>
+                      </div>
+                      <span className="font-mono font-bold text-slate-800">
+                        ₹{ord.totalAmount.toFixed(2)}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Verification prompt */}
+              <div className="bg-amber-50/80 border border-amber-200 rounded-xl p-3 text-[11px] text-amber-900 space-y-2">
+                <div className="font-bold flex items-center gap-1.5">
+                  <AlertCircle className="w-4 h-4 text-amber-700 shrink-0" />
+                  <span>
+                    Step 2 Verification: Type &quot;{deleteModal.isDemoReset ? "RESET" : "DELETE"}&quot; below to confirm
+                  </span>
+                </div>
+                <input
+                  type="text"
+                  value={deleteConfirmText}
+                  onChange={(e) => setDeleteConfirmText(e.target.value.toUpperCase())}
+                  placeholder={deleteModal.isDemoReset ? "Type RESET" : "Type DELETE"}
+                  className="w-full bg-white border border-amber-300 rounded-lg px-3 py-2 font-mono font-bold text-sm tracking-widest text-slate-900 focus:outline-none focus:ring-2 focus:ring-rose-500"
+                />
+              </div>
+
+              {deleteFeedback && (
+                <div className="p-2.5 bg-rose-50 border border-rose-200 text-rose-800 text-xs rounded-lg font-medium">
+                  {deleteFeedback}
+                </div>
+              )}
+
+              {/* Actions */}
+              <div className="flex items-center justify-end gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setDeleteModal(null)}
+                  className="px-4 py-2 font-semibold text-slate-600 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 rounded-xl transition-colors cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={handleExecuteDelete}
+                  disabled={
+                    isDeleting ||
+                    (deleteModal.isDemoReset
+                      ? deleteConfirmText.trim() !== "RESET"
+                      : deleteConfirmText.trim() !== "DELETE")
+                  }
+                  className="px-5 py-2 font-bold text-white bg-rose-600 hover:bg-rose-700 disabled:opacity-40 disabled:cursor-not-allowed rounded-xl shadow-sm flex items-center gap-1.5 transition-all cursor-pointer"
+                >
+                  <Trash2 className="w-4 h-4" />
+                  <span>
+                    {isDeleting
+                      ? "Deleting..."
+                      : deleteModal.isDemoReset
+                      ? "Confirm Reset Demo"
+                      : "Confirm Permanent Delete"}
+                  </span>
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}
