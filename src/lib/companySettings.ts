@@ -58,11 +58,11 @@ export async function saveCompanySettings(
       updates: [
         {
           q: { _id: { $exists: true } },
-          u: { $set: merged },
+          u: { $set: merged as any },
           upsert: true,
         },
       ],
-    });
+    } as any);
   } catch (dbErr) {
     // Continue saving to file
   }

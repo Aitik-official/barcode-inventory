@@ -444,3 +444,41 @@ model User {
   @@index([role])
   @@index([status])
 }
+
+model CompanySettings {
+  id             String  @id @default(cuid()) @map("_id")
+  companyName    String  @default("Stealth Sight Inventory")
+  tagline        String? @default("Professional Barcode & Logistics Systems")
+  gstin          String? @default("27AABCU9603R1ZN")
+  pan            String? @default("AABCU9603R")
+  cin            String?
+  email          String? @default("billing@stealthsight.com")
+  phone          String? @default("+91 98200 12345")
+  alternatePhone String?
+  website        String? @default("www.stealthsight.com")
+  addressLine1   String? @default("Industrial Hub, Unit 4B, MIDC")
+  addressLine2   String? @default("Andheri East")
+  city           String? @default("Mumbai")
+  state          String? @default("Maharashtra")
+  stateCode      String? @default("27")
+  pincode        String? @default("400093")
+  country        String? @default("India")
+
+  // Bank Details
+  bankName      String? @default("HDFC Bank")
+  accountName   String? @default("Stealth Sight Inventory Pvt Ltd")
+  accountNumber String? @default("50200012345678")
+  ifscCode      String? @default("HDFC0001234")
+  branch        String? @default("Andheri East, Mumbai")
+  upiId         String? @default("stealthsight@hdfcbank")
+
+  // Invoice Customization
+  invoicePrefix       String?  @default("INV-")
+  invoiceTerms        String?  @default("1. Goods once sold will not be taken back.\n2. Interest @ 18% p.a. will be charged if payment is not made within due date.\n3. Subject to Mumbai Jurisdiction.")
+  footerNote          String?  @default("Thank you for your business!")
+  authorizedSignatory String?  @default("Authorized Signatory")
+  logoUrl             String?
+  signatureUrl        String?
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+}
