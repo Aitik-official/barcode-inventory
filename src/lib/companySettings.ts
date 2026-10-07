@@ -48,17 +48,18 @@ export async function saveCompanySettings(
   const merged: CompanySettingsData = {
     ...current,
     ...data,
-    updatedAt: new Date().toISOString(),
+    updatedAt: new Date(),
   };
 
   // 1. Persist to MongoDB raw collection
   try {
+    const mongoDoc = { ...merged, updatedAt: new Date() };
     await prisma.$runCommandRaw({
       update: "CompanySettings",
       updates: [
         {
           q: { _id: { $exists: true } },
-          u: { $set: merged as any },
+          u: { $set: mongoDoc as any },
           upsert: true,
         },
       ],
