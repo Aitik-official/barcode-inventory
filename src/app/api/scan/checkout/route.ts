@@ -166,8 +166,7 @@ export async function POST(req: Request) {
       }
     }
 
-    // Determine Prefix and Order Number
-    const orderCount = await prisma.order.count();
+    // Determine Prefix and Unique Order Number
     const prefix =
       channel === "AMAZON"
         ? "AMZ"
@@ -181,10 +180,42 @@ export async function POST(req: Request) {
         ? "B2B"
         : "POS";
 
-    const finalOrderNumber =
-      channelOrderId && channelOrderId.trim()
-        ? channelOrderId.trim()
-        : `${prefix}-${String(orderCount + 1).padStart(4, "0")}`;
+    let finalOrderNumber = channelOrderId && channelOrderId.trim() ? channelOrderId.trim() : "";
+
+    if (!finalOrderNumber) {
+      const year = new Date().getFullYear();
+      let candidateNumber = 1;
+      const latestOrder = await prisma.order.findFirst({
+        where: { orderNumber: { startsWith: `${prefix}-${year}-` } },
+        orderBy: { createdAt: "desc" },
+      });
+
+      if (latestOrder) {
+        const parts = latestOrder.orderNumber.split("-");
+        const num = parseInt(parts[parts.length - 1], 10);
+        if (!isNaN(num)) {
+          candidateNumber = num + 1;
+        }
+      } else {
+        const totalCount = await prisma.order.count();
+        candidateNumber = totalCount + 1;
+      }
+
+      finalOrderNumber = `${prefix}-${year}-${String(candidateNumber).padStart(4, "0")}`;
+
+      // Guarantee no collision
+      let existingOrder = await prisma.order.findUnique({ where: { orderNumber: finalOrderNumber } });
+      while (existingOrder) {
+        candidateNumber++;
+        finalOrderNumber = `${prefix}-${year}-${String(candidateNumber).padStart(4, "0")}`;
+        existingOrder = await prisma.order.findUnique({ where: { orderNumber: finalOrderNumber } });
+      }
+    } else {
+      let existingOrder = await prisma.order.findUnique({ where: { orderNumber: finalOrderNumber } });
+      if (existingOrder) {
+        finalOrderNumber = `${finalOrderNumber}-${Math.floor(100 + Math.random() * 900)}`;
+      }
+    }
 
     const orderNotes =
       notes ||

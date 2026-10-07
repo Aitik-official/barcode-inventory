@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { PrintLabelDialog } from "@/components/PrintLabelDialog";
@@ -67,10 +67,18 @@ export default function ProductDetailClient({
   const soldCount = soldUnits.length;
   const damagedCount = unitBarcodes.filter((u: any) => u.status === "DAMAGED").length;
 
+  // Filter Barcodes Status (Default: AVAILABLE - hides sold/scanned items from active view)
+  const [unitFilterStatus, setUnitFilterStatus] = useState<"AVAILABLE" | "ALL" | "SOLD" | "DAMAGED">("AVAILABLE");
+
+  const filteredUnits = useMemo(() => {
+    if (unitFilterStatus === "ALL") return unitBarcodes;
+    return unitBarcodes.filter((u: any) => u.status === unitFilterStatus);
+  }, [unitBarcodes, unitFilterStatus]);
+
   // Pagination for Unit Barcodes
   const [barcodePage, setBarcodePage] = useState(1);
   const [barcodePageSize, setBarcodePageSize] = useState(24);
-  const paginatedUnits = unitBarcodes.slice(
+  const paginatedUnits = filteredUnits.slice(
     (barcodePage - 1) * barcodePageSize,
     barcodePage * barcodePageSize
   );
@@ -263,10 +271,10 @@ export default function ProductDetailClient({
 
   // Toggle Select All
   const toggleSelectAll = () => {
-    if (selectedIds.size === unitBarcodes.length) {
+    if (selectedIds.size === filteredUnits.length && filteredUnits.length > 0) {
       setSelectedIds(new Set());
     } else {
-      setSelectedIds(new Set(unitBarcodes.map((u: any) => u.id)));
+      setSelectedIds(new Set(filteredUnits.map((u: any) => u.id)));
     }
   };
 
@@ -279,7 +287,7 @@ export default function ProductDetailClient({
 
   // Print Selected Units in Batch
   const handlePrintSelected = () => {
-    const selectedUnits = unitBarcodes.filter((u: any) => selectedIds.has(u.id));
+    const selectedUnits = filteredUnits.filter((u: any) => selectedIds.has(u.id));
     if (selectedUnits.length === 0) {
       alert("Please select at least one unit barcode to print.");
       return;
@@ -289,13 +297,14 @@ export default function ProductDetailClient({
     setIsPrintOpen(true);
   };
 
-  // Print All Units in Batch
+  // Print All Units in Batch (defaults to available in stock)
   const handlePrintAll = () => {
-    if (unitBarcodes.length === 0) {
-      alert("No unit barcodes available to print.");
+    const unitsToPrint = unitFilterStatus === "ALL" ? availableUnits : filteredUnits;
+    if (unitsToPrint.length === 0) {
+      alert("No available unit barcodes to print.");
       return;
     }
-    setPrintBarcodes(unitBarcodes.map((u: any) => u.barcode));
+    setPrintBarcodes(unitsToPrint.map((u: any) => u.barcode));
     setSingleUnitSerial(undefined);
     setIsPrintOpen(true);
   };
@@ -769,15 +778,61 @@ export default function ProductDetailClient({
               <ScanBarcode className="w-5 h-5 text-[#056468]" />
               <span>Per-Unit Serial Barcode Registry</span>
               <span className="text-xs px-2.5 py-0.5 rounded-full bg-[#e3f2f5] text-[#056468] font-mono border border-[#cce7ed]">
-                {unitBarcodes.length} Barcodes ({availableCount} Available)
+                {availableCount} Available / {unitBarcodes.length} Total
               </span>
             </h2>
             <p className="text-xs text-[#4a6870] mt-0.5">
-              Individual sequential 12-digit Code 128 barcodes. If extra stock was entered, remove it to release serial numbers for reuse.
+              Individual sequential 12-digit Code 128 barcodes. Sold and scanned barcodes are hidden from active view by default.
             </p>
           </div>
 
           <div className="flex items-center gap-2 flex-wrap">
+            {/* Status Filter Buttons */}
+            <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl border border-slate-200 text-xs">
+              <button
+                type="button"
+                onClick={() => {
+                  setUnitFilterStatus("AVAILABLE");
+                  setBarcodePage(1);
+                }}
+                className={`px-3 py-1 rounded-lg font-bold transition-all cursor-pointer ${
+                  unitFilterStatus === "AVAILABLE"
+                    ? "bg-[#056468] text-white shadow-xs"
+                    : "text-slate-600 hover:text-slate-900"
+                }`}
+              >
+                Available ({availableCount})
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setUnitFilterStatus("ALL");
+                  setBarcodePage(1);
+                }}
+                className={`px-3 py-1 rounded-lg font-bold transition-all cursor-pointer ${
+                  unitFilterStatus === "ALL"
+                    ? "bg-[#056468] text-white shadow-xs"
+                    : "text-slate-600 hover:text-slate-900"
+                }`}
+              >
+                All ({unitBarcodes.length})
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setUnitFilterStatus("SOLD");
+                  setBarcodePage(1);
+                }}
+                className={`px-3 py-1 rounded-lg font-bold transition-all cursor-pointer ${
+                  unitFilterStatus === "SOLD"
+                    ? "bg-purple-700 text-white shadow-xs"
+                    : "text-slate-600 hover:text-slate-900"
+                }`}
+              >
+                Sold / Scanned ({soldCount})
+              </button>
+            </div>
+
             {/* Reduce stock button in registry */}
             <button
               type="button"
@@ -797,7 +852,7 @@ export default function ProductDetailClient({
               onClick={toggleSelectAll}
               className="px-3 py-1.5 rounded-lg bg-white hover:bg-[#f0f8fa] text-[#056468] font-medium text-xs border border-[#cce7ed] transition-all flex items-center gap-1.5 cursor-pointer"
             >
-              {selectedIds.size === unitBarcodes.length && unitBarcodes.length > 0 ? (
+              {selectedIds.size === filteredUnits.length && filteredUnits.length > 0 ? (
                 <>
                   <CheckSquare className="w-3.5 h-3.5 text-[#056468]" />
                   <span>Deselect All</span>
@@ -805,7 +860,7 @@ export default function ProductDetailClient({
               ) : (
                 <>
                   <Square className="w-3.5 h-3.5 text-[#4a6870]" />
-                  <span>Select All ({unitBarcodes.length})</span>
+                  <span>Select All ({filteredUnits.length})</span>
                 </>
               )}
             </button>

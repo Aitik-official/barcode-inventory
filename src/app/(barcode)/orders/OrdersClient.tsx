@@ -1549,16 +1549,24 @@ export default function OrdersClient({
       {/* TAB 4: TAX INVOICES */}
       {activeTab === "invoices" && (
         <div className="bg-white border border-[#cce7ed] rounded-2xl p-6 shadow-sm space-y-4">
-          <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b border-slate-100 pb-3">
             <div>
               <h2 className="text-lg font-semibold text-[#0b252c] flex items-center gap-2">
                 <Receipt className="w-5 h-5 text-[#056468]" />
-                GST Tax Invoices Registry
+                <span>GST Tax Invoices Registry</span>
               </h2>
               <p className="text-xs text-slate-500">
                 Official GST Tax Invoices generated for online orders & store dispatches.
               </p>
             </div>
+
+            <a
+              href="/invoices"
+              className="px-4 py-2 bg-gradient-to-r from-[#056468] to-[#044e51] hover:from-[#044e51] hover:to-[#033b3d] text-white font-bold text-xs rounded-xl shadow-md flex items-center gap-2 transition-all shrink-0 cursor-pointer"
+            >
+              <QrCode className="w-4 h-4 text-emerald-300" />
+              <span>Open Invoice Barcode Scanner Hub</span>
+            </a>
           </div>
 
           <div className="overflow-x-auto rounded-xl border border-[#cce7ed]">

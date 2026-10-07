@@ -256,6 +256,14 @@ export async function PATCH(req: NextRequest) {
         },
       });
 
+      // If status changed to Cancelled or Returned, restore barcodes & inventory stock
+      if (status === "Cancelled" || status === "Returned") {
+        await restoreOrderInventoryAndBarcodes(
+          updated.items,
+          updated.orderNumber || updated.id
+        );
+      }
+
       await writeAudit({
         action: "ORDER_UPDATED",
         entity: "Order",
@@ -398,6 +406,84 @@ export async function POST(req: NextRequest) {
   }
 }
 
+// Helper to restore all unit barcodes and replenish inventory quantities when an order is cancelled or deleted
+async function restoreOrderInventoryAndBarcodes(items: any[], orderReference: string) {
+  for (const item of items) {
+    try {
+      // 1. If exact unit barcode is linked, restore it to AVAILABLE
+      if (item.unitBarcodeId) {
+        await prisma.unitBarcode.update({
+          where: { id: item.unitBarcodeId },
+          data: { status: "AVAILABLE", soldAt: null },
+        });
+      }
+
+      // 2. Resolve the ProductVariant
+      let variant = null;
+      if (item.productVariantId) {
+        variant = await prisma.productVariant.findUnique({
+          where: { id: item.productVariantId },
+        });
+      } else if (item.localVariantId) {
+        variant = await prisma.productVariant.findUnique({
+          where: { id: item.localVariantId },
+        });
+      } else if (item.sku || item.channelSku) {
+        const skuToFind = item.sku || item.channelSku;
+        variant = await prisma.productVariant.findUnique({
+          where: { sku: skuToFind },
+        });
+      }
+
+      if (variant) {
+        // Check if this variant has serialized unit barcodes
+        const totalUnitsCount = await prisma.unitBarcode.count({
+          where: { productVariantId: variant.id },
+        });
+
+        const inv = await prisma.inventory.findUnique({
+          where: { productVariantId: variant.id },
+        });
+        const prevStock = inv?.quantity ?? 0;
+
+        let newStock = prevStock;
+        if (totalUnitsCount > 0) {
+          // Recount available unit barcodes
+          const availableUnitsCount = await prisma.unitBarcode.count({
+            where: { productVariantId: variant.id, status: "AVAILABLE" },
+          });
+          newStock = availableUnitsCount;
+        } else {
+          // Non-serialized item: add back the item quantity
+          newStock = prevStock + (item.quantity || 1);
+        }
+
+        await prisma.inventory.upsert({
+          where: { productVariantId: variant.id },
+          update: { quantity: newStock },
+          create: { productVariantId: variant.id, quantity: newStock },
+        });
+
+        // Record inventory transaction
+        await prisma.inventoryTransaction.create({
+          data: {
+            productVariantId: variant.id,
+            unitBarcodeId: item.unitBarcodeId || null,
+            transactionType: "RETURN",
+            quantity: item.quantity || 1,
+            previousStock: prevStock,
+            newStock,
+            note: `Restored to active stock from deleted order #${orderReference}`,
+            performedBy: "system",
+          },
+        });
+      }
+    } catch (err) {
+      console.warn(`Could not restore stock for item in order #${orderReference}:`, err);
+    }
+  }
+}
+
 export async function DELETE(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
@@ -425,17 +511,11 @@ export async function DELETE(req: NextRequest) {
       });
 
       if (standardOrder) {
-        // Free sold unit barcodes associated with this order
-        const unitBarcodeIds = standardOrder.items
-          .map((i) => i.unitBarcodeId)
-          .filter(Boolean) as string[];
-
-        if (unitBarcodeIds.length > 0) {
-          await prisma.unitBarcode.updateMany({
-            where: { id: { in: unitBarcodeIds } },
-            data: { status: "AVAILABLE", soldAt: null },
-          });
-        }
+        // Restores unit barcodes to AVAILABLE and replenishes inventory stock
+        await restoreOrderInventoryAndBarcodes(
+          standardOrder.items,
+          standardOrder.orderNumber || standardOrder.id
+        );
 
         // Delete order invoices & items & order
         await prisma.invoice.deleteMany({
@@ -455,6 +535,12 @@ export async function DELETE(req: NextRequest) {
       });
 
       if (mpOrder) {
+        // Restores marketplace items stock
+        await restoreOrderInventoryAndBarcodes(
+          mpOrder.items,
+          mpOrder.channelOrderId || mpOrder.id
+        );
+
         await prisma.invoice.deleteMany({
           where: { OR: [{ orderId: mpOrder.id }, { orderId: mpOrder.channelOrderId }] },
         });
@@ -477,7 +563,7 @@ export async function DELETE(req: NextRequest) {
     return NextResponse.json({
       success: true,
       deletedCount,
-      message: `Successfully deleted ${deletedCount} order(s).`,
+      message: `Successfully deleted ${deletedCount} order(s). All item barcodes and stock quantities have been restored to normal.`,
     });
   } catch (err: any) {
     console.error("DELETE /api/orders error:", err);

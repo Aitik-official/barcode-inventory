@@ -9,6 +9,7 @@ import {
   QrCode,
   Boxes,
   FileText,
+  Receipt,
   Users,
   BarChart3,
   HelpCircle,
@@ -201,6 +202,18 @@ export function AppNav() {
           userPerms.includes("ORDERS_VIEW") ||
           currentUser?.role === "ACCOUNTANT" ||
           currentUser?.role === "ADMIN"),
+    },
+    {
+      label: "Invoices",
+      href: "/invoices",
+      icon: Receipt,
+      allowed:
+        isLoggedIn &&
+        (isSuperAdmin ||
+          userPerms.includes("ORDERS_VIEW") ||
+          currentUser?.role === "ACCOUNTANT" ||
+          currentUser?.role === "ADMIN" ||
+          currentUser?.role === "STAFF"),
     },
   ];
 

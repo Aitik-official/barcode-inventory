@@ -114,13 +114,13 @@ export default function UnitBarcodesClient({
 
           <select
             name="status"
-            defaultValue={initialStatus}
-            className="bg-white border border-[#cce7ed] rounded-lg px-3 py-2 text-xs text-[#0b252c] focus:outline-none focus:ring-2 focus:ring-[#056468]"
+            defaultValue={initialStatus || "AVAILABLE"}
+            className="bg-white border border-[#cce7ed] rounded-lg px-3 py-2 text-xs text-[#0b252c] font-semibold focus:outline-none focus:ring-2 focus:ring-[#056468]"
           >
-            <option value="">All Statuses</option>
-            <option value="AVAILABLE">AVAILABLE Only</option>
-            <option value="SOLD">SOLD Only</option>
-            <option value="RETIRED">RETIRED Only</option>
+            <option value="AVAILABLE">Available in Stock (Active)</option>
+            <option value="ALL">All Barcodes (Include Sold)</option>
+            <option value="SOLD">Sold / Scanned Only</option>
+            <option value="RETIRED">Retired Only</option>
           </select>
 
           <button

@@ -429,38 +429,74 @@ export default function ScanPosPage() {
               </div>
 
               {/* 2. ORDER / CUSTOMER INFO */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
-                <div>
-                  <label className="block text-[11px] font-semibold text-slate-600 mb-1">
-                    {orderSource === "POS" ? "Customer Name" : `${orderSource} Buyer Name`}
-                  </label>
-                  <input
-                    type="text"
-                    value={customerName}
-                    onChange={(e) => setCustomerName(e.target.value)}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 text-xs text-slate-900 font-medium focus:outline-none focus:border-[#056468]"
-                  />
+              <div className="space-y-2.5 pt-1">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-[11px] font-semibold text-slate-600 mb-1">
+                      {orderSource === "POS" ? "Customer Name" : `${orderSource} Buyer Name`}
+                    </label>
+                    <input
+                      type="text"
+                      value={customerName}
+                      onChange={(e) => setCustomerName(e.target.value)}
+                      placeholder="e.g. Rahul Sharma"
+                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 text-xs text-slate-900 font-medium focus:outline-none focus:border-[#056468]"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-semibold text-slate-600 mb-1">
+                      {orderSource === "POS" ? "Order Ref / Receipt #" : `${orderSource} Order ID`}
+                    </label>
+                    <input
+                      type="text"
+                      value={channelOrderId}
+                      onChange={(e) => setChannelOrderId(e.target.value)}
+                      placeholder={
+                        orderSource === "AMAZON"
+                          ? "e.g. 402-9842184-1849102"
+                          : orderSource === "FLIPKART"
+                          ? "e.g. OD482910398214"
+                          : orderSource === "WEBSITE"
+                          ? "e.g. WEB-1029"
+                          : "Auto-generated (e.g. POS-2026-0001)"
+                      }
+                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 text-xs font-mono font-bold text-[#056468] focus:outline-none focus:border-[#056468]"
+                    />
+                  </div>
                 </div>
 
-                <div>
-                  <label className="block text-[11px] font-semibold text-slate-600 mb-1">
-                    {orderSource === "POS" ? "Order Ref / Receipt #" : `${orderSource} Order ID`}
-                  </label>
-                  <input
-                    type="text"
-                    value={channelOrderId}
-                    onChange={(e) => setChannelOrderId(e.target.value)}
-                    placeholder={
-                      orderSource === "AMAZON"
-                        ? "e.g. 402-9842184-1849102"
-                        : orderSource === "FLIPKART"
-                        ? "e.g. OD482910398214"
-                        : orderSource === "WEBSITE"
-                        ? "e.g. WEB-1029"
-                        : "Auto-generated"
-                    }
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 text-xs font-mono font-bold text-[#056468] focus:outline-none focus:border-[#056468]"
-                  />
+                {/* Customer Phone & Address */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-[11px] font-semibold text-slate-600 mb-1">
+                      Customer Phone (WhatsApp / SMS Bill)
+                    </label>
+                    <input
+                      type="tel"
+                      value={customerPhone}
+                      onChange={(e) => setCustomerPhone(e.target.value)}
+                      placeholder="+91 98200 12345 (Optional)"
+                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 text-xs text-slate-900 font-mono focus:outline-none focus:border-[#056468]"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-semibold text-slate-600 mb-1">
+                      Delivery Address / Counter Details
+                    </label>
+                    <input
+                      type="text"
+                      value={shippingAddress}
+                      onChange={(e) => setShippingAddress(e.target.value)}
+                      placeholder={
+                        orderSource === "POS"
+                          ? "In-Store Counter Pickup / Mumbai"
+                          : "Delivery Address, Pincode"
+                      }
+                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 text-xs text-slate-900 focus:outline-none focus:border-[#056468]"
+                    />
+                  </div>
                 </div>
               </div>
 
