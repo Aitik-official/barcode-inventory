@@ -151,6 +151,7 @@ export function PrintShippingInvoiceDialog({
   const [docMode, setDocMode] = useState<"A4_INVOICE" | "THERMAL_LABEL">(
     initialMode
   );
+  const [a4Layout, setA4Layout] = useState<"2_IN_1_DUAL" | "FULL_PAGE">("2_IN_1_DUAL");
   const [copies, setCopies] = useState(1);
   const [showSettings, setShowSettings] = useState(false);
   const [isSavedInDb, setIsSavedInDb] = useState(data.isSavedInDb || false);
@@ -398,6 +399,354 @@ export function PrintShippingInvoiceDialog({
     }
 
     if (docMode === "A4_INVOICE") {
+      if (a4Layout === "2_IN_1_DUAL") {
+        // DUAL COPY GENERATOR (2 Copies on 1 Single A4 Sheet: Top = Buyer, Bottom = Seller)
+        const renderHalfCopyHtml = (
+          copyBadge: string,
+          copySubtext: string,
+          isBuyer: boolean
+        ) => {
+          const itemsRows = displayItems
+            .map((item, idx) => {
+              const itemTotal =
+                item.total || (item.unitPrice || 0) * (item.quantity || 1);
+              const itemTaxable = (itemTotal / 1.18).toFixed(2);
+              const itemCgst = ((itemTotal - Number(itemTaxable)) / 2).toFixed(2);
+              const itemSgst = itemCgst;
+              return `
+                <tr>
+                  <td style="padding: 2px 3px; text-align: center; border: 0.8px solid #0f172a; font-weight: 700; font-size: 7.5px;">${
+                    idx + 1
+                  }</td>
+                  <td style="padding: 2px 3px; text-align: center; border: 0.8px solid #0f172a; font-family: monospace; font-size: 7.5px;">${
+                    item.hsn || "8525"
+                  }</td>
+                  <td style="padding: 2px 3px; border: 0.8px solid #0f172a; font-family: monospace; font-size: 7.5px; font-weight: 700;">
+                    ${item.sku}
+                  </td>
+                  <td style="padding: 2px 3px; border: 0.8px solid #0f172a;">
+                    <div style="font-weight: 700; color: #0f172a; font-size: 8px; line-height: 1.15;">${
+                      item.title
+                    }</div>
+                    ${
+                      item.unitBarcode
+                        ? `<div style="font-family: monospace; font-size: 7px; color: #475569;">Barcode: ${item.unitBarcode}</div>`
+                        : ""
+                    }
+                  </td>
+                  <td style="padding: 2px 3px; text-align: center; border: 0.8px solid #0f172a; font-weight: 800; font-size: 8px;">${
+                    item.quantity
+                  }</td>
+                  <td style="padding: 2px 3px; text-align: right; border: 0.8px solid #0f172a; font-family: monospace; font-size: 7.5px;">₹${(
+                    item.unitPrice / 1.18
+                  ).toFixed(2)}</td>
+                  <td style="padding: 2px 3px; text-align: right; border: 0.8px solid #0f172a; font-family: monospace; font-size: 7.5px;">₹${itemTaxable}</td>
+                  <td style="padding: 2px 3px; text-align: right; border: 0.8px solid #0f172a; font-family: monospace; font-size: 7.5px;">₹${itemCgst}</td>
+                  <td style="padding: 2px 3px; text-align: right; border: 0.8px solid #0f172a; font-family: monospace; font-size: 7.5px;">₹${itemSgst}</td>
+                  <td style="padding: 2px 3px; text-align: right; border: 0.8px solid #0f172a; font-family: monospace; font-weight: 800; font-size: 8px; color: #0f172a;">₹${itemTotal.toFixed(
+                    2
+                  )}</td>
+                </tr>
+              `;
+            })
+            .join("");
+
+          return `
+            <div class="invoice-half-box">
+              <!-- TOP 3-BOX HEADER -->
+              <div style="display: grid; grid-template-columns: 1.2fr 1.15fr 0.95fr; border-bottom: 1px solid #0f172a;">
+                <!-- BOX 1: SELLER DETAILS -->
+                <div style="padding: 3px 5px; border-right: 1px solid #0f172a;">
+                  ${
+                    logoUrl
+                      ? `<div style="margin-bottom: 2px;"><img src="${logoUrl}" alt="Logo" style="max-height: 18px; max-width: 80px; object-fit: contain; display: block;" onerror="this.style.display='none'" /></div>`
+                      : ""
+                  }
+                  <div style="font-size: 11px; font-weight: 900; color: #0f172a; text-transform: uppercase; line-height: 1.1;">${sellerName}</div>
+                  ${
+                    sellerTagline
+                      ? `<div style="font-size: 7px; font-weight: 700; color: #475569; line-height: 1;">${sellerTagline}</div>`
+                      : ""
+                  }
+                  <div style="font-size: 7px; color: #334155; margin-top: 1.5px; line-height: 1.2;">
+                    ${sellerAddress}
+                  </div>
+                  <div style="font-size: 7px; color: #334155;">
+                    Tel: <strong>${sellerPhone}</strong> | Email: <strong>${sellerEmail}</strong>
+                  </div>
+                  <div style="font-size: 7px; font-weight: 800; color: #0f172a; margin-top: 1px;">
+                    GSTIN: <span style="font-family: monospace;">${sellerGstin}</span> | State: <strong>${sellerStateName}</strong> | PAN: <span style="font-family: monospace;">${sellerPan}</span>
+                  </div>
+                </div>
+
+                <!-- BOX 2: BUYER / CONSIGNEE (BILL & SHIP TO) -->
+                <div style="padding: 3px 5px; border-right: 1px solid #0f172a; background: #fafbfc;">
+                  <div style="font-size: 6.5px; font-weight: 800; color: #64748b; text-transform: uppercase; border-bottom: 0.5px solid #cbd5e1; padding-bottom: 1px; margin-bottom: 1.5px;">
+                    BUYER / CONSIGNEE (BILL & SHIP TO):
+                  </div>
+                  <div style="font-size: 10px; font-weight: 900; color: #0f172a; text-transform: uppercase; line-height: 1.1;">
+                    ${data.buyerName}
+                  </div>
+                  <div style="font-size: 7px; color: #334155; line-height: 1.2; margin-top: 1.5px;">
+                    ${data.shippingAddress}${
+            data.city ? `, ${data.city}, ${data.state || ""} - ${data.pincode || ""}` : ""
+          }
+                  </div>
+                  <div style="font-size: 7px; color: #334155;">
+                    ${
+                      data.buyerPhone
+                        ? `Contact: <strong>${data.buyerPhone}</strong> | `
+                        : ""
+                    }State: <strong>${data.state || "Maharashtra (27)"}</strong>
+                  </div>
+                  <div style="font-size: 7px; color: #0f172a; font-weight: 700; margin-top: 1px;">
+                    Place of Supply: <strong>${
+                      data.state || "Maharashtra (27)"
+                    }</strong> | Reverse Charge: <strong>NO</strong>
+                  </div>
+                </div>
+
+                <!-- BOX 3: INVOICE DETAILS & METADATA -->
+                <div style="padding: 3px 5px; background: #fff;">
+                  <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #0f172a; padding-bottom: 2px; margin-bottom: 2px;">
+                    <span style="font-size: 9px; font-weight: 900; color: #0f172a; letter-spacing: 0.5px;">TAX INVOICE</span>
+                    <span style="font-size: 7px; font-weight: 800; padding: 1px 4px; background: ${
+                      isBuyer ? "#0f172a" : "#475569"
+                    }; color: #fff; border-radius: 2px; text-transform: uppercase;">
+                      ${copySubtext}
+                    </span>
+                  </div>
+                  <div style="font-size: 6.5px; font-weight: 800; color: #64748b; text-transform: uppercase; margin-bottom: 1.5px;">
+                    ${copyBadge}
+                  </div>
+                  <div style="font-size: 7px; font-family: monospace; line-height: 1.35;">
+                    <div><strong>INVOICE NO:</strong> <span style="font-weight: 800; color: #0f172a;">${invoiceNum}</span></div>
+                    <div><strong>DATE:</strong> ${new Date(
+                      data.invoiceDate || Date.now()
+                    ).toLocaleDateString("en-IN")}</div>
+                    <div><strong>ORDER REF:</strong> #${data.orderId}</div>
+                    <div><strong>COURIER:</strong> ${courierName}</div>
+                    <div><strong>AWB NO:</strong> <span style="font-weight: 700;">${tracking}</span></div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- MAIN ITEMS TABLE: ERP HIGH DENSITY GRID -->
+              <table style="width: 100%; border-collapse: collapse; font-size: 7.5px;">
+                <thead>
+                  <tr style="background: #f1f5f9; color: #0f172a; font-size: 7px; font-weight: 800; text-transform: uppercase;">
+                    <th style="padding: 2.5px 3px; border: 0.8px solid #0f172a; width: 18px; text-align: center;">#</th>
+                    <th style="padding: 2.5px 3px; border: 0.8px solid #0f172a; width: 35px; text-align: center;">HSN</th>
+                    <th style="padding: 2.5px 3px; border: 0.8px solid #0f172a; width: 65px; text-align: left;">SKU / CODE</th>
+                    <th style="padding: 2.5px 3px; border: 0.8px solid #0f172a; text-align: left;">PRODUCT DESCRIPTION & SPECIFICATIONS</th>
+                    <th style="padding: 2.5px 3px; border: 0.8px solid #0f172a; width: 28px; text-align: center;">QTY</th>
+                    <th style="padding: 2.5px 3px; border: 0.8px solid #0f172a; width: 45px; text-align: right;">RATE (₹)</th>
+                    <th style="padding: 2.5px 3px; border: 0.8px solid #0f172a; width: 50px; text-align: right;">TAXABLE</th>
+                    <th style="padding: 2.5px 3px; border: 0.8px solid #0f172a; width: 42px; text-align: right;">CGST (9%)</th>
+                    <th style="padding: 2.5px 3px; border: 0.8px solid #0f172a; width: 42px; text-align: right;">SGST (9%)</th>
+                    <th style="padding: 2.5px 3px; border: 0.8px solid #0f172a; width: 55px; text-align: right;">TOTAL (₹)</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${itemsRows}
+                </tbody>
+                <tfoot>
+                  <tr style="background: #f8fafc; font-weight: 800; font-size: 7.5px;">
+                    <td colspan="4" style="padding: 2px 4px; border: 0.8px solid #0f172a; text-align: left;">
+                      Totals: <strong>${displayItems.length} Item(s)</strong>
+                    </td>
+                    <td style="padding: 2px 3px; border: 0.8px solid #0f172a; text-align: center; font-weight: 900;">${displayItems.reduce(
+                      (a, b) => a + b.quantity,
+                      0
+                    )}</td>
+                    <td style="border: 0.8px solid #0f172a;"></td>
+                    <td style="padding: 2px 3px; border: 0.8px solid #0f172a; text-align: right; font-family: monospace;">₹${taxableValue.toFixed(
+                      2
+                    )}</td>
+                    <td style="padding: 2px 3px; border: 0.8px solid #0f172a; text-align: right; font-family: monospace;">₹${cgst.toFixed(
+                      2
+                    )}</td>
+                    <td style="padding: 2px 3px; border: 0.8px solid #0f172a; text-align: right; font-family: monospace;">₹${sgst.toFixed(
+                      2
+                    )}</td>
+                    <td style="padding: 2px 3px; border: 0.8px solid #0f172a; text-align: right; font-family: monospace; font-weight: 900; color: #0f172a;">₹${grandTotal.toFixed(
+                      2
+                    )}</td>
+                  </tr>
+                </tfoot>
+              </table>
+
+              <!-- BOTTOM 3-BOX SUMMARY & SETTLEMENT FOOTER -->
+              <div style="display: grid; grid-template-columns: 1.35fr 0.9fr 0.95fr; border-top: 1px solid #0f172a;">
+                <!-- COL 1: DECLARATION, WORDS, BANK & TERMS -->
+                <div style="padding: 3px 5px; border-right: 1px solid #0f172a; font-size: 7px; line-height: 1.25;">
+                  <div>
+                    <strong style="color: #0f172a;">Declaration:</strong> I/We hereby certify that goods/products mentioned in this invoice are warranted to be genuine and of standard quality.
+                  </div>
+                  <div style="border-top: 0.5px dashed #94a3b8; margin-top: 1.5px; padding-top: 1.5px;">
+                    <strong style="color: #0f172a;">Amount in Words:</strong> <span style="font-weight: 700;">${numberToWords(
+                      grandTotal
+                    )}</span>
+                  </div>
+                  <div style="border-top: 0.5px dashed #94a3b8; margin-top: 1.5px; padding-top: 1.5px; color: #334155;">
+                    <strong>Settlement Bank:</strong> ${bankName} | <strong>A/C:</strong> <span style="font-family: monospace; font-weight: 700;">${bankAccount}</span> | <strong>IFSC:</strong> <span style="font-family: monospace; font-weight: 700;">${bankIfsc}</span>${
+                      showUpi && bankUpi
+                        ? ` | <strong>UPI:</strong> ${bankUpi}`
+                        : ""
+                    }
+                  </div>
+                  <div style="font-size: 6.5px; color: #64748b; margin-top: 1.5px;">
+                    <strong>Terms:</strong> Standard manufacturer warranty applies. Subject to Mumbai Jurisdiction. E.&O.E.
+                  </div>
+                </div>
+
+                <!-- COL 2: TAX VERIFICATION & DISPATCH -->
+                <div style="padding: 3px 5px; border-right: 1px solid #0f172a; background: #fafbfc; font-size: 7px; line-height: 1.3;">
+                  <div style="display: flex; justify-content: space-between;">
+                    <span>Taxable Value:</span> <strong style="font-family: monospace;">₹${taxableValue.toFixed(2)}</strong>
+                  </div>
+                  <div style="display: flex; justify-content: space-between;">
+                    <span>CGST (9%):</span> <span style="font-family: monospace;">₹${cgst.toFixed(2)}</span>
+                  </div>
+                  <div style="display: flex; justify-content: space-between;">
+                    <span>SGST (9%):</span> <span style="font-family: monospace;">₹${sgst.toFixed(2)}</span>
+                  </div>
+                  <div style="display: flex; justify-content: space-between; border-top: 0.5px solid #cbd5e1; margin-top: 1.5px; padding-top: 1px; font-weight: 800;">
+                    <span>Total GST:</span> <span style="font-family: monospace;">₹${totalGst.toFixed(2)}</span>
+                  </div>
+                  <div style="border-top: 0.5px solid #cbd5e1; margin-top: 2px; padding-top: 1.5px; font-size: 6.5px; color: #475569;">
+                    Reverse Charge: <strong>NO</strong> | Mode: <strong>${data.paymentMethod || "PREPAID"}</strong><br/>
+                    Packed by: <strong>Verified</strong> | Courier: <strong>${courierName}</strong>
+                  </div>
+                </div>
+
+                <!-- COL 3: TOTALS & SIGNATURE -->
+                <div style="padding: 3px 5px; font-size: 7.5px; line-height: 1.35; text-align: right;">
+                  <div style="display: flex; justify-content: space-between; font-size: 7px;">
+                    <span>Gross Taxable:</span> <span style="font-family: monospace;">₹${taxableValue.toFixed(2)}</span>
+                  </div>
+                  <div style="display: flex; justify-content: space-between; font-size: 7px;">
+                    <span>Add GST (18%):</span> <span style="font-family: monospace;">₹${totalGst.toFixed(2)}</span>
+                  </div>
+                  <div style="border: 1px solid #0f172a; background: #0f172a; color: #ffffff; padding: 2px 4px; border-radius: 2px; margin-top: 2px; display: flex; justify-content: space-between; align-items: center;">
+                    <span style="font-weight: 800; font-size: 7.5px; letter-spacing: 0.5px;">BILL AMT / TO PAY:</span>
+                    <span style="font-family: monospace; font-weight: 900; font-size: 9.5px;">₹${grandTotal.toFixed(2)}</span>
+                  </div>
+                  <div style="margin-top: 4px; font-size: 7px;">
+                    <div style="font-weight: 800; color: #0f172a;">For ${sellerName}</div>
+                    <div style="margin-top: 8px; border-top: 0.8px solid #94a3b8; display: inline-block; padding-top: 1px; color: #475569; font-weight: 700;">
+                      ${signatoryName} (${signatoryDesignation})
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          `;
+        };
+
+        const pagesHtml = Array(copies)
+          .fill(null)
+          .map(
+            () => `
+          <div class="a4-page dual-layout">
+            ${renderHalfCopyHtml(
+              "ORIGINAL FOR RECIPIENT",
+              "BUYER'S COPY",
+              true
+            )}
+
+            <!-- SCISSOR CUT DIVIDER -->
+            <div class="cut-divider">
+              <span style="font-size: 11px;">✂</span>
+              <span class="cut-text">CUT ALONG DOTTED LINE • TOP: BUYER COPY • BOTTOM: SELLER COPY</span>
+              <span style="font-size: 11px;">✂</span>
+            </div>
+
+            ${renderHalfCopyHtml(
+              "DUPLICATE FOR SUPPLIER",
+              "SELLER'S COPY",
+              false
+            )}
+          </div>
+        `
+          )
+          .join("");
+
+        printWindow.document.write(`
+          <!DOCTYPE html>
+          <html>
+            <head>
+              <title>Tax Invoice (2-in-1 Dual Copy) - ${invoiceNum} - ${data.orderId}</title>
+              <style>
+                @page {
+                  size: A4 portrait;
+                  margin: 4mm 5mm;
+                }
+                * {
+                  box-sizing: border-box;
+                  margin: 0;
+                  padding: 0;
+                }
+                body {
+                  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+                  background: #fff;
+                  color: #0f172a;
+                  -webkit-print-color-adjust: exact;
+                  print-color-adjust: exact;
+                }
+                .a4-page {
+                  width: 100%;
+                  box-sizing: border-box;
+                  page-break-after: always;
+                  break-after: page;
+                  display: flex;
+                  flex-direction: column;
+                  justify-content: space-between;
+                  height: 289mm;
+                  padding: 1mm 0;
+                }
+                .invoice-half-box {
+                  border: 1.5px solid #0f172a;
+                  border-radius: 2px;
+                  background: #fff;
+                  box-sizing: border-box;
+                  height: 138mm;
+                  display: flex;
+                  flex-direction: column;
+                  justify-content: space-between;
+                }
+                .cut-divider {
+                  display: flex;
+                  align-items: center;
+                  justify-content: center;
+                  gap: 8px;
+                  margin: 1.5mm 0;
+                  border-top: 1.5px dashed #0f172a;
+                  padding-top: 1.5mm;
+                  color: #0f172a;
+                  font-size: 8px;
+                  font-weight: 800;
+                  letter-spacing: 1px;
+                }
+              </style>
+            </head>
+            <body>
+              ${pagesHtml}
+              <script>
+                setTimeout(() => {
+                  window.print();
+                  window.close();
+                }, 400);
+              </script>
+            </body>
+          </html>
+        `);
+        printWindow.document.close();
+        onClose();
+        return;
+      }
+
+      // FULL PAGE A4 INVOICE (1 Copy - Full ERP layout)
       const itemsHtml = displayItems
         .map((item, idx) => {
           const itemTotal =
@@ -407,44 +756,35 @@ export function PrintShippingInvoiceDialog({
           const itemSgst = itemCgst;
           return `
             <tr>
-              <td style="padding: 6px 8px; text-align: center; border: 1px solid #cbd5e1; font-weight: 600;">${
+              <td style="padding: 4px 6px; text-align: center; border: 1px solid #0f172a; font-weight: 700; font-size: 10px;">${
                 idx + 1
               }</td>
-              <td style="padding: 6px 8px; border: 1px solid #cbd5e1;">
-                <div style="font-weight: 700; color: #0f172a; font-size: 11px;">${
-                  item.title
-                }</div>
-                <div style="font-family: monospace; font-size: 10px; color: #475569; margin-top: 1px;">
-                  SKU: <strong>${item.sku}</strong>
-                  ${
-                    item.unitBarcode
-                      ? ` &bull; Barcode: <strong>${item.unitBarcode}</strong>`
-                      : ""
-                  }
-                  ${
-                    item.asinOrFsn
-                      ? ` &bull; ASIN/FSN: <strong>${item.asinOrFsn}</strong>`
-                      : ""
-                  }
-                </div>
-              </td>
-              <td style="padding: 6px 8px; text-align: center; border: 1px solid #cbd5e1; font-family: monospace; font-size: 11px;">${
+              <td style="padding: 4px 6px; text-align: center; border: 1px solid #0f172a; font-family: monospace; font-size: 10px;">${
                 item.hsn || "8525"
               }</td>
-              <td style="padding: 6px 8px; text-align: center; border: 1px solid #cbd5e1; font-weight: 700; font-size: 11px;">${
+              <td style="padding: 4px 6px; border: 1px solid #0f172a; font-family: monospace; font-size: 10px; font-weight: 700;">
+                ${item.sku}
+              </td>
+              <td style="padding: 4px 6px; border: 1px solid #0f172a;">
+                <div style="font-weight: 700; color: #0f172a; font-size: 11px; line-height: 1.2;">${
+                  item.title
+                }</div>
+                ${
+                  item.unitBarcode
+                    ? `<div style="font-family: monospace; font-size: 9px; color: #475569;">Barcode: ${item.unitBarcode}</div>`
+                    : ""
+                }
+              </td>
+              <td style="padding: 4px 6px; text-align: center; border: 1px solid #0f172a; font-weight: 800; font-size: 11px;">${
                 item.quantity
               }</td>
-              <td style="padding: 6px 8px; text-align: right; border: 1px solid #cbd5e1; font-family: monospace; font-size: 11px;">₹${(
+              <td style="padding: 4px 6px; text-align: right; border: 1px solid #0f172a; font-family: monospace; font-size: 10.5px;">₹${(
                 item.unitPrice / 1.18
               ).toFixed(2)}</td>
-              <td style="padding: 6px 8px; text-align: right; border: 1px solid #cbd5e1; font-family: monospace; font-size: 11px;">₹${itemTaxable}</td>
-              <td style="padding: 6px 8px; text-align: right; border: 1px solid #cbd5e1; font-family: monospace; font-size: 10px;">
-                9% (₹${itemCgst})
-              </td>
-              <td style="padding: 6px 8px; text-align: right; border: 1px solid #cbd5e1; font-family: monospace; font-size: 10px;">
-                9% (₹${itemSgst})
-              </td>
-              <td style="padding: 6px 8px; text-align: right; border: 1px solid #cbd5e1; font-family: monospace; font-weight: 700; font-size: 11px; color: #0f172a;">₹${itemTotal.toFixed(
+              <td style="padding: 4px 6px; text-align: right; border: 1px solid #0f172a; font-family: monospace; font-size: 10.5px;">₹${itemTaxable}</td>
+              <td style="padding: 4px 6px; text-align: right; border: 1px solid #0f172a; font-family: monospace; font-size: 10px;">₹${itemCgst}</td>
+              <td style="padding: 4px 6px; text-align: right; border: 1px solid #0f172a; font-family: monospace; font-size: 10px;">₹${itemSgst}</td>
+              <td style="padding: 4px 6px; text-align: right; border: 1px solid #0f172a; font-family: monospace; font-weight: 800; font-size: 11px; color: #0f172a;">₹${itemTotal.toFixed(
                 2
               )}</td>
             </tr>
@@ -455,186 +795,192 @@ export function PrintShippingInvoiceDialog({
       const pagesHtml = Array(copies)
         .fill(null)
         .map(
-          (_, pageIdx) => `
-        <div class="a4-page">
-          <!-- TOP HEADER -->
-          <div style="display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #056468; padding-bottom: 8px;">
-            <div style="max-width: 62%;">
-              ${logoUrl ? `<div style="margin-bottom: 4px;"><img src="${logoUrl}" alt="Logo" style="max-height: 34px; max-width: 140px; object-fit: contain; display: block;" onerror="this.style.display='none'" /></div>` : ""}
-              <div style="font-size: 18px; font-weight: 900; color: #056468; letter-spacing: -0.4px; line-height: 1.2;">${sellerName}</div>
-              ${sellerTagline ? `<div style="font-size: 9px; font-weight: 700; color: #475569; margin-top: 1px; margin-bottom: 2px;">${sellerTagline}</div>` : ""}
-              <div style="font-size: 9px; color: #334155; margin-top: 2px; max-width: 440px; line-height: 1.35;">
-                ${sellerAddress}<br/>
+          () => `
+        <div class="a4-page-full">
+          <!-- TOP 3-BOX HEADER -->
+          <div style="display: grid; grid-template-columns: 1.25fr 1.2fr 0.95fr; border-bottom: 1.5px solid #0f172a;">
+            <!-- BOX 1: SELLER -->
+            <div style="padding: 6px 8px; border-right: 1.5px solid #0f172a;">
+              ${
+                logoUrl
+                  ? `<div style="margin-bottom: 4px;"><img src="${logoUrl}" alt="Logo" style="max-height: 28px; max-width: 120px; object-fit: contain; display: block;" onerror="this.style.display='none'" /></div>`
+                  : ""
+              }
+              <div style="font-size: 15px; font-weight: 900; color: #0f172a; text-transform: uppercase; line-height: 1.1;">${sellerName}</div>
+              ${
+                sellerTagline
+                  ? `<div style="font-size: 9px; font-weight: 700; color: #475569; margin-top: 1px;">${sellerTagline}</div>`
+                  : ""
+              }
+              <div style="font-size: 9px; color: #334155; margin-top: 3px; line-height: 1.3;">
+                ${sellerAddress}
+              </div>
+              <div style="font-size: 9px; color: #334155; margin-top: 1px;">
                 Tel: <strong>${sellerPhone}</strong> | Email: <strong>${sellerEmail}</strong>
               </div>
-              <div style="margin-top: 3px; font-size: 9px; color: #0f172a; font-weight: 700;">
-                GSTIN: <span style="font-family: monospace; font-size: 10px; color: #056468;">${sellerGstin}</span> | State: <strong>${sellerStateName}</strong> | PAN: <span style="font-family: monospace;">${sellerPan}</span>
+              <div style="font-size: 9px; font-weight: 800; color: #0f172a; margin-top: 2px;">
+                GSTIN: <span style="font-family: monospace;">${sellerGstin}</span> | State: <strong>${sellerStateName}</strong> | PAN: <span style="font-family: monospace;">${sellerPan}</span>
               </div>
             </div>
-            <div style="text-align: right; min-width: 160px;">
-              <div style="background: #056468; color: #fff; display: inline-block; padding: 3px 10px; font-weight: 800; font-size: 12px; border-radius: 4px; letter-spacing: 0.5px;">
-                TAX INVOICE
-              </div>
-              <div style="font-size: 9px; font-weight: 700; color: #64748b; margin-top: 3px; text-transform: uppercase;">
-                Original for Recipient
-              </div>
-              <div style="margin-top: 6px; font-size: 10.5px; line-height: 1.4;">
-                <strong>Invoice #:</strong> <span style="font-family: monospace; font-weight: 700; color: #056468;">${invoiceNum}</span><br/>
-                <strong>Invoice Date:</strong> ${new Date(
-                  data.invoiceDate || Date.now()
-                ).toLocaleDateString("en-IN")}<br/>
-                <strong>Order Ref:</strong> #${data.orderId}
-              </div>
-            </div>
-          </div>
 
-          <!-- META GRID: BILL TO / SHIP TO / ORDER DETAILS -->
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 10px 0; border: 1px solid #cbd5e1; border-radius: 6px; padding: 8px 10px; background: #f8fafc; font-size: 10px; line-height: 1.4;">
-            <div>
-              <div style="font-weight: 800; color: #056468; text-transform: uppercase; font-size: 9px; border-bottom: 1px solid #e2e8f0; padding-bottom: 2px; margin-bottom: 3px;">
-                Billed To (Customer Details):
+            <!-- BOX 2: BUYER -->
+            <div style="padding: 6px 8px; border-right: 1.5px solid #0f172a; background: #fafbfc;">
+              <div style="font-size: 8px; font-weight: 800; color: #64748b; text-transform: uppercase; border-bottom: 0.8px solid #cbd5e1; padding-bottom: 2px; margin-bottom: 3px;">
+                BUYER / CONSIGNEE (BILL & SHIP TO):
               </div>
-              <div style="font-size: 12px; font-weight: 800; color: #0f172a;">${
-                data.buyerName
-              }</div>
-              <div style="color: #475569;">
-                ${data.shippingAddress}<br/>
+              <div style="font-size: 13px; font-weight: 900; color: #0f172a; text-transform: uppercase; line-height: 1.1;">
+                ${data.buyerName}
+              </div>
+              <div style="font-size: 9.5px; color: #334155; line-height: 1.3; margin-top: 3px;">
+                ${data.shippingAddress}${
+            data.city ? `, ${data.city}, ${data.state || ""} - ${data.pincode || ""}` : ""
+          }
+              </div>
+              <div style="font-size: 9px; color: #334155; margin-top: 2px;">
                 ${
-                  data.city
-                    ? `${data.city}, ${data.state || ""} - ${
-                        data.pincode || ""
-                      }`
+                  data.buyerPhone
+                    ? `Contact: <strong>${data.buyerPhone}</strong> | `
                     : ""
-                }
+                }State: <strong>${data.state || "Maharashtra (27)"}</strong>
               </div>
-              ${
-                data.buyerPhone
-                  ? `<div>Contact: <strong>${data.buyerPhone}</strong></div>`
-                  : ""
-              }
-              ${
-                data.buyerEmail
-                  ? `<div>Email: <strong>${data.buyerEmail}</strong></div>`
-                  : ""
-              }
-              <div>Place of Supply: <strong>${
-                data.state || "Maharashtra (27)"
-              }</strong></div>
+              <div style="font-size: 9px; color: #0f172a; font-weight: 700; margin-top: 2px;">
+                Place of Supply: <strong>${
+                  data.state || "Maharashtra (27)"
+                }</strong> | Reverse Charge: <strong>NO</strong>
+              </div>
             </div>
 
-            <div>
-              <div style="font-weight: 800; color: #056468; text-transform: uppercase; font-size: 9px; border-bottom: 1px solid #e2e8f0; padding-bottom: 2px; margin-bottom: 3px;">
-                Dispatch & Transport Details:
+            <!-- BOX 3: META -->
+            <div style="padding: 6px 8px; background: #fff;">
+              <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1.5px solid #0f172a; padding-bottom: 3px; margin-bottom: 3px;">
+                <span style="font-size: 12px; font-weight: 900; color: #0f172a; letter-spacing: 0.5px;">TAX INVOICE</span>
+                <span style="font-size: 8.5px; font-weight: 800; padding: 2px 6px; background: #0f172a; color: #fff; border-radius: 3px; text-transform: uppercase;">
+                  ORIGINAL
+                </span>
               </div>
-              <div>Channel: <strong>${
-                data.channel || "DIRECT DISPATCH"
-              }</strong></div>
-              <div>Courier / Transporter: <strong>${courierName}</strong></div>
-              <div>AWB / Tracking Number: <strong style="font-family: monospace;">${tracking}</strong></div>
-              <div>Payment Mode: <strong style="color: #056468;">${
-                data.paymentMethod || "PREPAID"
-              }</strong></div>
-              <div>Reverse Charge Applicable: <strong>NO</strong></div>
+              <div style="font-size: 8px; font-weight: 800; color: #64748b; text-transform: uppercase; margin-bottom: 3px;">
+                ORIGINAL FOR RECIPIENT
+              </div>
+              <div style="font-size: 9px; font-family: monospace; line-height: 1.45;">
+                <div><strong>INVOICE NO:</strong> <span style="font-weight: 800; color: #0f172a;">${invoiceNum}</span></div>
+                <div><strong>DATE:</strong> ${new Date(
+                  data.invoiceDate || Date.now()
+                ).toLocaleDateString("en-IN")}</div>
+                <div><strong>ORDER REF:</strong> #${data.orderId}</div>
+                <div><strong>COURIER:</strong> ${courierName}</div>
+                <div><strong>AWB NO:</strong> <span style="font-weight: 700;">${tracking}</span></div>
+              </div>
             </div>
           </div>
 
           <!-- TABLE OF GOODS -->
-          <table style="width: 100%; border-collapse: collapse; margin-top: 6px; font-size: 10px;">
+          <table style="width: 100%; border-collapse: collapse; font-size: 9.5px;">
             <thead>
-              <tr style="background: #056468; color: #ffffff;">
-                <th style="padding: 6px; border: 1px solid #056468; width: 30px;">#</th>
-                <th style="padding: 6px; border: 1px solid #056468; text-align: left;">Item Description & Specifications</th>
-                <th style="padding: 6px; border: 1px solid #056468; text-align: center; width: 50px;">HSN</th>
-                <th style="padding: 6px; border: 1px solid #056468; text-align: center; width: 40px;">Qty</th>
-                <th style="padding: 6px; border: 1px solid #056468; text-align: right; width: 65px;">Unit Rate</th>
-                <th style="padding: 6px; border: 1px solid #056468; text-align: right; width: 70px;">Taxable</th>
-                <th style="padding: 6px; border: 1px solid #056468; text-align: right; width: 65px;">CGST (9%)</th>
-                <th style="padding: 6px; border: 1px solid #056468; text-align: right; width: 65px;">SGST (9%)</th>
-                <th style="padding: 6px; border: 1px solid #056468; text-align: right; width: 75px;">Total (INR)</th>
+              <tr style="background: #f1f5f9; color: #0f172a; font-size: 8.5px; font-weight: 800; text-transform: uppercase;">
+                <th style="padding: 4px 6px; border: 1px solid #0f172a; width: 25px; text-align: center;">#</th>
+                <th style="padding: 4px 6px; border: 1px solid #0f172a; width: 50px; text-align: center;">HSN</th>
+                <th style="padding: 4px 6px; border: 1px solid #0f172a; width: 85px; text-align: left;">SKU / CODE</th>
+                <th style="padding: 4px 6px; border: 1px solid #0f172a; text-align: left;">PRODUCT DESCRIPTION & SPECIFICATIONS</th>
+                <th style="padding: 4px 6px; border: 1px solid #0f172a; width: 35px; text-align: center;">QTY</th>
+                <th style="padding: 4px 6px; border: 1px solid #0f172a; width: 65px; text-align: right;">RATE (₹)</th>
+                <th style="padding: 4px 6px; border: 1px solid #0f172a; width: 70px; text-align: right;">TAXABLE</th>
+                <th style="padding: 4px 6px; border: 1px solid #0f172a; width: 60px; text-align: right;">CGST (9%)</th>
+                <th style="padding: 4px 6px; border: 1px solid #0f172a; width: 60px; text-align: right;">SGST (9%)</th>
+                <th style="padding: 4px 6px; border: 1px solid #0f172a; width: 75px; text-align: right;">TOTAL (₹)</th>
               </tr>
             </thead>
             <tbody>
               ${itemsHtml}
             </tbody>
             <tfoot>
-              <tr style="background: #f1f5f9; font-weight: 800;">
-                <td colspan="3" style="padding: 6px 8px; border: 1px solid #cbd5e1; text-align: right;">Total / Summary:</td>
-                <td style="padding: 6px; text-align: center; border: 1px solid #cbd5e1;">${displayItems.reduce(
+              <tr style="background: #f8fafc; font-weight: 800; font-size: 10px;">
+                <td colspan="4" style="padding: 4px 6px; border: 1px solid #0f172a; text-align: left;">
+                  Totals: <strong>${displayItems.length} Item(s)</strong>
+                </td>
+                <td style="padding: 4px 6px; border: 1px solid #0f172a; text-align: center; font-weight: 900;">${displayItems.reduce(
                   (a, b) => a + b.quantity,
                   0
                 )}</td>
-                <td style="border: 1px solid #cbd5e1;"></td>
-                <td style="padding: 6px; text-align: right; border: 1px solid #cbd5e1; font-family: monospace;">₹${taxableValue.toFixed(
+                <td style="border: 1px solid #0f172a;"></td>
+                <td style="padding: 4px 6px; border: 1px solid #0f172a; text-align: right; font-family: monospace;">₹${taxableValue.toFixed(
                   2
                 )}</td>
-                <td style="padding: 6px; text-align: right; border: 1px solid #cbd5e1; font-family: monospace;">₹${cgst.toFixed(
+                <td style="padding: 4px 6px; border: 1px solid #0f172a; text-align: right; font-family: monospace;">₹${cgst.toFixed(
                   2
                 )}</td>
-                <td style="padding: 6px; text-align: right; border: 1px solid #cbd5e1; font-family: monospace;">₹${sgst.toFixed(
+                <td style="padding: 4px 6px; border: 1px solid #0f172a; text-align: right; font-family: monospace;">₹${sgst.toFixed(
                   2
                 )}</td>
-                <td style="padding: 6px; text-align: right; border: 1px solid #cbd5e1; font-family: monospace; font-size: 11px; color: #056468;">₹${grandTotal.toFixed(
+                <td style="padding: 4px 6px; border: 1px solid #0f172a; text-align: right; font-family: monospace; font-weight: 900; color: #0f172a;">₹${grandTotal.toFixed(
                   2
                 )}</td>
               </tr>
             </tfoot>
           </table>
 
-          <!-- TOTAL IN WORDS & SUMMARY BOX -->
-          <div style="display: grid; grid-template-columns: 1.4fr 1fr; gap: 12px; margin-top: 10px;">
-            <div style="border: 1px solid #cbd5e1; border-radius: 6px; padding: 8px 10px; background: #fff; font-size: 9.5px;">
-              <div style="margin-bottom: 6px;">
-                <strong style="color: #056468;">Amount in Words:</strong><br/>
-                <span style="font-weight: 700; color: #0f172a;">${numberToWords(
+          <!-- BOTTOM 3-BOX SUMMARY & SETTLEMENT FOOTER -->
+          <div class="summary-footer-box" style="display: grid; grid-template-columns: 1.4fr 1fr 1fr; border-top: 1.5px solid #0f172a; page-break-inside: avoid; break-inside: avoid;">
+            <!-- COL 1: DECLARATION, WORDS, BANK & TERMS -->
+            <div style="padding: 6px 8px; border-right: 1.5px solid #0f172a; font-size: 8.5px; line-height: 1.35;">
+              <div>
+                <strong style="color: #0f172a;">Declaration:</strong> I/We hereby certify that goods/products mentioned in this invoice are warranted to be genuine and of standard quality.
+              </div>
+              <div style="border-top: 0.8px dashed #94a3b8; margin-top: 3px; padding-top: 3px;">
+                <strong style="color: #0f172a;">Amount in Words:</strong> <span style="font-weight: 700;">${numberToWords(
                   grandTotal
                 )}</span>
               </div>
-              <div style="border-top: 1px dashed #cbd5e1; padding-top: 6px; font-size: 9px; color: #475569; line-height: 1.4;">
-                <strong style="color: #056468;">Bank & Payment Details for Settlement:</strong><br/>
-                Bank: <strong>${bankName}</strong> | Branch: <strong>${bankBranch}</strong><br/>
-                A/C No: <strong style="font-family: monospace; font-size: 10px; color: #0f172a;">${bankAccount}</strong> | IFSC: <strong style="font-family: monospace; font-size: 10px; color: #0f172a;">${bankIfsc}</strong>
-                ${showUpi && bankUpi ? `<br/>UPI ID / VPA: <strong style="font-family: monospace; color: #056468;">${bankUpi}</strong>` : ""}
+              <div style="border-top: 0.8px dashed #94a3b8; margin-top: 3px; padding-top: 3px; color: #334155;">
+                <strong>Settlement Bank:</strong> ${bankName} | <strong>A/C:</strong> <span style="font-family: monospace; font-weight: 700;">${bankAccount}</span> | <strong>IFSC:</strong> <span style="font-family: monospace; font-weight: 700;">${bankIfsc}</span>${
+                  showUpi && bankUpi
+                    ? ` | <strong>UPI:</strong> ${bankUpi}`
+                    : ""
+                }
               </div>
-              <div style="border-top: 1px dashed #cbd5e1; margin-top: 6px; padding-top: 4px; font-size: 8px; color: #64748b; line-height: 1.35;">
-                <strong style="color: #334155;">Terms & Conditions:</strong> ${invoiceTerms.replace(/\n/g, "<br/>")}
+              <div style="font-size: 8px; color: #64748b; margin-top: 3px;">
+                <strong>Terms:</strong> Standard manufacturer warranty applies. Subject to Mumbai Jurisdiction. E.&O.E.
               </div>
             </div>
 
-            <!-- SUMMARY AMOUNTS -->
-            <div style="border: 1px solid #cbd5e1; border-radius: 6px; padding: 8px 10px; background: #f8fafc; font-size: 10px; line-height: 1.5;">
+            <!-- COL 2: TAX VERIFICATION & DISPATCH -->
+            <div style="padding: 6px 8px; border-right: 1.5px solid #0f172a; background: #fafbfc; font-size: 8.5px; line-height: 1.4;">
               <div style="display: flex; justify-content: space-between;">
-                <span>Total Taxable Value:</span>
-                <span style="font-family: monospace; font-weight: 600;">₹${taxableValue.toFixed(
-                  2
-                )}</span>
+                <span>Taxable Value:</span> <strong style="font-family: monospace;">₹${taxableValue.toFixed(2)}</strong>
               </div>
               <div style="display: flex; justify-content: space-between;">
-                <span>Central GST (CGST 9%):</span>
-                <span style="font-family: monospace;">₹${cgst.toFixed(2)}</span>
+                <span>CGST (9%):</span> <span style="font-family: monospace;">₹${cgst.toFixed(2)}</span>
               </div>
               <div style="display: flex; justify-content: space-between;">
-                <span>State GST (SGST 9%):</span>
-                <span style="font-family: monospace;">₹${sgst.toFixed(2)}</span>
+                <span>SGST (9%):</span> <span style="font-family: monospace;">₹${sgst.toFixed(2)}</span>
               </div>
-              <div style="display: flex; justify-content: space-between; border-top: 1.5px solid #056468; padding-top: 4px; margin-top: 4px; font-size: 12px; font-weight: 900; color: #056468;">
-                <span>Grand Total:</span>
-                <span style="font-family: monospace;">₹${grandTotal.toFixed(
-                  2
-                )}</span>
+              <div style="display: flex; justify-content: space-between; border-top: 0.8px solid #cbd5e1; margin-top: 2px; padding-top: 2px; font-weight: 800;">
+                <span>Total GST:</span> <span style="font-family: monospace;">₹${totalGst.toFixed(2)}</span>
               </div>
-              <div style="text-align: right; margin-top: 18px;">
-                <div style="font-size: 9px; font-weight: 800; color: #0f172a;">For ${sellerName}</div>
-                <div style="margin-top: 18px; font-size: 8.5px; color: #475569; border-top: 1px solid #94a3b8; display: inline-block; padding-top: 2px;">
-                  <strong>${signatoryName}</strong><br/>
-                  <span style="font-size: 7.5px; color: #64748b;">${signatoryDesignation}</span>
+              <div style="border-top: 0.8px solid #cbd5e1; margin-top: 3px; padding-top: 3px; font-size: 8px; color: #475569;">
+                Reverse Charge: <strong>NO</strong> | Mode: <strong>${data.paymentMethod || "PREPAID"}</strong><br/>
+                Packed by: <strong>Verified</strong> | Courier: <strong>${courierName}</strong>
+              </div>
+            </div>
+
+            <!-- COL 3: TOTALS & SIGNATURE -->
+            <div style="padding: 6px 8px; font-size: 9px; line-height: 1.45; text-align: right;">
+              <div style="display: flex; justify-content: space-between; font-size: 8.5px;">
+                <span>Gross Taxable:</span> <span style="font-family: monospace;">₹${taxableValue.toFixed(2)}</span>
+              </div>
+              <div style="display: flex; justify-content: space-between; font-size: 8.5px;">
+                <span>Add GST (18%):</span> <span style="font-family: monospace;">₹${totalGst.toFixed(2)}</span>
+              </div>
+              <div style="border: 1.5px solid #0f172a; background: #0f172a; color: #ffffff; padding: 3px 6px; border-radius: 3px; margin-top: 3px; display: flex; justify-content: space-between; align-items: center;">
+                <span style="font-weight: 800; font-size: 9px; letter-spacing: 0.5px;">BILL AMT / TO PAY:</span>
+                <span style="font-family: monospace; font-weight: 900; font-size: 12px;">₹${grandTotal.toFixed(2)}</span>
+              </div>
+              <div style="margin-top: 8px; font-size: 8px;">
+                <div style="font-weight: 800; color: #0f172a;">For ${sellerName}</div>
+                <div style="margin-top: 14px; border-top: 1px solid #94a3b8; display: inline-block; padding-top: 2px; color: #475569; font-weight: 700;">
+                  ${signatoryName} (${signatoryDesignation})
                 </div>
               </div>
             </div>
-          </div>
-
-          <!-- FOOTER NOTE -->
-          <div style="text-align: center; margin-top: 12px; font-size: 8px; color: #94a3b8; border-top: 1px solid #e2e8f0; padding-top: 4px;">
-            This is a computer-generated GST Tax Invoice created via BarcodeZAA ERP.
           </div>
         </div>
       `
@@ -649,7 +995,7 @@ export function PrintShippingInvoiceDialog({
             <style>
               @page {
                 size: A4 portrait;
-                margin: 8mm;
+                margin: 8mm 8mm 10mm 8mm;
               }
               * {
                 box-sizing: border-box;
@@ -663,12 +1009,30 @@ export function PrintShippingInvoiceDialog({
                 -webkit-print-color-adjust: exact;
                 print-color-adjust: exact;
               }
-              .a4-page {
+              .a4-page-full {
                 width: 100%;
                 box-sizing: border-box;
-                padding: 4mm;
                 page-break-after: always;
                 break-after: page;
+                border: 1.5px solid #0f172a;
+                background: #fff;
+              }
+              table {
+                page-break-inside: auto;
+              }
+              thead {
+                display: table-header-group;
+              }
+              tfoot {
+                display: table-row-group;
+              }
+              tr {
+                page-break-inside: avoid;
+                break-inside: avoid;
+              }
+              .summary-footer-box {
+                page-break-inside: avoid;
+                break-inside: avoid;
               }
             </style>
           </head>
@@ -1131,208 +1495,636 @@ export function PrintShippingInvoiceDialog({
 
         {/* Scrollable Preview Area */}
         <div className="flex-1 overflow-y-auto space-y-4 pr-1">
-          {/* Live Document Preview Container */}
-          {docMode === "A4_INVOICE" ? (
-            <div className="bg-slate-50 border border-slate-300 rounded-xl p-5 text-xs shadow-inner space-y-4 font-sans">
-              {/* Top Seller & Invoice Header */}
-              <div className="flex justify-between items-start border-b-2 border-[#056468] pb-3">
-                <div className="max-w-[65%]">
-                  {logoUrl && (
-                    <img
-                      src={logoUrl}
-                      alt="Logo"
-                      className="h-7 max-h-7 max-w-[130px] object-contain mb-1.5 block"
-                      onError={(e) => {
-                        (e.target as HTMLElement).style.display = "none";
-                      }}
-                    />
-                  )}
-                  <h4 className="text-lg font-black text-[#056468] tracking-tight leading-tight">
-                    {sellerName}
-                  </h4>
-                  {sellerTagline && (
-                    <p className="text-[10px] font-semibold text-slate-600 mt-0.5">
-                      {sellerTagline}
-                    </p>
-                  )}
-                  <p className="text-[11px] text-slate-600 mt-1 max-w-sm leading-tight">
-                    {sellerAddress}
-                  </p>
-                  <p className="text-[10px] text-slate-800 font-medium mt-1">
-                    GSTIN:{" "}
-                    <span className="font-mono font-bold text-[#056468]">
-                      {sellerGstin}
-                    </span>{" "}
-                    • State: <strong>{sellerStateName}</strong> • PAN:{" "}
-                    <span className="font-mono font-bold">{sellerPan}</span>
-                  </p>
-                </div>
-                <div className="text-right shrink-0">
-                  <span className="px-3 py-1 bg-[#056468] text-white font-bold text-xs rounded uppercase tracking-wider">
-                    TAX INVOICE
-                  </span>
-                  <div className="mt-2 text-[11px] font-mono leading-tight">
-                    <div>
-                      Inv: <strong>{invoiceNum}</strong>
-                    </div>
-                    <div>
-                      Date:{" "}
-                      {new Date(
-                        data.invoiceDate || Date.now()
-                      ).toLocaleDateString("en-IN")}
-                    </div>
-                    <div>
-                      Order: <strong>#{data.orderId}</strong>
-                    </div>
-                  </div>
-                </div>
+          {/* A4 Layout Selector Toolbar */}
+          {docMode === "A4_INVOICE" && (
+            <div className="flex flex-wrap items-center justify-between gap-2 p-2.5 bg-gradient-to-r from-teal-50/80 via-white to-slate-50 border border-teal-200/80 rounded-xl shadow-2xs">
+              <div className="flex items-center gap-1.5 text-xs font-bold text-[#056468]">
+                <Layers className="w-4 h-4 text-[#056468]" />
+                <span>A4 Page Printing Format:</span>
               </div>
-
-              {/* Bill to & Ship To Grid */}
-              <div className="grid grid-cols-2 gap-4 p-3 bg-white rounded-lg border border-slate-200 text-[11px]">
-                <div>
-                  <div className="text-[10px] font-bold text-[#056468] uppercase border-b border-slate-100 pb-1 mb-1">
-                    Bill & Ship To (Buyer):
-                  </div>
-                  <div className="font-bold text-slate-900 text-sm">
-                    {data.buyerName}
-                  </div>
-                  <div className="text-slate-600">{data.shippingAddress}</div>
-                  <div className="font-bold text-[#056468] mt-1">
-                    PIN: {data.pincode || "400001"} • {data.state || "India"}
-                  </div>
-                  {data.buyerPhone && (
-                    <div className="text-slate-500">Tel: {data.buyerPhone}</div>
-                  )}
-                </div>
-
-                <div>
-                  <div className="text-[10px] font-bold text-[#056468] uppercase border-b border-slate-100 pb-1 mb-1">
-                    Fulfillment & Dispatch Details:
-                  </div>
-                  <div>
-                    Channel:{" "}
-                    <strong className="text-slate-900">
-                      {data.channel || "DIRECT DISPATCH"}
-                    </strong>
-                  </div>
-                  <div>
-                    Courier:{" "}
-                    <strong className="text-slate-900">{courierName}</strong>
-                  </div>
-                  <div>
-                    AWB Tracking:{" "}
-                    <strong className="font-mono text-slate-900">
-                      {tracking}
-                    </strong>
-                  </div>
-                  <div>
-                    Payment Status:{" "}
-                    <strong className="text-emerald-700">
-                      {data.paymentMethod || "PREPAID"}
-                    </strong>
-                  </div>
-                </div>
-              </div>
-
-              {/* Product Table */}
-              <div className="overflow-x-auto rounded-lg border border-slate-200 bg-white">
-                <table className="w-full text-left text-xs">
-                  <thead className="bg-[#f0f8fa] text-[#0b252c] font-bold uppercase text-[10px] border-b border-slate-200">
-                    <tr>
-                      <th className="p-2.5 w-8">#</th>
-                      <th className="p-2.5">Item Description</th>
-                      <th className="p-2.5 text-center">HSN</th>
-                      <th className="p-2.5 text-center">Qty</th>
-                      <th className="p-2.5 text-right">Taxable</th>
-                      <th className="p-2.5 text-right">GST (18%)</th>
-                      <th className="p-2.5 text-right">Total</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100 font-normal">
-                    {displayItems.map((itm, i) => {
-                      const itmTotal =
-                        itm.total ||
-                        (itm.unitPrice || 0) * (itm.quantity || 1);
-                      const itmTaxable = (itmTotal / 1.18).toFixed(2);
-                      const itmGst = (itmTotal - Number(itmTaxable)).toFixed(2);
-                      return (
-                        <tr key={i} className="hover:bg-slate-50/70">
-                          <td className="p-2.5 font-bold text-slate-500">
-                            {i + 1}
-                          </td>
-                          <td className="p-2.5 font-medium text-slate-900">
-                            <div>{itm.title}</div>
-                            <div className="text-[10px] text-slate-500 font-mono">
-                              SKU: {itm.sku}{" "}
-                              {itm.unitBarcode
-                                ? `• Unit: ${itm.unitBarcode}`
-                                : ""}
-                            </div>
-                          </td>
-                          <td className="p-2.5 text-center font-mono text-[11px]">
-                            {itm.hsn || "8525"}
-                          </td>
-                          <td className="p-2.5 text-center font-bold">
-                            {itm.quantity}
-                          </td>
-                          <td className="p-2.5 text-right font-mono">
-                            ₹{itmTaxable}
-                          </td>
-                          <td className="p-2.5 text-right font-mono text-slate-600">
-                            ₹{itmGst}
-                          </td>
-                          <td className="p-2.5 text-right font-mono font-bold text-[#056468]">
-                            ₹{itmTotal.toFixed(2)}
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                  <tfoot className="bg-slate-50 font-bold border-t border-slate-200">
-                    <tr>
-                      <td colSpan={4} className="p-2.5 text-right">
-                        Summary Total:
-                      </td>
-                      <td className="p-2.5 text-right font-mono">
-                        ₹{taxableValue.toFixed(2)}
-                      </td>
-                      <td className="p-2.5 text-right font-mono">
-                        ₹{totalGst.toFixed(2)}
-                      </td>
-                      <td className="p-2.5 text-right font-mono text-sm text-[#056468]">
-                        ₹{grandTotal.toFixed(2)}
-                      </td>
-                    </tr>
-                  </tfoot>
-                </table>
-              </div>
-
-              {/* Bank & Signatory Footer */}
-              <div className="p-3 bg-white rounded-lg border border-slate-200 flex flex-col sm:flex-row justify-between gap-3 text-xs">
-                <div>
-                  <span className="text-[10px] text-slate-500 font-semibold uppercase">
-                    Amount in Words:
-                  </span>
-                  <div className="font-bold text-slate-900 text-[11px]">
-                    {numberToWords(grandTotal)}
-                  </div>
-                  <div className="text-[10px] text-slate-500 mt-1">
-                    Bank: <strong>{bankName}</strong> • A/C:{" "}
-                    <strong>{bankAccount}</strong> • IFSC:{" "}
-                    <strong>{bankIfsc}</strong> • Branch: <strong>{bankBranch}</strong>
-                  </div>
-                </div>
-                <div className="text-right">
-                  <div className="text-slate-500 text-[10px]">
-                    {signatoryDesignation || "Authorized Signatory"}
-                  </div>
-                  <div className="font-bold text-[#056468] text-xs mt-3">
-                    {signatoryName ? `${signatoryName} (For ${sellerName})` : `For ${sellerName}`}
-                  </div>
-                </div>
+              <div className="flex items-center gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => setA4Layout("2_IN_1_DUAL")}
+                  className={`px-3 py-1 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+                    a4Layout === "2_IN_1_DUAL"
+                      ? "bg-[#056468] text-white shadow-xs ring-1 ring-[#056468]"
+                      : "bg-white text-slate-700 hover:bg-slate-100 border border-slate-200"
+                  }`}
+                >
+                  <Sparkles className="w-3 h-3 text-amber-300" />
+                  <span>2-in-1 Dual Copy (Buyer + Seller on 1 Page)</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setA4Layout("FULL_PAGE")}
+                  className={`px-3 py-1 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+                    a4Layout === "FULL_PAGE"
+                      ? "bg-[#056468] text-white shadow-xs ring-1 ring-[#056468]"
+                      : "bg-white text-slate-700 hover:bg-slate-100 border border-slate-200"
+                  }`}
+                >
+                  <FileText className="w-3 h-3" />
+                  <span>Full Page (1 Copy)</span>
+                </button>
               </div>
             </div>
+          )}
+
+          {/* Live Document Preview Container */}
+          {docMode === "A4_INVOICE" ? (
+            a4Layout === "2_IN_1_DUAL" ? (
+              /* DUAL COPY PREVIEW (2-in-1 on single A4) */
+              <div className="bg-slate-200/90 border border-slate-400 rounded-xl p-3 sm:p-4 text-xs shadow-inner space-y-3 font-sans">
+                {/* 1. TOP HALF: BUYER'S COPY (ERP Tax Invoice) */}
+                <div className="bg-white border-2 border-slate-900 rounded-sm shadow-xs overflow-hidden text-[9px] leading-tight">
+                  {/* 3-COLUMN TOP HEADER */}
+                  <div className="grid grid-cols-[1.3fr_1.3fr_1.1fr] border-b border-slate-900 bg-white">
+                    {/* Box 1: Seller */}
+                    <div className="p-2 border-r border-slate-900">
+                      {logoUrl && (
+                        <img
+                          src={logoUrl}
+                          alt="Logo"
+                          className="h-5 max-h-5 max-w-[90px] object-contain mb-1 block"
+                          onError={(e) => {
+                            (e.target as HTMLElement).style.display = "none";
+                          }}
+                        />
+                      )}
+                      <div className="font-black text-[11px] text-slate-900 uppercase tracking-tight">
+                        {sellerName}
+                      </div>
+                      {sellerTagline && (
+                        <div className="text-[8px] font-semibold text-slate-600">
+                          {sellerTagline}
+                        </div>
+                      )}
+                      <div className="text-[8.5px] text-slate-700 mt-0.5 leading-tight">
+                        {sellerAddress}
+                      </div>
+                      <div className="text-[8px] text-slate-800 font-medium mt-1">
+                        GSTIN: <span className="font-mono font-bold text-slate-950">{sellerGstin}</span> • PAN: <span className="font-mono font-bold">{sellerPan}</span>
+                      </div>
+                      <div className="text-[8px] text-slate-700">
+                        State: <strong>{sellerStateName}</strong>
+                      </div>
+                    </div>
+
+                    {/* Box 2: Buyer / Consignee */}
+                    <div className="p-2 border-r border-slate-900 bg-slate-50/50">
+                      <div className="text-[8px] font-black text-slate-900 uppercase border-b border-slate-200 pb-0.5 mb-1">
+                        Consignee / Billed & Shipped To:
+                      </div>
+                      <div className="font-bold text-slate-950 text-[10px]">
+                        {data.buyerName}
+                      </div>
+                      <div className="text-[8.5px] text-slate-700 mt-0.5 line-clamp-2">
+                        {data.shippingAddress}
+                      </div>
+                      <div className="text-[8px] text-slate-800 font-medium mt-1">
+                        PIN: <strong>{data.pincode || "400001"}</strong> • State: <strong>{data.state || "Maharashtra (27)"}</strong>
+                        {data.buyerPhone ? ` • Ph: ${data.buyerPhone}` : ""}
+                      </div>
+                      <div className="text-[7.5px] text-slate-600 mt-0.5 font-semibold">
+                        Place of Supply: <strong>{data.state || "Maharashtra (27)"}</strong> • Rev. Charge: <strong>NO</strong>
+                      </div>
+                    </div>
+
+                    {/* Box 3: Invoice Meta */}
+                    <div className="p-2 bg-white">
+                      <div className="flex items-center justify-between border-b border-slate-900 pb-1 mb-1">
+                        <span className="font-black text-[10px] text-slate-900 tracking-wider">
+                          TAX INVOICE
+                        </span>
+                        <span className="px-1.5 py-0.5 bg-slate-900 text-white font-black text-[7.5px] rounded uppercase">
+                          BUYER'S COPY
+                        </span>
+                      </div>
+                      <div className="text-[7.5px] font-bold text-slate-500 uppercase mb-1">
+                        ORIGINAL FOR RECIPIENT
+                      </div>
+                      <div className="font-mono text-[8px] space-y-0.5 text-slate-800">
+                        <div><strong>INV NO:</strong> <span className="font-bold text-slate-950">{invoiceNum}</span></div>
+                        <div><strong>DATE:</strong> {new Date(data.invoiceDate || Date.now()).toLocaleDateString("en-IN")}</div>
+                        <div><strong>ORDER REF:</strong> #{data.orderId}</div>
+                        <div><strong>COURIER:</strong> {courierName}</div>
+                        <div><strong>AWB:</strong> <span className="font-bold">{tracking}</span></div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* HIGH DENSITY ERP PRODUCTS TABLE */}
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left text-[8px] border-collapse">
+                      <thead className="bg-slate-100 text-slate-900 font-black uppercase text-[7.5px] border-b border-slate-900">
+                        <tr>
+                          <th className="p-1 text-center w-5 border-r border-slate-900">#</th>
+                          <th className="p-1 text-center w-10 border-r border-slate-900">HSN</th>
+                          <th className="p-1 w-16 border-r border-slate-900">SKU / CODE</th>
+                          <th className="p-1 border-r border-slate-900">PRODUCT DESCRIPTION</th>
+                          <th className="p-1 text-center w-8 border-r border-slate-900">QTY</th>
+                          <th className="p-1 text-right w-12 border-r border-slate-900">RATE (₹)</th>
+                          <th className="p-1 text-right w-12 border-r border-slate-900">TAXABLE</th>
+                          <th className="p-1 text-right w-11 border-r border-slate-900">CGST (9%)</th>
+                          <th className="p-1 text-right w-11 border-r border-slate-900">SGST (9%)</th>
+                          <th className="p-1 text-right w-14 font-black">TOTAL (₹)</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-300">
+                        {displayItems.map((itm, i) => {
+                          const itmTotal = itm.total || (itm.unitPrice || 0) * (itm.quantity || 1);
+                          const itmTaxable = itmTotal / 1.18;
+                          const itmGst = itmTotal - itmTaxable;
+                          const itmHalfGst = itmGst / 2;
+                          const itmUnitRate = itm.unitPrice ? (itm.unitPrice / 1.18) : (itmTaxable / (itm.quantity || 1));
+                          return (
+                            <tr key={i} className="hover:bg-slate-50">
+                              <td className="p-1 text-center font-bold text-slate-600 border-r border-slate-900">{i + 1}</td>
+                              <td className="p-1 text-center font-mono border-r border-slate-900">{itm.hsn || "8525"}</td>
+                              <td className="p-1 font-mono font-semibold border-r border-slate-900 truncate max-w-[70px]">{itm.sku}</td>
+                              <td className="p-1 font-medium text-slate-900 border-r border-slate-900">
+                                <div>{itm.title}</div>
+                                {itm.unitBarcode && (
+                                  <div className="text-[7px] text-slate-500 font-mono">BC: {itm.unitBarcode}</div>
+                                )}
+                              </td>
+                              <td className="p-1 text-center font-bold border-r border-slate-900">{itm.quantity}</td>
+                              <td className="p-1 text-right font-mono border-r border-slate-900">{itmUnitRate.toFixed(2)}</td>
+                              <td className="p-1 text-right font-mono border-r border-slate-900">{itmTaxable.toFixed(2)}</td>
+                              <td className="p-1 text-right font-mono border-r border-slate-900 text-slate-600">{itmHalfGst.toFixed(2)}</td>
+                              <td className="p-1 text-right font-mono border-r border-slate-900 text-slate-600">{itmHalfGst.toFixed(2)}</td>
+                              <td className="p-1 text-right font-mono font-bold text-slate-950">₹{itmTotal.toFixed(2)}</td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                      <tfoot className="bg-slate-100 font-black border-t border-slate-900 text-[8px]">
+                        <tr>
+                          <td colSpan={4} className="p-1 border-r border-slate-900 text-left">
+                            Totals: <strong>{displayItems.length} Item(s)</strong>
+                          </td>
+                          <td className="p-1 text-center border-r border-slate-900 font-black">
+                            {displayItems.reduce((a, b) => a + b.quantity, 0)}
+                          </td>
+                          <td className="border-r border-slate-900"></td>
+                          <td className="p-1 text-right font-mono border-r border-slate-900">₹{taxableValue.toFixed(2)}</td>
+                          <td className="p-1 text-right font-mono border-r border-slate-900">₹{cgst.toFixed(2)}</td>
+                          <td className="p-1 text-right font-mono border-r border-slate-900">₹{sgst.toFixed(2)}</td>
+                          <td className="p-1 text-right font-mono font-black text-slate-950">₹{grandTotal.toFixed(2)}</td>
+                        </tr>
+                      </tfoot>
+                    </table>
+                  </div>
+
+                  {/* 3-COLUMN SETTLEMENT & TAX FOOTER */}
+                  <div className="grid grid-cols-[1.3fr_0.9fr_1fr] border-t border-slate-900 text-[7.5px] bg-white">
+                    {/* Left: Declaration & Bank */}
+                    <div className="p-1.5 border-r border-slate-900 leading-snug space-y-1">
+                      <div>
+                        <strong>Declaration:</strong> I/We hereby certify that goods/products mentioned in this invoice are warranted to be genuine and of standard quality.
+                      </div>
+                      <div className="border-t border-dashed border-slate-300 pt-0.5">
+                        <strong>Amount in Words:</strong> <span className="font-semibold">{numberToWords(grandTotal)}</span>
+                      </div>
+                      <div className="border-t border-dashed border-slate-300 pt-0.5 text-slate-700">
+                        <strong>Bank:</strong> {bankName} | <strong>A/C:</strong> <span className="font-mono font-bold">{bankAccount}</span> | <strong>IFSC:</strong> <span className="font-mono font-bold">{bankIfsc}</span>
+                      </div>
+                      <div className="text-[7px] text-slate-500">
+                        <strong>Terms:</strong> Standard warranty applies. Subject to Mumbai Jurisdiction. E.&O.E.
+                      </div>
+                    </div>
+
+                    {/* Middle: Tax Analysis */}
+                    <div className="p-1.5 border-r border-slate-900 bg-slate-50/70 font-mono space-y-0.5 leading-snug">
+                      <div className="flex justify-between">
+                        <span>Taxable Value:</span> <strong>₹{taxableValue.toFixed(2)}</strong>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>CGST (9%):</span> <span>₹{cgst.toFixed(2)}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>SGST (9%):</span> <span>₹{sgst.toFixed(2)}</span>
+                      </div>
+                      <div className="flex justify-between border-t border-slate-300 pt-0.5 font-bold">
+                        <span>Total GST:</span> <span>₹{totalGst.toFixed(2)}</span>
+                      </div>
+                      <div className="text-[7px] font-sans text-slate-600 border-t border-slate-200 pt-0.5">
+                        Rev. Charge: <strong>NO</strong> • Courier: <strong>{courierName}</strong>
+                      </div>
+                    </div>
+
+                    {/* Right: Bill Amt & Signature */}
+                    <div className="p-1.5 text-right space-y-1 flex flex-col justify-between">
+                      <div>
+                        <div className="flex justify-between text-[7.5px] font-mono">
+                          <span>Gross:</span> <span>₹{taxableValue.toFixed(2)}</span>
+                        </div>
+                        <div className="flex justify-between text-[7.5px] font-mono">
+                          <span>GST (18%):</span> <span>₹{totalGst.toFixed(2)}</span>
+                        </div>
+                        <div className="bg-slate-900 text-white p-1 rounded-xs flex justify-between items-center font-bold mt-1">
+                          <span className="text-[7.5px] tracking-wide">BILL AMT / TO PAY:</span>
+                          <span className="font-mono text-[9.5px] font-black">₹{grandTotal.toFixed(2)}</span>
+                        </div>
+                      </div>
+                      <div className="pt-2 text-[7px]">
+                        <div className="font-bold text-slate-900">For {sellerName}</div>
+                        <div className="mt-2 pt-0.5 border-t border-slate-400 font-semibold text-slate-600 inline-block">
+                          {signatoryName} ({signatoryDesignation})
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 2. SCISSOR CUT DIVIDER */}
+                <div className="flex items-center justify-center gap-2 py-1 text-slate-600 font-mono text-[9px] font-black border-y-2 border-dashed border-slate-500 bg-slate-200/80 rounded">
+                  <span>✂</span>
+                  <span className="tracking-widest uppercase text-[8px]">
+                    Cut Along Dotted Line (Top: Buyer Copy • Bottom: Seller Copy)
+                  </span>
+                  <span>✂</span>
+                </div>
+
+                {/* 3. BOTTOM HALF: SELLER'S COPY (ERP Tax Invoice) */}
+                <div className="bg-white border-2 border-slate-700 rounded-sm shadow-xs overflow-hidden text-[9px] leading-tight opacity-95">
+                  {/* 3-COLUMN TOP HEADER */}
+                  <div className="grid grid-cols-[1.3fr_1.3fr_1.1fr] border-b border-slate-700 bg-white">
+                    {/* Box 1: Seller */}
+                    <div className="p-2 border-r border-slate-700">
+                      {logoUrl && (
+                        <img
+                          src={logoUrl}
+                          alt="Logo"
+                          className="h-5 max-h-5 max-w-[90px] object-contain mb-1 block"
+                          onError={(e) => {
+                            (e.target as HTMLElement).style.display = "none";
+                          }}
+                        />
+                      )}
+                      <div className="font-black text-[11px] text-slate-900 uppercase tracking-tight">
+                        {sellerName}
+                      </div>
+                      <div className="text-[8.5px] text-slate-700 mt-0.5 leading-tight">
+                        {sellerAddress}
+                      </div>
+                      <div className="text-[8px] text-slate-800 font-medium mt-1">
+                        GSTIN: <span className="font-mono font-bold text-slate-950">{sellerGstin}</span> • PAN: <span className="font-mono font-bold">{sellerPan}</span>
+                      </div>
+                      <div className="text-[8px] text-slate-700">
+                        State: <strong>{sellerStateName}</strong>
+                      </div>
+                    </div>
+
+                    {/* Box 2: Buyer / Consignee */}
+                    <div className="p-2 border-r border-slate-700 bg-slate-50/50">
+                      <div className="text-[8px] font-black text-slate-900 uppercase border-b border-slate-200 pb-0.5 mb-1">
+                        Consignee / Billed & Shipped To:
+                      </div>
+                      <div className="font-bold text-slate-950 text-[10px]">
+                        {data.buyerName}
+                      </div>
+                      <div className="text-[8.5px] text-slate-700 mt-0.5 line-clamp-2">
+                        {data.shippingAddress}
+                      </div>
+                      <div className="text-[8px] text-slate-800 font-medium mt-1">
+                        PIN: <strong>{data.pincode || "400001"}</strong> • State: <strong>{data.state || "Maharashtra (27)"}</strong>
+                      </div>
+                      <div className="text-[7.5px] text-slate-600 mt-0.5 font-semibold">
+                        Place of Supply: <strong>{data.state || "Maharashtra (27)"}</strong> • Rev. Charge: <strong>NO</strong>
+                      </div>
+                    </div>
+
+                    {/* Box 3: Invoice Meta */}
+                    <div className="p-2 bg-white">
+                      <div className="flex items-center justify-between border-b border-slate-700 pb-1 mb-1">
+                        <span className="font-black text-[10px] text-slate-900 tracking-wider">
+                          TAX INVOICE
+                        </span>
+                        <span className="px-1.5 py-0.5 bg-slate-700 text-white font-black text-[7.5px] rounded uppercase">
+                          SELLER'S COPY
+                        </span>
+                      </div>
+                      <div className="text-[7.5px] font-bold text-slate-500 uppercase mb-1">
+                        DUPLICATE FOR SUPPLIER
+                      </div>
+                      <div className="font-mono text-[8px] space-y-0.5 text-slate-800">
+                        <div><strong>INV NO:</strong> <span className="font-bold text-slate-950">{invoiceNum}</span></div>
+                        <div><strong>DATE:</strong> {new Date(data.invoiceDate || Date.now()).toLocaleDateString("en-IN")}</div>
+                        <div><strong>ORDER REF:</strong> #{data.orderId}</div>
+                        <div><strong>COURIER:</strong> ${courierName}</div>
+                        <div><strong>AWB:</strong> <span className="font-bold">{tracking}</span></div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* HIGH DENSITY ERP PRODUCTS TABLE */}
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left text-[8px] border-collapse">
+                      <thead className="bg-slate-100 text-slate-900 font-black uppercase text-[7.5px] border-b border-slate-700">
+                        <tr>
+                          <th className="p-1 text-center w-5 border-r border-slate-700">#</th>
+                          <th className="p-1 text-center w-10 border-r border-slate-700">HSN</th>
+                          <th className="p-1 w-16 border-r border-slate-700">SKU / CODE</th>
+                          <th className="p-1 border-r border-slate-700">PRODUCT DESCRIPTION</th>
+                          <th className="p-1 text-center w-8 border-r border-slate-700">QTY</th>
+                          <th className="p-1 text-right w-12 border-r border-slate-700">RATE (₹)</th>
+                          <th className="p-1 text-right w-12 border-r border-slate-700">TAXABLE</th>
+                          <th className="p-1 text-right w-11 border-r border-slate-700">CGST (9%)</th>
+                          <th className="p-1 text-right w-11 border-r border-slate-700">SGST (9%)</th>
+                          <th className="p-1 text-right w-14 font-black">TOTAL (₹)</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-300">
+                        {displayItems.map((itm, i) => {
+                          const itmTotal = itm.total || (itm.unitPrice || 0) * (itm.quantity || 1);
+                          const itmTaxable = itmTotal / 1.18;
+                          const itmGst = itmTotal - itmTaxable;
+                          const itmHalfGst = itmGst / 2;
+                          const itmUnitRate = itm.unitPrice ? (itm.unitPrice / 1.18) : (itmTaxable / (itm.quantity || 1));
+                          return (
+                            <tr key={i} className="hover:bg-slate-50">
+                              <td className="p-1 text-center font-bold text-slate-600 border-r border-slate-700">{i + 1}</td>
+                              <td className="p-1 text-center font-mono border-r border-slate-700">{itm.hsn || "8525"}</td>
+                              <td className="p-1 font-mono font-semibold border-r border-slate-700 truncate max-w-[70px]">{itm.sku}</td>
+                              <td className="p-1 font-medium text-slate-900 border-r border-slate-700">
+                                <div>{itm.title}</div>
+                              </td>
+                              <td className="p-1 text-center font-bold border-r border-slate-700">{itm.quantity}</td>
+                              <td className="p-1 text-right font-mono border-r border-slate-700">{itmUnitRate.toFixed(2)}</td>
+                              <td className="p-1 text-right font-mono border-r border-slate-700">{itmTaxable.toFixed(2)}</td>
+                              <td className="p-1 text-right font-mono border-r border-slate-700 text-slate-600">{itmHalfGst.toFixed(2)}</td>
+                              <td className="p-1 text-right font-mono border-r border-slate-700 text-slate-600">{itmHalfGst.toFixed(2)}</td>
+                              <td className="p-1 text-right font-mono font-bold text-slate-950">₹{itmTotal.toFixed(2)}</td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                      <tfoot className="bg-slate-100 font-black border-t border-slate-700 text-[8px]">
+                        <tr>
+                          <td colSpan={4} className="p-1 border-r border-slate-700 text-left">
+                            Totals: <strong>{displayItems.length} Item(s)</strong>
+                          </td>
+                          <td className="p-1 text-center border-r border-slate-700 font-black">
+                            {displayItems.reduce((a, b) => a + b.quantity, 0)}
+                          </td>
+                          <td className="border-r border-slate-700"></td>
+                          <td className="p-1 text-right font-mono border-r border-slate-700">₹{taxableValue.toFixed(2)}</td>
+                          <td className="p-1 text-right font-mono border-r border-slate-700">₹{cgst.toFixed(2)}</td>
+                          <td className="p-1 text-right font-mono border-r border-slate-700">₹{sgst.toFixed(2)}</td>
+                          <td className="p-1 text-right font-mono font-black text-slate-950">₹{grandTotal.toFixed(2)}</td>
+                        </tr>
+                      </tfoot>
+                    </table>
+                  </div>
+
+                  {/* 3-COLUMN SETTLEMENT & TAX FOOTER */}
+                  <div className="grid grid-cols-[1.3fr_0.9fr_1fr] border-t border-slate-700 text-[7.5px] bg-white">
+                    {/* Left: Declaration & Notes */}
+                    <div className="p-1.5 border-r border-slate-700 leading-snug space-y-1">
+                      <div>
+                        <strong>Internal Record Copy:</strong> Retain this voucher copy for sales ledger, accounts, tax filing and statutory audit purposes.
+                      </div>
+                      <div className="border-t border-dashed border-slate-300 pt-0.5">
+                        <strong>Amount in Words:</strong> <span className="font-semibold">{numberToWords(grandTotal)}</span>
+                      </div>
+                      <div className="text-[7px] text-slate-500">
+                        Subject to Mumbai Jurisdiction. E.&O.E.
+                      </div>
+                    </div>
+
+                    {/* Middle: Tax Analysis */}
+                    <div className="p-1.5 border-r border-slate-700 bg-slate-50/70 font-mono space-y-0.5 leading-snug">
+                      <div className="flex justify-between">
+                        <span>Taxable Value:</span> <strong>₹{taxableValue.toFixed(2)}</strong>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Total GST:</span> <span>₹{totalGst.toFixed(2)}</span>
+                      </div>
+                      <div className="text-[7px] font-sans text-slate-600 border-t border-slate-200 pt-0.5">
+                        Payment: <strong>{data.paymentMethod || "PREPAID"}</strong> • Courier: <strong>{courierName}</strong>
+                      </div>
+                    </div>
+
+                    {/* Right: Bill Amt & Signature */}
+                    <div className="p-1.5 text-right space-y-1 flex flex-col justify-between">
+                      <div>
+                        <div className="bg-slate-800 text-white p-1 rounded-xs flex justify-between items-center font-bold">
+                          <span className="text-[7.5px] tracking-wide">BILL AMT:</span>
+                          <span className="font-mono text-[9.5px] font-black">₹{grandTotal.toFixed(2)}</span>
+                        </div>
+                      </div>
+                      <div className="pt-2 text-[7px]">
+                        <div className="font-bold text-slate-900">For {sellerName}</div>
+                        <div className="mt-2 pt-0.5 border-t border-slate-400 font-semibold text-slate-600 inline-block">
+                          Verified & Authorized
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              /* SINGLE FULL PAGE A4 PREVIEW (ERP High-Density Grid) */
+              <div className="bg-white border-2 border-slate-900 rounded-sm shadow-md text-xs font-sans">
+                {/* 3-COLUMN TOP HEADER */}
+                <div className="grid grid-cols-[1.4fr_1.3fr_1.1fr] border-b-2 border-slate-900">
+                  {/* Box 1: Seller */}
+                  <div className="p-3 border-r-2 border-slate-900">
+                    {logoUrl && (
+                      <img
+                        src={logoUrl}
+                        alt="Logo"
+                        className="h-6 max-h-6 max-w-[120px] object-contain mb-1.5 block"
+                        onError={(e) => {
+                          (e.target as HTMLElement).style.display = "none";
+                        }}
+                      />
+                    )}
+                    <h4 className="text-sm font-black text-slate-950 uppercase tracking-tight">
+                      {sellerName}
+                    </h4>
+                    {sellerTagline && (
+                      <p className="text-[9px] font-semibold text-slate-600">
+                        {sellerTagline}
+                      </p>
+                    )}
+                    <p className="text-[10px] text-slate-700 mt-1 leading-snug">
+                      {sellerAddress}
+                    </p>
+                    <p className="text-[9.5px] text-slate-800 font-medium mt-1.5">
+                      GSTIN: <span className="font-mono font-bold text-slate-950">{sellerGstin}</span> • PAN: <span className="font-mono font-bold">{sellerPan}</span>
+                    </p>
+                    <p className="text-[9.5px] text-slate-700">
+                      State: <strong>{sellerStateName}</strong>
+                    </p>
+                  </div>
+
+                  {/* Box 2: Buyer / Consignee */}
+                  <div className="p-3 border-r-2 border-slate-900 bg-slate-50/60">
+                    <div className="text-[9px] font-black text-slate-900 uppercase border-b border-slate-200 pb-1 mb-1.5">
+                      Consignee / Billed & Shipped To:
+                    </div>
+                    <div className="font-bold text-slate-950 text-xs">
+                      {data.buyerName}
+                    </div>
+                    <div className="text-[10px] text-slate-700 mt-1 leading-snug">
+                      {data.shippingAddress}
+                    </div>
+                    <div className="text-[9.5px] text-slate-800 font-medium mt-1.5">
+                      PIN: <strong>{data.pincode || "400001"}</strong> • State: <strong>{data.state || "Maharashtra (27)"}</strong>
+                      {data.buyerPhone ? ` • Ph: ${data.buyerPhone}` : ""}
+                    </div>
+                    <div className="text-[9px] text-slate-600 mt-1 font-semibold">
+                      Place of Supply: <strong>{data.state || "Maharashtra (27)"}</strong> • Rev. Charge: <strong>NO</strong>
+                    </div>
+                  </div>
+
+                  {/* Box 3: Invoice Meta */}
+                  <div className="p-3 bg-white">
+                    <div className="flex items-center justify-between border-b border-slate-900 pb-1 mb-1.5">
+                      <span className="font-black text-xs text-slate-900 tracking-wider">
+                        TAX INVOICE
+                      </span>
+                      <span className="px-2 py-0.5 bg-slate-900 text-white font-black text-[8.5px] rounded uppercase">
+                        ORIGINAL
+                      </span>
+                    </div>
+                    <div className="font-mono text-[9px] space-y-1 text-slate-800">
+                      <div><strong>INVOICE NO:</strong> <span className="font-bold text-slate-950">{invoiceNum}</span></div>
+                      <div><strong>DATE:</strong> {new Date(data.invoiceDate || Date.now()).toLocaleDateString("en-IN")}</div>
+                      <div><strong>ORDER REF:</strong> #{data.orderId}</div>
+                      <div><strong>COURIER:</strong> {courierName}</div>
+                      <div><strong>AWB NO:</strong> <span className="font-bold">{tracking}</span></div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* HIGH DENSITY ERP PRODUCTS TABLE */}
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-[9.5px] border-collapse">
+                    <thead className="bg-slate-100 text-slate-900 font-black uppercase text-[8.5px] border-b-2 border-slate-900">
+                      <tr>
+                        <th className="p-1.5 text-center w-7 border-r border-slate-900">#</th>
+                        <th className="p-1.5 text-center w-14 border-r border-slate-900">HSN</th>
+                        <th className="p-1.5 w-24 border-r border-slate-900">SKU / CODE</th>
+                        <th className="p-1.5 border-r border-slate-900">PRODUCT DESCRIPTION & SPECIFICATIONS</th>
+                        <th className="p-1.5 text-center w-10 border-r border-slate-900">QTY</th>
+                        <th className="p-1.5 text-right w-16 border-r border-slate-900">RATE (₹)</th>
+                        <th className="p-1.5 text-right w-16 border-r border-slate-900">TAXABLE</th>
+                        <th className="p-1.5 text-right w-16 border-r border-slate-900">CGST (9%)</th>
+                        <th className="p-1.5 text-right w-16 border-r border-slate-900">SGST (9%)</th>
+                        <th className="p-1.5 text-right w-20 font-black">TOTAL (₹)</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-300">
+                      {displayItems.map((itm, i) => {
+                        const itmTotal = itm.total || (itm.unitPrice || 0) * (itm.quantity || 1);
+                        const itmTaxable = itmTotal / 1.18;
+                        const itmGst = itmTotal - itmTaxable;
+                        const itmHalfGst = itmGst / 2;
+                        const itmUnitRate = itm.unitPrice ? (itm.unitPrice / 1.18) : (itmTaxable / (itm.quantity || 1));
+                        return (
+                          <tr key={i} className="hover:bg-slate-50">
+                            <td className="p-1.5 text-center font-bold text-slate-600 border-r border-slate-900">{i + 1}</td>
+                            <td className="p-1.5 text-center font-mono border-r border-slate-900">{itm.hsn || "8525"}</td>
+                            <td className="p-1.5 font-mono font-semibold border-r border-slate-900">{itm.sku}</td>
+                            <td className="p-1.5 font-medium text-slate-900 border-r border-slate-900">
+                              <div>{itm.title}</div>
+                              {itm.unitBarcode && (
+                                <div className="text-[8px] text-slate-500 font-mono">Unit Barcode: {itm.unitBarcode}</div>
+                              )}
+                            </td>
+                            <td className="p-1.5 text-center font-bold border-r border-slate-900">{itm.quantity}</td>
+                            <td className="p-1.5 text-right font-mono border-r border-slate-900">{itmUnitRate.toFixed(2)}</td>
+                            <td className="p-1.5 text-right font-mono border-r border-slate-900">{itmTaxable.toFixed(2)}</td>
+                            <td className="p-1.5 text-right font-mono border-r border-slate-900 text-slate-600">{itmHalfGst.toFixed(2)}</td>
+                            <td className="p-1.5 text-right font-mono border-r border-slate-900 text-slate-600">{itmHalfGst.toFixed(2)}</td>
+                            <td className="p-1.5 text-right font-mono font-bold text-slate-950">₹{itmTotal.toFixed(2)}</td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                    <tfoot className="bg-slate-100 font-black border-t-2 border-slate-900 text-[9px]">
+                      <tr>
+                        <td colSpan={4} className="p-1.5 border-r border-slate-900 text-left">
+                          Totals: <strong>{displayItems.length} Item(s)</strong>
+                        </td>
+                        <td className="p-1.5 text-center border-r border-slate-900 font-black">
+                          {displayItems.reduce((a, b) => a + b.quantity, 0)}
+                        </td>
+                        <td className="border-r border-slate-900"></td>
+                        <td className="p-1.5 text-right font-mono border-r border-slate-900">₹{taxableValue.toFixed(2)}</td>
+                        <td className="p-1.5 text-right font-mono border-r border-slate-900">₹{cgst.toFixed(2)}</td>
+                        <td className="p-1.5 text-right font-mono border-r border-slate-900">₹{sgst.toFixed(2)}</td>
+                        <td className="p-1.5 text-right font-mono font-black text-slate-950">₹{grandTotal.toFixed(2)}</td>
+                      </tr>
+                    </tfoot>
+                  </table>
+                </div>
+
+                {/* 3-COLUMN SETTLEMENT & TAX FOOTER */}
+                <div className="grid grid-cols-[1.4fr_1fr_1.1fr] border-t-2 border-slate-900 text-[9px] bg-white">
+                  {/* Left: Declaration & Bank */}
+                  <div className="p-2.5 border-r-2 border-slate-900 leading-normal space-y-1.5">
+                    <div>
+                      <strong>Declaration:</strong> I/We hereby certify that goods/products mentioned in this invoice are warranted to be genuine and of standard quality.
+                    </div>
+                    <div className="border-t border-dashed border-slate-300 pt-1">
+                      <strong>Amount in Words:</strong> <span className="font-semibold">{numberToWords(grandTotal)}</span>
+                    </div>
+                    <div className="border-t border-dashed border-slate-300 pt-1 text-slate-700">
+                      <strong>Settlement Bank:</strong> {bankName} | <strong>A/C:</strong> <span className="font-mono font-bold">{bankAccount}</span> | <strong>IFSC:</strong> <span className="font-mono font-bold">{bankIfsc}</span>
+                    </div>
+                    <div className="text-[8px] text-slate-500">
+                      <strong>Terms:</strong> Standard manufacturer warranty applies. Subject to Mumbai Jurisdiction. E.&O.E.
+                    </div>
+                  </div>
+
+                  {/* Middle: Tax Analysis */}
+                  <div className="p-2.5 border-r-2 border-slate-900 bg-slate-50/70 font-mono space-y-1 leading-normal">
+                    <div className="flex justify-between">
+                      <span>Taxable Value:</span> <strong>₹{taxableValue.toFixed(2)}</strong>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>CGST (9%):</span> <span>₹{cgst.toFixed(2)}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>SGST (9%):</span> <span>₹{sgst.toFixed(2)}</span>
+                    </div>
+                    <div className="flex justify-between border-t border-slate-300 pt-1 font-bold">
+                      <span>Total GST:</span> <span>₹{totalGst.toFixed(2)}</span>
+                    </div>
+                    <div className="text-[8px] font-sans text-slate-600 border-t border-slate-200 pt-1">
+                      Reverse Charge: <strong>NO</strong> • Courier: <strong>{courierName}</strong>
+                    </div>
+                  </div>
+
+                  {/* Right: Bill Amt & Signature */}
+                  <div className="p-2.5 text-right space-y-2 flex flex-col justify-between">
+                    <div>
+                      <div className="flex justify-between text-[8.5px] font-mono">
+                        <span>Gross Taxable:</span> <span>₹{taxableValue.toFixed(2)}</span>
+                      </div>
+                      <div className="flex justify-between text-[8.5px] font-mono">
+                        <span>Add GST (18%):</span> <span>₹{totalGst.toFixed(2)}</span>
+                      </div>
+                      <div className="bg-slate-900 text-white p-1.5 rounded-xs flex justify-between items-center font-bold mt-1.5 shadow-xs">
+                        <span className="text-[8.5px] tracking-wider">BILL AMT / TO PAY:</span>
+                        <span className="font-mono text-xs font-black">₹{grandTotal.toFixed(2)}</span>
+                      </div>
+                    </div>
+                    <div className="pt-3 text-[8px]">
+                      <div className="font-bold text-slate-900">For {sellerName}</div>
+                      <div className="mt-3 pt-1 border-t border-slate-400 font-semibold text-slate-600 inline-block">
+                        {signatoryName} ({signatoryDesignation})
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )
           ) : (
             /* THERMAL LABEL PREVIEW */
             <div className="bg-slate-900 p-4 rounded-xl flex justify-center">
@@ -1760,7 +2552,9 @@ export function PrintShippingInvoiceDialog({
               <Printer className="w-4 h-4" />
               <span>
                 {docMode === "A4_INVOICE"
-                  ? "Print A4 GST Tax Invoice"
+                  ? a4Layout === "2_IN_1_DUAL"
+                    ? "Print 2-in-1 Dual Invoice (Buyer + Seller)"
+                    : "Print Full Page A4 Invoice"
                   : "Print 100×150mm Label"}
               </span>
             </button>
