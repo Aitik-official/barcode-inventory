@@ -232,17 +232,16 @@ export default function NewProductPage() {
                   <p className="text-[11px] text-[#4a6870] font-normal">Check boxes to specify which sections of the homepage index this product appears in.</p>
                 </div>
 
-                <div className="flex flex-wrap gap-3 pt-1">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1">
                   {[
-                    { key: "HERO", label: "Hero Spotlight Banner" },
-                    { key: "FEATURED", label: "Featured Carousel" },
-                    { key: "BEST_SELLER", label: "Best Sellers Section" },
-                    { key: "NEW_ARRIVALS", label: "New Arrivals" },
-                    { key: "DEALS", label: "Special Deals" },
+                    { key: "FEATURED", label: "Featured Products (Tab 1)", desc: "Primary 3×3 / 4×4 grid" },
+                    { key: "NEW_ARRIVALS", label: "New Arrivals (Tab 2)", desc: "New release products" },
+                    { key: "DEALS", label: "Limited Deals (Tab 3)", desc: "Discount ≥20% / Hot Deals" },
+                    { key: "BEST_SELLER", label: "Best Sellers (Carousel)", desc: "Auto-scrolling carousel" },
                   ].map((sec) => {
                     const checked = formData.homepageSections.includes(sec.key);
                     return (
-                      <label key={sec.key} className="flex items-center gap-1.5 text-xs text-[#0b252c] font-medium cursor-pointer">
+                      <label key={sec.key} className="flex items-start gap-2 text-xs text-[#0b252c] font-medium cursor-pointer p-2 rounded-lg bg-white border border-[#cce7ed] hover:border-[#056468] transition-colors">
                         <input
                           type="checkbox"
                           checked={checked}
@@ -252,9 +251,12 @@ export default function NewProductPage() {
                               : formData.homepageSections.filter((s) => s !== sec.key);
                             setFormData({ ...formData, homepageSections: newSecs });
                           }}
-                          className="rounded text-[#056468] focus:ring-0"
+                          className="mt-0.5 rounded text-[#056468] focus:ring-0 cursor-pointer"
                         />
-                        <span>{sec.label}</span>
+                        <div>
+                          <div className="font-bold text-[#0b252c]">{sec.label}</div>
+                          <div className="text-[10px] text-slate-500">{sec.desc}</div>
+                        </div>
                       </label>
                     );
                   })}

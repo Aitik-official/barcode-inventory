@@ -161,23 +161,71 @@ export async function DELETE(_req: NextRequest, { params }: Params) {
 
     // Clean up dependent unit barcodes, inventory, transactions
     if (variantIds.length > 0) {
-      await prisma.inventoryTransaction.deleteMany({
+      // Find all unit barcodes for these variant IDs
+      const unitBarcodes = await prisma.unitBarcode.findMany({
         where: { productVariantId: { in: variantIds } },
+        select: { id: true },
       });
+      const unitBarcodeIds = unitBarcodes.map((u) => u.id);
+
+      // 1. Unlink OrderItems to avoid foreign key / relation constraint violations
+      if (unitBarcodeIds.length > 0) {
+        await prisma.orderItem.updateMany({
+          where: { unitBarcodeId: { in: unitBarcodeIds } },
+          data: { unitBarcodeId: null },
+        });
+      }
+      await prisma.orderItem.updateMany({
+        where: { productVariantId: { in: variantIds } },
+        data: { productVariantId: null },
+      });
+
+      // 2. Unlink MarketplaceOrderItems if any
+      await prisma.marketplaceOrderItem.updateMany({
+        where: { localVariantId: { in: variantIds } },
+        data: { localVariantId: null },
+      }).catch(() => {});
+
+      // 3. Delete inventory transactions for these variants or unit barcodes
+      await prisma.inventoryTransaction.deleteMany({
+        where: {
+          OR: [
+            { productVariantId: { in: variantIds } },
+            ...(unitBarcodeIds.length > 0 ? [{ unitBarcodeId: { in: unitBarcodeIds } }] : []),
+          ],
+        },
+      });
+
+      // 4. Delete auxiliary records
+      await prisma.customerStock.deleteMany({
+        where: { productVariantId: { in: variantIds } },
+      }).catch(() => {});
+
+      await prisma.waste.deleteMany({
+        where: { productVariantId: { in: variantIds } },
+      }).catch(() => {});
+
+      await prisma.printJob.deleteMany({
+        where: { productVariantId: { in: variantIds } },
+      }).catch(() => {});
+
+      // 5. Delete unit barcodes
       await prisma.unitBarcode.deleteMany({
         where: { productVariantId: { in: variantIds } },
       });
+
+      // 6. Delete inventory records
       await prisma.inventory.deleteMany({
         where: { productVariantId: { in: variantIds } },
       });
-      await prisma.printJob.deleteMany({
-        where: { productVariantId: { in: variantIds } },
-      });
+
+      // 7. Delete product variants
       await prisma.productVariant.deleteMany({
         where: { id: { in: variantIds } },
       });
     }
 
+    // 8. Delete product
     await prisma.product.delete({ where: { id } });
 
     return NextResponse.json({ success: true, message: `Product '${product.name}' deleted successfully.` });

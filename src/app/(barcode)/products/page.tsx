@@ -15,10 +15,10 @@ export default async function ProductsPage({
   const where: any = {};
   if (search) {
     where.OR = [
-      { name: { contains: search } },
-      { brand: { contains: search } },
-      { vendor: { contains: search } },
-      { variants: { some: { sku: { contains: search } } } },
+      { name: { contains: search, mode: "insensitive" } },
+      { brand: { contains: search, mode: "insensitive" } },
+      { vendor: { contains: search, mode: "insensitive" } },
+      { variants: { some: { sku: { contains: search, mode: "insensitive" } } } },
     ];
   }
   if (categoryId) {

@@ -18,9 +18,9 @@ export default async function BarcodesPage({
   }
   if (search) {
     where.OR = [
-      { barcode: { contains: search } },
-      { productVariant: { sku: { contains: search } } },
-      { productVariant: { product: { name: { contains: search } } } },
+      { barcode: { contains: search, mode: "insensitive" } },
+      { productVariant: { sku: { contains: search, mode: "insensitive" } } },
+      { productVariant: { product: { name: { contains: search, mode: "insensitive" } } } },
     ];
   }
 

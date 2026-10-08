@@ -1727,7 +1727,6 @@ export default function ProductDetailClient({
         onConfirm={handleConfirmDeleteProduct}
         title="Delete Product & All Associated Barcodes"
         itemName={`${product.name} (SKU: ${variant?.sku || "N/A"})`}
-        confirmKeyword="RESET"
       />
     </div>
   );

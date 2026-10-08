@@ -512,12 +512,7 @@ export default function InvoicesClient({
                 ref={inputRef}
                 type="text"
                 value={searchInput}
-                onChange={(e) => {
-                  setSearchInput(e.target.value);
-                  if (e.target.value.length >= 3) {
-                    handleSearch(e.target.value);
-                  }
-                }}
+                onChange={(e) => setSearchInput(e.target.value)}
                 placeholder="Scan Invoice Barcode, AWB No., Order # (e.g. INV-2026-0001, 54082, OD123456...)"
                 className="w-full pl-11 pr-10 py-3 bg-white border-2 border-slate-300 focus:border-[#056468] focus:ring-4 focus:ring-[#056468]/15 rounded-xl font-mono text-sm sm:text-base font-bold text-slate-900 placeholder:text-slate-400 shadow-inner transition-all outline-none"
               />
