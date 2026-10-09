@@ -1669,15 +1669,59 @@ export default function ProductDetailClient({
                     </div>
 
                     <div>
-                      <label className="block font-semibold text-slate-700 mb-1">Description & Specifications</label>
+                      <div className="flex items-center justify-between mb-1">
+                        <label className="block font-semibold text-slate-700">Description & Technical Specifications</label>
+                        <div className="flex items-center gap-1 flex-wrap">
+                          <span className="text-[10px] text-slate-500 font-semibold">Presets:</span>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setEditForm((prev) => ({
+                                ...prev,
+                                description: `• 1080P Full HD Video with 150° Ultra Wide-Angle Lens\n• Invisible Infrared Night Vision (Up to 5m in pitch black)\n• AI Motion Detection Sensor with Realtime Instant Mobile Alerts\n• Built-in Rechargeable 500mAh Lithium Battery\n• Supports MicroSD Card Loop Recording (up to 128GB)\n• Includes 360° Magnetic Rotating Base & USB Cable`,
+                              }))
+                            }
+                            className="px-2 py-0.5 rounded bg-slate-100 hover:bg-emerald-50 text-[#056468] text-[10px] font-bold border border-slate-200"
+                          >
+                            📷 Camera
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setEditForm((prev) => ({
+                                ...prev,
+                                description: `• Realtime Live GPS + LBS + WiFi Multi-Mode Positioning\n• Strong Built-in Industrial Neodymium Magnet Mount\n• Geo-Fence Boundary Breach & Speeding Alerts on Smartphone App\n• Long-lasting 5000mAh Battery with 30-Day Ultra Low Standby\n• Live Audio Monitoring & 90-Day History Playback`,
+                              }))
+                            }
+                            className="px-2 py-0.5 rounded bg-slate-100 hover:bg-emerald-50 text-[#056468] text-[10px] font-bold border border-slate-200"
+                          >
+                            🛰️ GPS
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setEditForm((prev) => ({
+                                ...prev,
+                                description: `• Multi-Frequency RF Signal & Infrared Laser Lens Optical Scanner\n• Accurately Pinpoints Wireless Hidden Cameras, GPS Trackers & Audio Bugs\n• Ultra-Wide Frequency Detection Band (1MHz to 6.5GHz)\n• Dual Alert Modes: Sound Beep & Silent Vibration for Discreet Sweeps\n• Compact Pocket-Sized Housing with Rechargeable Battery`,
+                              }))
+                            }
+                            className="px-2 py-0.5 rounded bg-slate-100 hover:bg-emerald-50 text-[#056468] text-[10px] font-bold border border-slate-200"
+                          >
+                            🛡️ Detector
+                          </button>
+                        </div>
+                      </div>
                       <textarea
                         name="description"
-                        rows={3}
+                        rows={5}
                         value={editForm.description}
                         onChange={handleFormChange}
-                        placeholder="Write detailed product specifications, features, warranty..."
-                        className="w-full px-3 py-2 rounded-lg border border-slate-300 text-slate-900 focus:outline-none focus:border-[#056468]"
+                        placeholder="Write detailed product specifications, features, bullet points, warranty..."
+                        className="w-full px-3 py-2 rounded-lg border border-slate-300 text-slate-900 focus:outline-none focus:border-[#056468] leading-relaxed text-xs font-sans"
                       />
+                      <p className="text-[10px] text-slate-500 mt-0.5">
+                        💡 Tip: Lines starting with bullets (•) will display as feature checkmarks on your online website.
+                      </p>
                     </div>
                   </div>
                 </div>
