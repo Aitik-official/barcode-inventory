@@ -133,6 +133,18 @@ export default function OrdersClient({
   const [localMarketplaceOrders, setLocalMarketplaceOrders] = useState<any[]>(marketplaceOrders);
   const [localCustomers, setLocalCustomers] = useState<any[]>(customers);
 
+  useEffect(() => {
+    setLocalOrders(orders);
+  }, [orders]);
+
+  useEffect(() => {
+    setLocalMarketplaceOrders(marketplaceOrders);
+  }, [marketplaceOrders]);
+
+  useEffect(() => {
+    setLocalCustomers(customers);
+  }, [customers]);
+
   // Selected Order for Details Modal
   const [selectedDetailOrder, setSelectedDetailOrder] = useState<UnifiedOrder | null>(null);
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
@@ -369,9 +381,66 @@ export default function OrdersClient({
       });
     });
 
+    // 3. Direct Invoices Fallback
+    invoices.forEach((inv) => {
+      if (
+        inv.order &&
+        !list.some((existing) => existing.id === inv.order.id || existing.orderNumber === inv.order.orderNumber)
+      ) {
+        const ord = inv.order;
+        let detectedChannel: "AMAZON" | "FLIPKART" | "WEBSITE" | "POS" = "WEBSITE";
+        const notesUpper = (ord.notes || "").toUpperCase();
+        const numUpper = (ord.orderNumber || "").toUpperCase();
+        const custUpper = (ord.customerName || "").toUpperCase();
+
+        if (numUpper.startsWith("AMZ-") || numUpper.startsWith("40") || notesUpper.includes("AMAZON") || custUpper.includes("AMAZON")) {
+          detectedChannel = "AMAZON";
+        } else if (numUpper.startsWith("FK-") || numUpper.startsWith("OD") || notesUpper.includes("FLIPKART") || custUpper.includes("FLIPKART")) {
+          detectedChannel = "FLIPKART";
+        } else if (
+          numUpper.startsWith("POS-") ||
+          notesUpper.includes("POS") ||
+          custUpper.includes("WALK-IN") ||
+          custUpper.includes("POS")
+        ) {
+          detectedChannel = "POS";
+        } else if (numUpper.startsWith("WEB-") || notesUpper.includes("WEBSITE") || custUpper.includes("WEBSITE")) {
+          detectedChannel = "WEBSITE";
+        }
+
+        const isPos = detectedChannel === "POS";
+        list.push({
+          id: ord.id,
+          orderNumber: ord.orderNumber,
+          channel: detectedChannel,
+          customerName: ord.customerName || (isPos ? "Walk-in Retail Customer" : "Store Customer"),
+          customerEmail: ord.customerEmail || "",
+          customerPhone: ord.customerPhone || "",
+          shippingAddress: ord.shippingAddress || (isPos ? "Local Store Pickup" : "Direct Dispatch"),
+          company: ord.company || undefined,
+          gstin: ord.gstin || undefined,
+          totalAmount: ord.totalAmount || inv.grandTotal || 0,
+          status: ord.status || "CONFIRMED",
+          createdAt: ord.createdAt || inv.createdAt,
+          customerId: ord.customerId,
+          notes: ord.notes || "",
+          isMarketplace: false,
+          items: (ord.items || []).map((i: any) => ({
+            title: i.name || i.productVariant?.product?.name || "Inventory Product",
+            sku: i.sku || i.productVariant?.sku || "PROD",
+            unitBarcode: i.unitBarcode?.barcode || undefined,
+            quantity: i.quantity || 1,
+            unitPrice: i.unitPrice || 0,
+            totalPrice: i.totalPrice || (i.quantity || 1) * (i.unitPrice || 0),
+          })),
+          rawOrder: ord,
+        });
+      }
+    });
+
     // Sort newest first
     return list.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-  }, [localOrders, localMarketplaceOrders]);
+  }, [localOrders, localMarketplaceOrders, invoices]);
 
   // Filtered Orders
   const filteredOrders = useMemo(() => {

@@ -37,6 +37,13 @@ export default function ScanPosPage() {
   const [error, setError] = useState<string | null>(null);
 
   const [cart, setCart] = useState<any[]>([]);
+  const [scanPromptNotice, setScanPromptNotice] = useState<{
+    type: "ALREADY_IN_CART";
+    unitBarcode: string;
+    productName: string;
+    serialNumber: number;
+    index: number;
+  } | null>(null);
 
   // Channel / Order Source
   const [orderSource, setOrderSource] = useState<
@@ -126,10 +133,19 @@ export default function ScanPosPage() {
 
       // Check if already in cart
       if (data.unitBarcode) {
-        const exists = cart.some((c) => c.unitBarcode === data.unitBarcode);
-        if (exists) {
-          setError(`Unit barcode ${data.unitBarcode} is already in the cart.`);
+        const existsIndex = cart.findIndex((c) => c.unitBarcode === data.unitBarcode);
+        if (existsIndex !== -1) {
+          setError(null);
+          // Set a friendly prompt notice
+          setScanPromptNotice({
+            type: "ALREADY_IN_CART",
+            unitBarcode: data.unitBarcode,
+            productName: data.productName,
+            serialNumber: data.serialNumber,
+            index: existsIndex,
+          });
         } else {
+          setScanPromptNotice(null);
           setCart((prev) => [
             ...prev,
             {
@@ -147,6 +163,7 @@ export default function ScanPosPage() {
       setScanInput("");
     } catch (err: any) {
       setError(err.message);
+      setScanPromptNotice(null);
     } finally {
       setLoading(false);
       inputRef.current?.focus();
@@ -155,6 +172,9 @@ export default function ScanPosPage() {
 
   const removeFromCart = (index: number) => {
     setCart((prev) => prev.filter((_, i) => i !== index));
+    if (scanPromptNotice && scanPromptNotice.index === index) {
+      setScanPromptNotice(null);
+    }
   };
 
   const cartTotal = cart.reduce((sum, item) => sum + (item.price || 0), 0);
@@ -279,6 +299,59 @@ export default function ScanPosPage() {
               Point your USB / Wireless scanner at the physical label sticker to scan and verify.
             </p>
           </form>
+
+          {/* Smart Tooltip for Already Scanned Items */}
+          {scanPromptNotice && (
+            <div className="p-4 rounded-2xl bg-gradient-to-r from-amber-50 to-orange-50 border-2 border-amber-300 shadow-sm animate-in fade-in space-y-3">
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex items-start gap-3">
+                  <div className="w-8 h-8 rounded-xl bg-amber-100 flex items-center justify-center text-amber-800 shrink-0 mt-0.5">
+                    <AlertCircle className="w-4 h-4 text-amber-700" />
+                  </div>
+                  <div>
+                    <h4 className="text-xs font-bold text-amber-950">
+                      Unit Barcode Already Scanned in Dispatch Cart
+                    </h4>
+                    <p className="text-[11px] text-amber-800 mt-0.5">
+                      <strong>{scanPromptNotice.productName}</strong> (Unit #{scanPromptNotice.serialNumber}) • Barcode: <span className="font-mono font-bold">{scanPromptNotice.unitBarcode}</span>
+                    </p>
+                    <p className="text-[11px] text-slate-600 mt-1">
+                      Would you like to complete and register this order, or remove this item from the cart?
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setScanPromptNotice(null)}
+                  className="text-amber-600 hover:text-amber-800 p-1"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              <div className="flex items-center gap-2 pt-1">
+                <button
+                  type="button"
+                  onClick={() => {
+                    const el = document.getElementById("customer-name-input");
+                    if (el) el.focus();
+                  }}
+                  className="px-3.5 py-1.5 bg-[#056468] hover:bg-[#044e51] text-white text-xs font-bold rounded-xl shadow-xs flex items-center gap-1.5 transition-all cursor-pointer"
+                >
+                  <Zap className="w-3.5 h-3.5" />
+                  <span>Fill Order Details & Complete</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => removeFromCart(scanPromptNotice.index)}
+                  className="px-3 py-1.5 bg-rose-100 hover:bg-rose-200 text-rose-800 text-xs font-bold rounded-xl flex items-center gap-1 transition-colors cursor-pointer"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                  <span>Remove from Cart</span>
+                </button>
+              </div>
+            </div>
+          )}
 
           {/* Feedback alerts */}
           {error && (
@@ -436,6 +509,7 @@ export default function ScanPosPage() {
                       {orderSource === "POS" ? "Customer Name" : `${orderSource} Buyer Name`}
                     </label>
                     <input
+                      id="customer-name-input"
                       type="text"
                       value={customerName}
                       onChange={(e) => setCustomerName(e.target.value)}

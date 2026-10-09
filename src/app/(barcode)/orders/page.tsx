@@ -45,7 +45,24 @@ export default async function OrdersPage() {
       }),
       prisma.invoice.findMany({
         orderBy: { createdAt: "desc" },
-        include: { order: true, customer: true },
+        include: {
+          order: {
+            include: {
+              items: {
+                include: {
+                  productVariant: {
+                    include: {
+                      product: true,
+                    },
+                  },
+                  unitBarcode: true,
+                },
+              },
+              customer: true,
+            },
+          },
+          customer: true,
+        },
       }),
       prisma.customer.findMany({
         orderBy: { name: "asc" },
