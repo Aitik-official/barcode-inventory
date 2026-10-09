@@ -1,30 +1,61 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { Users, Building2, Plus, Factory, X, UserCheck } from "lucide-react";
+import { Users, Building2, Plus, Factory, X, UserCheck, Search } from "lucide-react";
 import { Pagination } from "@/components/Pagination";
 
 export default function PartnersClient({
-  customers,
-  suppliers,
+  customers = [],
+  suppliers = [],
 }: {
-  customers: any[];
-  suppliers: any[];
+  customers?: any[];
+  suppliers?: any[];
 }) {
   const [activeTab, setActiveTab] = useState<"customers" | "suppliers">("customers");
+  const [search, setSearch] = useState("");
+
+  const safeCustomers = useMemo(() => Array.isArray(customers) ? customers : [], [customers]);
+  const safeSuppliers = useMemo(() => Array.isArray(suppliers) ? suppliers : [], [suppliers]);
+
+  const filteredCustomers = useMemo(() => {
+    if (!search.trim()) return safeCustomers;
+    const q = search.toLowerCase().trim();
+    return safeCustomers.filter(
+      (c) =>
+        (c.name || "").toLowerCase().includes(q) ||
+        (c.email || "").toLowerCase().includes(q) ||
+        (c.phone || "").toLowerCase().includes(q) ||
+        (c.company || "").toLowerCase().includes(q) ||
+        (c.gstin || "").toLowerCase().includes(q)
+    );
+  }, [safeCustomers, search]);
+
+  const filteredSuppliers = useMemo(() => {
+    if (!search.trim()) return safeSuppliers;
+    const q = search.toLowerCase().trim();
+    return safeSuppliers.filter(
+      (s) =>
+        (s.name || "").toLowerCase().includes(q) ||
+        (s.contact || "").toLowerCase().includes(q) ||
+        (s.email || "").toLowerCase().includes(q) ||
+        (s.phone || "").toLowerCase().includes(q) ||
+        (s.city || "").toLowerCase().includes(q) ||
+        (s.gstin || "").toLowerCase().includes(q)
+    );
+  }, [safeSuppliers, search]);
 
   // Pagination states
   const [custPage, setCustPage] = useState(1);
   const [custPageSize, setCustPageSize] = useState(10);
   const paginatedCustomers = useMemo(() => {
-    return customers.slice((custPage - 1) * custPageSize, custPage * custPageSize);
-  }, [customers, custPage, custPageSize]);
+    return filteredCustomers.slice((custPage - 1) * custPageSize, custPage * custPageSize);
+  }, [filteredCustomers, custPage, custPageSize]);
 
   const [supPage, setSupPage] = useState(1);
   const [supPageSize, setSupPageSize] = useState(10);
   const paginatedSuppliers = useMemo(() => {
-    return suppliers.slice((supPage - 1) * supPageSize, supPage * supPageSize);
-  }, [suppliers, supPage, supPageSize]);
+    return filteredSuppliers.slice((supPage - 1) * supPageSize, supPage * supPageSize);
+  }, [filteredSuppliers, supPage, supPageSize]);
 
   // Customer Modal State
   const [custModalOpen, setCustModalOpen] = useState(false);
@@ -172,18 +203,38 @@ export default function PartnersClient({
       {/* TAB 1: CUSTOMERS */}
       {activeTab === "customers" && (
         <div className="bg-white border border-[#cce7ed] rounded-2xl p-6 shadow-sm space-y-4">
-          <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 border-b border-slate-100 pb-3">
             <h2 className="text-lg font-semibold text-[#0b252c] flex items-center gap-2">
               <UserCheck className="w-5 h-5 text-[#056468]" />
-              B2B Customers Directory
+              <span>B2B Customers Directory</span>
+              <span className="text-xs bg-[#e3f2f5] text-[#056468] px-2 py-0.5 rounded-full font-bold">
+                {filteredCustomers.length}
+              </span>
             </h2>
-            <button
-              onClick={() => setCustModalOpen(true)}
-              className="px-4 py-2 bg-[#056468] hover:bg-[#044e51] text-white font-medium text-xs rounded-xl shadow-sm flex items-center gap-1.5"
-            >
-              <Plus className="w-3.5 h-3.5" />
-              Add Customer
-            </button>
+
+            <div className="flex items-center gap-2">
+              <div className="relative flex-1 sm:w-64">
+                <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-slate-400" />
+                <input
+                  type="text"
+                  value={search}
+                  onChange={(e) => {
+                    setSearch(e.target.value);
+                    setCustPage(1);
+                  }}
+                  placeholder="Search customer, email, phone..."
+                  className="w-full bg-slate-50 border border-[#cce7ed] rounded-lg pl-8 pr-3 py-1.5 text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#056468]"
+                />
+              </div>
+
+              <button
+                onClick={() => setCustModalOpen(true)}
+                className="px-4 py-1.5 bg-[#056468] hover:bg-[#044e51] text-white font-medium text-xs rounded-lg shadow-sm flex items-center gap-1.5 shrink-0"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span>Add Customer</span>
+              </button>
+            </div>
           </div>
 
           <div className="overflow-x-auto rounded-xl border border-[#cce7ed]">
@@ -242,18 +293,38 @@ export default function PartnersClient({
       {/* TAB 2: SUPPLIERS */}
       {activeTab === "suppliers" && (
         <div className="bg-white border border-[#cce7ed] rounded-2xl p-6 shadow-sm space-y-4">
-          <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 border-b border-slate-100 pb-3">
             <h2 className="text-lg font-semibold text-[#0b252c] flex items-center gap-2">
               <Factory className="w-5 h-5 text-[#056468]" />
-              Vendors & Suppliers Directory
+              <span>Vendors & Suppliers Directory</span>
+              <span className="text-xs bg-[#e3f2f5] text-[#056468] px-2 py-0.5 rounded-full font-bold">
+                {filteredSuppliers.length}
+              </span>
             </h2>
-            <button
-              onClick={() => setSupModalOpen(true)}
-              className="px-4 py-2 bg-[#056468] hover:bg-[#044e51] text-white font-medium text-xs rounded-xl shadow-sm flex items-center gap-1.5"
-            >
-              <Plus className="w-3.5 h-3.5" />
-              Add Supplier
-            </button>
+
+            <div className="flex items-center gap-2">
+              <div className="relative flex-1 sm:w-64">
+                <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-slate-400" />
+                <input
+                  type="text"
+                  value={search}
+                  onChange={(e) => {
+                    setSearch(e.target.value);
+                    setSupPage(1);
+                  }}
+                  placeholder="Search supplier, city, GSTIN..."
+                  className="w-full bg-slate-50 border border-[#cce7ed] rounded-lg pl-8 pr-3 py-1.5 text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#056468]"
+                />
+              </div>
+
+              <button
+                onClick={() => setSupModalOpen(true)}
+                className="px-4 py-1.5 bg-[#056468] hover:bg-[#044e51] text-white font-medium text-xs rounded-lg shadow-sm flex items-center gap-1.5 shrink-0"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span>Add Supplier</span>
+              </button>
+            </div>
           </div>
 
           <div className="overflow-x-auto rounded-xl border border-[#cce7ed]">
