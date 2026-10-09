@@ -16,7 +16,13 @@ async function main() {
   });
   const soldBarcodes = await prisma.unitBarcode.findMany({
     where: { status: 'SOLD' },
-    include: { product: true }
+    include: {
+      productVariant: {
+        include: {
+          product: true,
+        },
+      },
+    },
   });
 
   console.log('=== ORDERS COUNT ===', orders.length);
