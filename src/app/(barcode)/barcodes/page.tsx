@@ -33,9 +33,14 @@ export default async function BarcodesPage({
             product: true,
           },
         },
+        orderItems: {
+          include: {
+            order: true,
+          },
+        },
       },
       orderBy: [{ generatedAt: "desc" }, { serialNumber: "asc" }],
-      take: 1000,
+      take: 2000,
     }),
     prisma.unitBarcode.count(),
     prisma.unitBarcode.count({ where: { status: "AVAILABLE" } }),
