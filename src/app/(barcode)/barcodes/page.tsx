@@ -10,7 +10,7 @@ export default async function BarcodesPage({
 }) {
   const params = await searchParams;
   const search = params.search || "";
-  const status = params.status !== undefined ? params.status : "AVAILABLE";
+  const status = params.status || "ALL";
 
   const where: any = {};
   if (status && status !== "ALL") {
