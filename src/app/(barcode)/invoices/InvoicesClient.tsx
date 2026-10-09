@@ -120,15 +120,36 @@ export default function InvoicesClient({
   const unifiedInvoices: UnifiedInvoiceItem[] = useMemo(() => {
     const list: UnifiedInvoiceItem[] = [];
 
-    // 1. Direct Website & POS Orders
+    // 1. Direct Website, POS & Marketplace Dispatch Orders
     orders.forEach((o) => {
+      let detectedChannel: "AMAZON" | "FLIPKART" | "WEBSITE" | "POS" = "WEBSITE";
+      const notesUpper = (o.notes || "").toUpperCase();
+      const numUpper = (o.orderNumber || "").toUpperCase();
+      const custUpper = (o.customerName || (o.customer?.name || "")).toUpperCase();
+
+      if (numUpper.startsWith("AMZ-") || numUpper.startsWith("40") || notesUpper.includes("AMAZON") || custUpper.includes("AMAZON")) {
+        detectedChannel = "AMAZON";
+      } else if (numUpper.startsWith("FK-") || numUpper.startsWith("OD") || notesUpper.includes("FLIPKART") || custUpper.includes("FLIPKART")) {
+        detectedChannel = "FLIPKART";
+      } else if (
+        numUpper.startsWith("POS-") ||
+        notesUpper.includes("POS") ||
+        custUpper.includes("WALK-IN") ||
+        custUpper.includes("POS")
+      ) {
+        detectedChannel = "POS";
+      } else if (numUpper.startsWith("WEB-") || notesUpper.includes("WEBSITE") || custUpper.includes("WEBSITE")) {
+        detectedChannel = "WEBSITE";
+      }
+
       const dbInvoice = invoices.find((inv) => inv.orderId === o.id || inv.orderId === o.orderNumber);
+      const prefix = detectedChannel === "FLIPKART" ? "FK" : detectedChannel === "AMAZON" ? "AZ" : "INV";
       const invoiceNumber =
         dbInvoice?.invoiceNumber ||
-        `INV-${new Date(o.createdAt).getFullYear()}-${o.orderNumber.replace(/[^0-9]/g, "").slice(-4) || o.id.slice(-4)}`;
+        `INV-${prefix}-${new Date(o.createdAt).getFullYear()}-${o.orderNumber.replace(/[^0-9]/g, "").slice(-4) || o.id.slice(-4)}`;
 
       const items = (o.items || []).map((i: any) => ({
-        title: i.productVariant?.product?.name || i.title || "Store Item",
+        title: i.productVariant?.product?.name || i.name || i.title || "Store Item",
         sku: i.productVariant?.sku || i.sku || "SKU",
         unitBarcode: i.unitBarcode?.barcode,
         quantity: i.quantity || 1,
@@ -142,7 +163,7 @@ export default function InvoicesClient({
           ? items
           : [
               {
-                title: o.channel === "POS" ? "POS Retail Counter Sale" : "Standard Store Order",
+                title: detectedChannel === "POS" ? "POS Retail Counter Sale" : `${detectedChannel} Store Order`,
                 sku: `SKU-${o.orderNumber.replace(/[^a-zA-Z0-9]/g, "") || "PROD"}`,
                 quantity: 1,
                 unitPrice: o.totalAmount,
@@ -150,6 +171,16 @@ export default function InvoicesClient({
                 hsn: "8525",
               },
             ];
+
+      // Extract tracking and courier from notes if present
+      let extractedTracking = o.trackingNumber || "";
+      let extractedCourier = o.courier || "";
+      if (o.notes) {
+        const trkMatch = o.notes.match(/AWB:\s*([^\s|]+)/i);
+        if (trkMatch) extractedTracking = trkMatch[1];
+        const courMatch = o.notes.match(/Courier:\s*([^\s|]+)/i);
+        if (courMatch) extractedCourier = courMatch[1];
+      }
 
       const taxable = o.totalAmount / 1.18;
       const gst = o.totalAmount - taxable;
@@ -159,11 +190,11 @@ export default function InvoicesClient({
         invoiceNumber,
         orderNumber: o.orderNumber,
         orderDbId: o.id,
-        channel: (o.channel as any) || "WEBSITE",
-        customerName: o.customer?.name || o.customerName || "Customer",
+        channel: detectedChannel,
+        customerName: o.customer?.name || o.customerName || (detectedChannel === "POS" ? "Walk-in Retail Customer" : `${detectedChannel} Customer`),
         customerPhone: o.customer?.phone || o.customerPhone,
         customerEmail: o.customer?.email || o.customerEmail,
-        shippingAddress: o.shippingAddress || "Store Pickup / Counter Dispatch",
+        shippingAddress: o.shippingAddress || (detectedChannel === "POS" ? "Store Pickup / Counter Dispatch" : "Direct Dispatch"),
         city: o.city || o.customer?.city,
         state: o.state || o.customer?.state,
         pincode: o.pincode || o.customer?.pincode,
@@ -173,8 +204,8 @@ export default function InvoicesClient({
         sgst: gst / 2,
         status: o.status || "Completed",
         createdAt: o.createdAt,
-        trackingNumber: o.trackingNumber,
-        courier: o.courier || (o.channel === "POS" ? "Handheld / Direct Counter" : "Standard Express"),
+        trackingNumber: extractedTracking || undefined,
+        courier: extractedCourier || (detectedChannel === "FLIPKART" ? "Ekart Logistics" : detectedChannel === "AMAZON" ? "Amazon ATS Express" : detectedChannel === "POS" ? "Handheld / Direct Counter" : "Standard Express"),
         paymentMethod: o.paymentMethod || "PREPAID",
         items: resolvedItems,
       });
@@ -182,16 +213,22 @@ export default function InvoicesClient({
 
     // 2. Marketplace Orders (Amazon / Flipkart)
     marketplaceOrders.forEach((m) => {
+      // Avoid duplicate entry if already loaded from direct Order table
+      if (list.some((existing) => existing.orderNumber === m.channelOrderId)) {
+        return;
+      }
+
       const channel = m.channel === "AMAZON" ? "AMAZON" : "FLIPKART";
       const invoiceNumber = `INV-${channel === "AMAZON" ? "AZ" : "FK"}-${m.channelOrderId.replace(/[^0-9]/g, "").slice(-4) || m.id.slice(-4)}`;
 
       const items = (m.items || []).map((i: any) => ({
         title: i.title || `${channel} Product Item`,
-        sku: i.sku || "SKU",
+        sku: i.sku || i.channelSku || "SKU",
         asinOrFsn: i.asinOrFsn,
+        unitBarcode: i.scannedBarcode,
         quantity: i.quantity || 1,
-        unitPrice: i.price || m.totalAmount / (i.quantity || 1),
-        total: (i.price || 0) * (i.quantity || 1) || m.totalAmount,
+        unitPrice: i.price || i.itemPrice || m.totalAmount / (i.quantity || 1),
+        total: (i.price || i.itemPrice || 0) * (i.quantity || 1) || m.totalAmount,
         hsn: "8525",
       }));
 
@@ -228,7 +265,7 @@ export default function InvoicesClient({
         cgst: gst / 2,
         sgst: gst / 2,
         status: m.orderStatus || "UNSHIPPED",
-        createdAt: m.orderDate,
+        createdAt: m.orderDate || m.createdAt,
         trackingNumber: m.trackingNumber,
         courier: m.courier || (channel === "AMAZON" ? "Amazon ATS Express" : "Ekart Logistics"),
         paymentMethod: "PREPAID",

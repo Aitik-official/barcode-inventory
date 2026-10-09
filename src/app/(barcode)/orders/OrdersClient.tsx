@@ -268,17 +268,22 @@ export default function OrdersClient({
     // 1. Local Orders (Website / POS / Direct / Multi-Channel)
     localOrders.forEach((ord) => {
       let detectedChannel: "AMAZON" | "FLIPKART" | "WEBSITE" | "POS" = "WEBSITE";
-      if (ord.orderNumber?.startsWith("AMZ-") || ord.notes?.includes("Channel: AMAZON")) {
+      const notesUpper = (ord.notes || "").toUpperCase();
+      const numUpper = (ord.orderNumber || "").toUpperCase();
+      const custUpper = (ord.customerName || "").toUpperCase();
+
+      if (numUpper.startsWith("AMZ-") || numUpper.startsWith("40") || notesUpper.includes("AMAZON") || custUpper.includes("AMAZON")) {
         detectedChannel = "AMAZON";
-      } else if (ord.orderNumber?.startsWith("FK-") || ord.notes?.includes("Channel: FLIPKART")) {
+      } else if (numUpper.startsWith("FK-") || numUpper.startsWith("OD") || notesUpper.includes("FLIPKART") || custUpper.includes("FLIPKART")) {
         detectedChannel = "FLIPKART";
       } else if (
-        ord.orderNumber?.startsWith("POS-") ||
-        ord.notes?.includes("Channel: POS") ||
-        ord.customerName?.toLowerCase().includes("walk-in")
+        numUpper.startsWith("POS-") ||
+        notesUpper.includes("POS") ||
+        custUpper.includes("WALK-IN") ||
+        custUpper.includes("POS")
       ) {
         detectedChannel = "POS";
-      } else if (ord.orderNumber?.startsWith("WEB-") || ord.notes?.includes("Channel: WEBSITE")) {
+      } else if (numUpper.startsWith("WEB-") || notesUpper.includes("WEBSITE") || custUpper.includes("WEBSITE")) {
         detectedChannel = "WEBSITE";
       }
 
@@ -327,6 +332,10 @@ export default function OrdersClient({
 
     // 2. Marketplace Orders (Amazon SP-API & Flipkart)
     localMarketplaceOrders.forEach((mord) => {
+      // Skip duplicate if already present in list from localOrders
+      if (list.some((existing) => existing.orderNumber === mord.channelOrderId)) {
+        return;
+      }
       const isAmazon = mord.channel === "AMAZON";
       list.push({
         id: mord.id,

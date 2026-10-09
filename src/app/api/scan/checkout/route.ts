@@ -217,11 +217,9 @@ export async function POST(req: Request) {
       }
     }
 
-    const orderNotes =
-      notes ||
-      `Channel: ${channel} | Payment Status: ${paymentStatus} | Mode: ${paymentMethod}${
-        courier ? ` | Courier: ${courier}` : ""
-      }${trackingNumber ? ` | AWB: ${trackingNumber}` : ""}`;
+    const orderNotes = `Channel: ${channel} | Payment Status: ${paymentStatus} | Mode: ${paymentMethod}${
+      courier ? ` | Courier: ${courier}` : ""
+    }${trackingNumber ? ` | AWB: ${trackingNumber}` : ""}${notes ? ` | Notes: ${notes}` : ""}`;
 
     const defaultAddress =
       shippingAddress ||
@@ -276,6 +274,67 @@ export async function POST(req: Request) {
         items: true,
       },
     });
+
+    // 1. Automatically generate official Invoice record
+    const taxable = totalSaleAmount / 1.18;
+    const gstTotal = totalSaleAmount - taxable;
+    const invoicePrefix = channel === "FLIPKART" ? "INV-FK" : channel === "AMAZON" ? "INV-AZ" : "INV";
+    const invoiceNum = `${invoicePrefix}-${new Date().getFullYear()}-${order.orderNumber.replace(/[^0-9]/g, "").slice(-4) || String(Math.floor(1000 + Math.random() * 9000))}`;
+
+    try {
+      await prisma.invoice.create({
+        data: {
+          invoiceNumber: invoiceNum,
+          orderId: order.id,
+          customerId: linkedCustomerId,
+          subtotal: taxable,
+          gstRate: 18,
+          cgst: gstTotal / 2,
+          sgst: gstTotal / 2,
+          igst: 0,
+          grandTotal: totalSaleAmount,
+        },
+      });
+    } catch (invErr) {
+      console.warn("Auto invoice creation warning:", invErr);
+    }
+
+    // 2. If Marketplace (Flipkart / Amazon), ensure MarketplaceOrder record exists
+    if (channel === "FLIPKART" || channel === "AMAZON") {
+      try {
+        const existingMOrder = await prisma.marketplaceOrder.findUnique({
+          where: { channelOrderId: finalOrderNumber },
+        });
+
+        if (!existingMOrder) {
+          await prisma.marketplaceOrder.create({
+            data: {
+              channel,
+              channelOrderId: finalOrderNumber,
+              buyerName: customerName || `${channel} Customer`,
+              shippingAddress: defaultAddress,
+              totalAmount: totalSaleAmount,
+              orderStatus: "SHIPPED",
+              dispatchedAt: new Date(),
+              courier: courier || (channel === "FLIPKART" ? "Ekart Logistics" : "Amazon ATS Express"),
+              trackingNumber: trackingNumber || `TRK-${finalOrderNumber}`,
+              items: {
+                create: processedItems.map((p) => ({
+                  channelSku: p.sku,
+                  title: p.name,
+                  quantity: 1,
+                  price: p.price,
+                  scannedBarcode: p.unitBarcode,
+                  localVariantId: p.productVariantId,
+                })),
+              },
+            },
+          });
+        }
+      } catch (mpErr) {
+        console.warn("Marketplace order sync warning:", mpErr);
+      }
+    }
 
     return NextResponse.json({
       success: true,
