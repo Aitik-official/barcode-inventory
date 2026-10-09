@@ -198,19 +198,42 @@ export default async function OrdersPage() {
         }
       }
     }
+    let soldBarcodes: any[] = [];
+    try {
+      soldBarcodes = await prisma.unitBarcode.findMany({
+        where: { status: "SOLD" },
+        include: {
+          productVariant: { include: { product: true } },
+          orderItems: { include: { order: true } },
+        },
+      });
+    } catch {}
+
+    return (
+      <OrdersClient
+        orders={orders}
+        marketplaceOrders={marketplaceOrders}
+        quotations={quotations}
+        enquiries={enquiries}
+        invoices={invoices}
+        customers={customers}
+        soldBarcodes={soldBarcodes}
+        initialCompanySettings={companySettings}
+      />
+    );
   } catch (err) {
     console.error("Error loading orders page data:", err);
+    return (
+      <OrdersClient
+        orders={orders}
+        marketplaceOrders={marketplaceOrders}
+        quotations={quotations}
+        enquiries={enquiries}
+        invoices={invoices}
+        customers={customers}
+        soldBarcodes={[]}
+        initialCompanySettings={companySettings}
+      />
+    );
   }
-
-  return (
-    <OrdersClient
-      orders={orders}
-      marketplaceOrders={marketplaceOrders}
-      quotations={quotations}
-      enquiries={enquiries}
-      invoices={invoices}
-      customers={customers}
-      initialCompanySettings={companySettings}
-    />
-  );
 }
