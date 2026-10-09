@@ -163,7 +163,7 @@ export default async function OrdersPage() {
                         channelSku: sku,
                         title: pName,
                         quantity: 1,
-                        price,
+                        itemPrice: price,
                         scannedBarcode: unit.barcode,
                         localVariantId: unit.productVariantId,
                       },

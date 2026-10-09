@@ -83,7 +83,7 @@ async function main() {
                 channelSku: sku,
                 title: productName,
                 quantity: 1,
-                price,
+                itemPrice: price,
                 scannedBarcode: b.barcode,
                 localVariantId: b.productVariantId,
               },
