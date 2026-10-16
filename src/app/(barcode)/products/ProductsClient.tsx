@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
+import { getSessionCache, setSessionCache } from "@/lib/sessionCache";
 import {
   Package,
   FolderTree,
@@ -28,15 +29,15 @@ import { BarcodeSvg } from "@/components/BarcodeSvg";
 import { Pagination } from "@/components/Pagination";
 
 export default function ProductsClient({
-  products,
-  categories,
-  initialSearch,
-  initialCategoryId,
+  products = [],
+  categories = [],
+  initialSearch = "",
+  initialCategoryId = "",
 }: {
-  products: any[];
-  categories: any[];
-  initialSearch: string;
-  initialCategoryId: string;
+  products?: any[];
+  categories?: any[];
+  initialSearch?: string;
+  initialCategoryId?: string;
 }) {
   const [activeTab, setActiveTab] = useState<"products" | "categories" | "services">("products");
 
@@ -96,8 +97,30 @@ export default function ProductsClient({
   const [printSingleUnit, setPrintSingleUnit] = useState<string>("");
   const [printItemsList, setPrintItemsList] = useState<any[]>([]);
 
-  // Product List & Safety Delete State
-  const [productList, setProductList] = useState<any[]>(products);
+  // Product List & Safety Delete State with browser-level session caching
+  const [productList, setProductList] = useState<any[]>(() => {
+    if (products && products.length > 0) return products;
+    return getSessionCache("products_catalog_list") || [];
+  });
+  const [categoryList, setCategoryList] = useState<any[]>(() => {
+    if (categories && categories.length > 0) return categories;
+    return getSessionCache("categories_catalog_list") || [];
+  });
+
+  useEffect(() => {
+    if (products && products.length > 0) {
+      setProductList(products);
+      setSessionCache("products_catalog_list", products);
+    }
+  }, [products]);
+
+  useEffect(() => {
+    if (categories && categories.length > 0) {
+      setCategoryList(categories);
+      setSessionCache("categories_catalog_list", categories);
+    }
+  }, [categories]);
+
   const [productToDelete, setProductToDelete] = useState<any | null>(null);
   const [isDeletingProduct, setIsDeletingProduct] = useState(false);
 
@@ -129,7 +152,7 @@ export default function ProductsClient({
   };
 
   const openBulkRefillModal = () => {
-    const physicalProducts = products.filter((p) => p.productType !== "SERVICE");
+    const physicalProducts = (productList || products || []).filter((p) => p.productType !== "SERVICE");
     const items = physicalProducts.map((p) => {
       const v = p.variants?.[0];
       return {
@@ -405,21 +428,21 @@ export default function ProductsClient({
   };
 
   // Level 1 Categories (Main Categories)
-  const mainCategories = useMemo(() => categories.filter((c) => !c.parentId), [categories]);
+  const mainCategories = useMemo(() => (categoryList || []).filter((c) => !c?.parentId), [categoryList]);
 
   // Level 2 Categories (Sub Categories)
   const subCategories = useMemo(
-    () => categories.filter((c) => c.parentId && mainCategories.some((m) => m.id === c.parentId)),
-    [categories, mainCategories]
+    () => (categoryList || []).filter((c) => c?.parentId && mainCategories.some((m) => m?.id === c?.parentId)),
+    [categoryList, mainCategories]
   );
 
   // Level 3 Categories (Level 2 Sub Categories)
   const level2SubCategories = useMemo(
-    () => categories.filter((c) => c.parentId && subCategories.some((s) => s.id === c.parentId)),
-    [categories, subCategories]
+    () => (categoryList || []).filter((c) => c?.parentId && subCategories.some((s) => s?.id === c?.parentId)),
+    [categoryList, subCategories]
   );
 
-  const serviceCategories = useMemo(() => categories.filter((c) => c.mainUse === "service"), [categories]);
+  const serviceCategories = useMemo(() => (categoryList || []).filter((c) => c?.mainUse === "service"), [categoryList]);
 
   // Pagination States
   const [productPage, setProductPage] = useState(1);
@@ -459,8 +482,8 @@ export default function ProductsClient({
   }, [level2SubCategories, l2CatPage, l2CatPageSize]);
 
   const serviceProducts = useMemo(() => {
-    return products.filter((p) => p.productType === "SERVICE");
-  }, [products]);
+    return (productList || products || []).filter((p) => p?.productType === "SERVICE");
+  }, [productList, products]);
 
   const paginatedServices = useMemo(() => {
     const start = (servicesPage - 1) * servicesPageSize;
@@ -519,7 +542,7 @@ export default function ProductsClient({
           }`}
         >
           <Package className="w-3.5 h-3.5" />
-          <span>Products List ({products.length})</span>
+          <span>Products List ({productList.length})</span>
         </button>
 
         <button
@@ -531,7 +554,7 @@ export default function ProductsClient({
           }`}
         >
           <FolderTree className="w-3.5 h-3.5" />
-          <span>3-Tier Categories ({categories.length})</span>
+          <span>3-Tier Categories ({categoryList.length})</span>
         </button>
 
         <button
@@ -543,7 +566,7 @@ export default function ProductsClient({
           }`}
         >
           <Wrench className="w-3.5 h-3.5" />
-          <span>Services & Printing ({products.filter((p) => p.productType === "SERVICE").length})</span>
+          <span>Services & Printing ({serviceProducts.length})</span>
         </button>
       </div>
 
@@ -568,7 +591,7 @@ export default function ProductsClient({
               className="bg-white border border-[#cce7ed] rounded-lg px-3 py-2 text-xs text-[#0b252c] focus:outline-none focus:ring-2 focus:ring-[#056468]"
             >
               <option value="">All Categories</option>
-              {categories.map((c) => (
+              {categoryList.map((c) => (
                 <option key={c.id} value={c.id}>
                   {c.parent ? `${c.parent.name} → ` : ""}{c.name} ({c.mainUse})
                 </option>
@@ -584,7 +607,7 @@ export default function ProductsClient({
           </form>
 
           {/* Products Grid */}
-          {products.length === 0 ? (
+          {productList.length === 0 ? (
             <div className="bg-white border border-[#cce7ed] rounded-xl p-12 text-center space-y-4 shadow-sm">
               <Package className="w-12 h-12 text-[#056468] mx-auto opacity-70" />
               <h3 className="text-base font-semibold text-[#0b252c]">No products found</h3>
@@ -1246,7 +1269,7 @@ export default function ProductsClient({
                     className="w-full bg-[#f8fcfe] border border-[#cce7ed] rounded-lg px-3 py-2 text-[#0b252c] text-xs"
                   >
                     <option value="">Select Category</option>
-                    {categories.map((c) => (
+                    {categoryList.map((c) => (
                       <option key={c.id} value={c.id}>
                         {c.name} ({c.mainUse})
                       </option>

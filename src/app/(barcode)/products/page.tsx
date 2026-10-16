@@ -6,11 +6,18 @@ export const revalidate = 0;
 export default async function ProductsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ search?: string; categoryId?: string }>;
+  searchParams?: Promise<{ search?: string; categoryId?: string }> | { search?: string; categoryId?: string };
 }) {
-  const params = await searchParams;
-  const search = params.search || "";
-  const categoryId = params.categoryId || "";
+  let search = "";
+  let categoryId = "";
+
+  try {
+    const resolvedParams = searchParams ? (await searchParams) : {};
+    search = typeof resolvedParams.search === "string" ? resolvedParams.search.trim() : "";
+    categoryId = typeof resolvedParams.categoryId === "string" ? resolvedParams.categoryId.trim() : "";
+  } catch (err) {
+    console.error("Error reading searchParams in ProductsPage:", err);
+  }
 
   const where: any = {};
   if (search) {
@@ -25,30 +32,71 @@ export default async function ProductsPage({
     where.categoryId = categoryId;
   }
 
-  const [products, categories] = await Promise.all([
-    prisma.product.findMany({
-      where,
-      include: {
-        category: true,
-        variants: {
-          include: {
-            inventory: true,
-            unitBarcodes: {
-              take: 5,
-              orderBy: { serialNumber: "asc" },
+  let products: any[] = [];
+  let categories: any[] = [];
+
+  try {
+    const results = await Promise.allSettled([
+      prisma.product.findMany({
+        where,
+        include: {
+          category: true,
+          variants: {
+            include: {
+              inventory: true,
+              unitBarcodes: {
+                take: 5,
+                orderBy: { serialNumber: "asc" },
+              },
             },
           },
         },
-      },
-      orderBy: { createdAt: "desc" },
-    }),
-    prisma.category.findMany({
-      include: {
-        _count: { select: { products: true } },
-      },
-      orderBy: { name: "asc" },
-    }),
-  ]);
+        orderBy: { createdAt: "desc" },
+      }),
+      prisma.category.findMany({
+        include: {
+          _count: { select: { products: true } },
+        },
+        orderBy: { name: "asc" },
+      }),
+    ]);
+
+    if (results[0].status === "fulfilled") {
+      products = results[0].value || [];
+    } else {
+      console.error("Products primary query failed:", results[0].reason);
+      // Fallback query with simpler relations in case nested relation caused issue
+      try {
+        products = await prisma.product.findMany({
+          where,
+          include: {
+            category: true,
+            variants: true,
+          },
+          orderBy: { createdAt: "desc" },
+        });
+      } catch (fallbackErr) {
+        console.error("Products fallback query failed:", fallbackErr);
+        products = [];
+      }
+    }
+
+    if (results[1].status === "fulfilled") {
+      categories = results[1].value || [];
+    } else {
+      console.error("Categories primary query failed:", results[1].reason);
+      try {
+        categories = await prisma.category.findMany({
+          orderBy: { name: "asc" },
+        });
+      } catch (fallbackErr) {
+        console.error("Categories fallback query failed:", fallbackErr);
+        categories = [];
+      }
+    }
+  } catch (err) {
+    console.error("Fatal error loading products page data:", err);
+  }
 
   return (
     <ProductsClient
@@ -59,3 +107,4 @@ export default async function ProductsPage({
     />
   );
 }
+

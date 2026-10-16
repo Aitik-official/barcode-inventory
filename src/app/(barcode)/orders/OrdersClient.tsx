@@ -48,6 +48,7 @@ import {
 } from "@/components/PrintShippingInvoiceDialog";
 import { Pagination } from "@/components/Pagination";
 import { CompanySettingsData, DEFAULT_COMPANY_SETTINGS } from "@/lib/companySettingsTypes";
+import { getSessionCache, setSessionCache } from "@/lib/sessionCache";
 
 interface UnifiedOrder {
   id: string;
@@ -130,21 +131,39 @@ export default function OrdersClient({
     text: string;
   } | null>(null);
 
-  // Local state for orders allowing real-time status & customer changes
-  const [localOrders, setLocalOrders] = useState<any[]>(orders);
-  const [localMarketplaceOrders, setLocalMarketplaceOrders] = useState<any[]>(marketplaceOrders);
-  const [localCustomers, setLocalCustomers] = useState<any[]>(customers);
+  // Local state with instant browser-level device caching
+  const [localOrders, setLocalOrders] = useState<any[]>(() => {
+    if (orders && orders.length > 0) return orders;
+    return getSessionCache("orders_hub_list") || [];
+  });
+  const [localMarketplaceOrders, setLocalMarketplaceOrders] = useState<any[]>(() => {
+    if (marketplaceOrders && marketplaceOrders.length > 0) return marketplaceOrders;
+    return getSessionCache("marketplace_orders_list") || [];
+  });
+  const [localCustomers, setLocalCustomers] = useState<any[]>(() => {
+    if (customers && customers.length > 0) return customers;
+    return getSessionCache("customers_list") || [];
+  });
 
   useEffect(() => {
-    setLocalOrders(orders);
+    if (orders && orders.length > 0) {
+      setLocalOrders(orders);
+      setSessionCache("orders_hub_list", orders);
+    }
   }, [orders]);
 
   useEffect(() => {
-    setLocalMarketplaceOrders(marketplaceOrders);
+    if (marketplaceOrders && marketplaceOrders.length > 0) {
+      setLocalMarketplaceOrders(marketplaceOrders);
+      setSessionCache("marketplace_orders_list", marketplaceOrders);
+    }
   }, [marketplaceOrders]);
 
   useEffect(() => {
-    setLocalCustomers(customers);
+    if (customers && customers.length > 0) {
+      setLocalCustomers(customers);
+      setSessionCache("customers_list", customers);
+    }
   }, [customers]);
 
   // Selected Order for Details Modal

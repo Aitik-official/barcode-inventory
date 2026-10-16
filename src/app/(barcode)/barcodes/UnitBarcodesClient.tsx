@@ -17,9 +17,11 @@ import {
   Tag,
 } from "lucide-react";
 
+import { getSessionCache, setSessionCache } from "@/lib/sessionCache";
+
 export default function UnitBarcodesClient({
-  unitBarcodes,
-  stats,
+  unitBarcodes = [],
+  stats = { totalCount: 0, availableCount: 0, soldCount: 0 },
   initialSearch = "",
   initialStatus = "ALL",
 }: {
@@ -31,6 +33,31 @@ export default function UnitBarcodesClient({
   const [selectedUnit, setSelectedUnit] = useState<any>(null);
   const [isPrintOpen, setIsPrintOpen] = useState(false);
 
+  // Local state with instant browser session cache
+  const [localBarcodes, setLocalBarcodes] = useState<any[]>(() => {
+    if (unitBarcodes && unitBarcodes.length > 0) return unitBarcodes;
+    return getSessionCache("unit_barcodes_list") || [];
+  });
+
+  const [localStats, setLocalStats] = useState(() => {
+    if (stats && stats.totalCount > 0) return stats;
+    return getSessionCache("unit_barcodes_stats") || stats;
+  });
+
+  useEffect(() => {
+    if (unitBarcodes && unitBarcodes.length > 0) {
+      setLocalBarcodes(unitBarcodes);
+      setSessionCache("unit_barcodes_list", unitBarcodes);
+    }
+  }, [unitBarcodes]);
+
+  useEffect(() => {
+    if (stats && stats.totalCount > 0) {
+      setLocalStats(stats);
+      setSessionCache("unit_barcodes_stats", stats);
+    }
+  }, [stats]);
+
   // Filter state
   const [search, setSearch] = useState(initialSearch);
   const [statusFilter, setStatusFilter] = useState<string>(initialStatus || "ALL");
@@ -41,7 +68,7 @@ export default function UnitBarcodesClient({
 
   // Filter unitBarcodes dynamically
   const filteredBarcodes = useMemo(() => {
-    return unitBarcodes.filter((unit) => {
+    return localBarcodes.filter((unit) => {
       // 1. Status Filter
       if (statusFilter !== "ALL" && unit.status !== statusFilter) {
         return false;
@@ -120,7 +147,7 @@ export default function UnitBarcodesClient({
           </div>
           <div className="mt-2">
             <div className="text-xs font-normal text-emerald-100/80">Total Serial Barcodes</div>
-            <div className="text-2xl font-bold text-white mt-0.5">{stats.totalCount}</div>
+            <div className="text-2xl font-bold text-white mt-0.5">{localStats.totalCount}</div>
           </div>
           <div className="text-[11px] text-emerald-200 font-medium flex items-center justify-between mt-1">
             <span>Sequential Code 128 Engine</span>
@@ -142,7 +169,7 @@ export default function UnitBarcodesClient({
           </div>
           <div className="mt-2">
             <div className="text-xs font-normal text-emerald-100/80">Available Units in Stock</div>
-            <div className="text-2xl font-bold text-emerald-200 mt-0.5">{stats.availableCount}</div>
+            <div className="text-2xl font-bold text-emerald-200 mt-0.5">{localStats.availableCount}</div>
           </div>
           <div className="text-[11px] text-emerald-100/70 font-medium flex items-center justify-between mt-1">
             <span>Ready for POS Scan & Order</span>
@@ -164,7 +191,7 @@ export default function UnitBarcodesClient({
           </div>
           <div className="mt-2">
             <div className="text-xs font-normal text-emerald-100/80">Sold / Fulfilled Units</div>
-            <div className="text-2xl font-bold text-white mt-0.5">{stats.soldCount}</div>
+            <div className="text-2xl font-bold text-white mt-0.5">{localStats.soldCount}</div>
           </div>
           <div className="text-[11px] text-emerald-100/70 font-medium flex items-center justify-between mt-1">
             <span>Completed Customer Orders</span>

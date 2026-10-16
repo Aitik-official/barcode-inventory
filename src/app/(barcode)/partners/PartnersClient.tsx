@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { Users, Building2, Plus, Factory, X, UserCheck, Search } from "lucide-react";
 import { Pagination } from "@/components/Pagination";
+import { getSessionCache, setSessionCache } from "@/lib/sessionCache";
 
 export default function PartnersClient({
   customers = [],
@@ -14,8 +15,32 @@ export default function PartnersClient({
   const [activeTab, setActiveTab] = useState<"customers" | "suppliers">("customers");
   const [search, setSearch] = useState("");
 
-  const safeCustomers = useMemo(() => Array.isArray(customers) ? customers : [], [customers]);
-  const safeSuppliers = useMemo(() => Array.isArray(suppliers) ? suppliers : [], [suppliers]);
+  const [localCustomers, setLocalCustomers] = useState<any[]>(() => {
+    if (customers && customers.length > 0) return customers;
+    return getSessionCache("partners_customers_list") || [];
+  });
+
+  const [localSuppliers, setLocalSuppliers] = useState<any[]>(() => {
+    if (suppliers && suppliers.length > 0) return suppliers;
+    return getSessionCache("partners_suppliers_list") || [];
+  });
+
+  useEffect(() => {
+    if (customers && customers.length > 0) {
+      setLocalCustomers(customers);
+      setSessionCache("partners_customers_list", customers);
+    }
+  }, [customers]);
+
+  useEffect(() => {
+    if (suppliers && suppliers.length > 0) {
+      setLocalSuppliers(suppliers);
+      setSessionCache("partners_suppliers_list", suppliers);
+    }
+  }, [suppliers]);
+
+  const safeCustomers = useMemo(() => Array.isArray(localCustomers) ? localCustomers : [], [localCustomers]);
+  const safeSuppliers = useMemo(() => Array.isArray(localSuppliers) ? localSuppliers : [], [localSuppliers]);
 
   const filteredCustomers = useMemo(() => {
     if (!search.trim()) return safeCustomers;
