@@ -23,11 +23,55 @@ import {
   CheckCircle2,
   X,
   Trash2,
+  AlertTriangle,
+  Info,
+  Check,
 } from "lucide-react";
 import { PrintLabelDialog } from "@/components/PrintLabelDialog";
 import { DeleteConfirmationModal } from "@/components/DeleteConfirmationModal";
 import { BarcodeSvg } from "@/components/BarcodeSvg";
 import { Pagination } from "@/components/Pagination";
+
+// Helper to audit website readiness of a product (Image, Description, Category, Price, SKU)
+export interface ProductWebsiteAudit {
+  isComplete: boolean;
+  score: number;
+  filledFieldsCount: number;
+  totalFieldsCount: number;
+  missingFields: string[];
+}
+
+export function checkProductWebsiteData(product: any): ProductWebsiteAudit {
+  const hasImage = Boolean(product?.imageUrl && product.imageUrl.trim() !== "");
+  const hasDescription = Boolean(product?.description && product.description.trim() !== "");
+  const hasCategory = Boolean(product?.category?.name || product?.categoryId);
+  const variant = product?.variants?.[0];
+  const hasPrice = Boolean(
+    (product?.offerPrice && product.offerPrice > 0) ||
+    (product?.mrp && product.mrp > 0) ||
+    (variant?.sellingPrice && variant.sellingPrice > 0)
+  );
+  const hasSku = Boolean(variant?.sku && variant.sku.trim() !== "");
+
+  const missing: string[] = [];
+  if (!hasImage) missing.push("Image");
+  if (!hasDescription) missing.push("Description");
+  if (!hasCategory) missing.push("Category");
+  if (!hasPrice) missing.push("Price");
+  if (!hasSku) missing.push("SKU");
+
+  const total = 5;
+  const filled = total - missing.length;
+  const score = Math.round((filled / total) * 100);
+
+  return {
+    isComplete: missing.length === 0,
+    score,
+    filledFieldsCount: filled,
+    totalFieldsCount: total,
+    missingFields: missing,
+  };
+}
 
 export default function ProductsClient({
   products = [],
@@ -41,6 +85,9 @@ export default function ProductsClient({
   initialCategoryId?: string;
 }) {
   const [activeTab, setActiveTab] = useState<"products" | "categories" | "services">("products");
+  const [websiteFilter, setWebsiteFilter] = useState<
+    "ALL" | "VISIBLE" | "VISIBLE_COMPLETE" | "VISIBLE_MISSING" | "HIDDEN"
+  >("ALL");
 
   // Main Category Modal State
   const [catModalOpen, setCatModalOpen] = useState(false);
@@ -350,7 +397,13 @@ export default function ProductsClient({
         body: JSON.stringify({ showOnWebsite: !currentShow }),
       });
       if (res.ok) {
-        window.location.reload();
+        setProductList((prev) => {
+          const updated = prev.map((p) =>
+            p.id === productId ? { ...p, showOnWebsite: !currentShow } : p
+          );
+          setSessionCache("products_catalog_list", updated);
+          return updated;
+        });
       }
     } catch (err) {
       console.error(err);
@@ -502,11 +555,77 @@ export default function ProductsClient({
   const [servicesPage, setServicesPage] = useState(1);
   const [servicesPageSize, setServicesPageSize] = useState(12);
 
+  // Website Visibility & Data Completeness Metrics
+  const websiteMetrics = useMemo(() => {
+    let visibleCount = 0;
+    let hiddenCount = 0;
+    let visibleCompleteCount = 0;
+    let visibleMissingCount = 0;
+
+    (productList || []).forEach((p) => {
+      const isVisible = p.showOnWebsite !== false;
+      const audit = checkProductWebsiteData(p);
+      if (isVisible) {
+        visibleCount++;
+        if (audit.isComplete) {
+          visibleCompleteCount++;
+        } else {
+          visibleMissingCount++;
+        }
+      } else {
+        hiddenCount++;
+      }
+    });
+
+    return {
+      total: (productList || []).length,
+      visibleCount,
+      hiddenCount,
+      visibleCompleteCount,
+      visibleMissingCount,
+    };
+  }, [productList]);
+
+  const websiteFilterLabel = useMemo(() => {
+    switch (websiteFilter) {
+      case "VISIBLE":
+        return "Visible on Website";
+      case "VISIBLE_COMPLETE":
+        return "Visible & Website Data Complete";
+      case "VISIBLE_MISSING":
+        return "Visible but Missing Website Data";
+      case "HIDDEN":
+        return "Hidden from Website";
+      default:
+        return "All Catalog Products";
+    }
+  }, [websiteFilter]);
+
+  // Filtered Products by Website Visibility & Data Status
+  const filteredProducts = useMemo(() => {
+    return (productList || []).filter((p) => {
+      const isVisible = p.showOnWebsite !== false;
+      const audit = checkProductWebsiteData(p);
+
+      if (websiteFilter === "VISIBLE") {
+        if (!isVisible) return false;
+      } else if (websiteFilter === "VISIBLE_COMPLETE") {
+        if (!isVisible || !audit.isComplete) return false;
+      } else if (websiteFilter === "VISIBLE_MISSING") {
+        if (!isVisible || audit.isComplete) return false;
+      } else if (websiteFilter === "HIDDEN") {
+        if (isVisible) return false;
+      }
+
+      return true;
+    });
+  }, [productList, websiteFilter]);
+
   // Paginated Slices
   const paginatedProducts = useMemo(() => {
     const start = (productPage - 1) * productPageSize;
-    return productList.slice(start, start + productPageSize);
-  }, [productList, productPage, productPageSize]);
+    return filteredProducts.slice(start, start + productPageSize);
+  }, [filteredProducts, productPage, productPageSize]);
 
   const paginatedMainCategories = useMemo(() => {
     const start = (mainCatPage - 1) * mainCatPageSize;
@@ -614,7 +733,135 @@ export default function ProductsClient({
 
       {/* TAB 1: PRODUCTS LIST */}
       {activeTab === "products" && (
-        <div className="space-y-6">
+        <div className="space-y-5">
+          {/* Website Readiness & Visibility Hub - Interactive Metric Filter Cards */}
+          <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+            {/* Card 1: All Catalog */}
+            <button
+              type="button"
+              onClick={() => {
+                setWebsiteFilter("ALL");
+                setProductPage(1);
+              }}
+              className={`p-3.5 rounded-2xl border text-left transition-all cursor-pointer flex flex-col justify-between ${
+                websiteFilter === "ALL"
+                  ? "bg-slate-900 text-white border-slate-900 shadow-sm ring-2 ring-slate-900/20"
+                  : "bg-white text-slate-800 border-slate-200 hover:border-slate-300 hover:bg-slate-50/80"
+              }`}
+            >
+              <div className="flex items-center justify-between w-full mb-1">
+                <span className={`text-[11px] font-bold ${websiteFilter === "ALL" ? "text-slate-300" : "text-slate-500"}`}>
+                  All Catalog
+                </span>
+                <Package className={`w-4 h-4 ${websiteFilter === "ALL" ? "text-slate-300" : "text-slate-400"}`} />
+              </div>
+              <div className="text-2xl font-black font-mono tracking-tight">{websiteMetrics.total}</div>
+              <span className={`text-[10px] mt-1 ${websiteFilter === "ALL" ? "text-slate-300" : "text-slate-500"}`}>
+                Total Master SKUs
+              </span>
+            </button>
+
+            {/* Card 2: Visible on Website */}
+            <button
+              type="button"
+              onClick={() => {
+                setWebsiteFilter("VISIBLE");
+                setProductPage(1);
+              }}
+              className={`p-3.5 rounded-2xl border text-left transition-all cursor-pointer flex flex-col justify-between ${
+                websiteFilter === "VISIBLE"
+                  ? "bg-[#056468] text-white border-[#056468] shadow-sm ring-2 ring-[#056468]/20"
+                  : "bg-white text-slate-800 border-[#cce7ed] hover:border-[#056468]/50 hover:bg-[#f0f8fa]"
+              }`}
+            >
+              <div className="flex items-center justify-between w-full mb-1">
+                <span className={`text-[11px] font-bold ${websiteFilter === "VISIBLE" ? "text-emerald-100" : "text-[#056468]"}`}>
+                  Visible on Website
+                </span>
+                <Globe className={`w-4 h-4 ${websiteFilter === "VISIBLE" ? "text-emerald-200" : "text-[#056468]"}`} />
+              </div>
+              <div className="text-2xl font-black font-mono tracking-tight">{websiteMetrics.visibleCount}</div>
+              <span className={`text-[10px] mt-1 ${websiteFilter === "VISIBLE" ? "text-emerald-100" : "text-slate-500"}`}>
+                Live on Storefront
+              </span>
+            </button>
+
+            {/* Card 3: Visible & Data Complete (100% Ready) */}
+            <button
+              type="button"
+              onClick={() => {
+                setWebsiteFilter("VISIBLE_COMPLETE");
+                setProductPage(1);
+              }}
+              className={`p-3.5 rounded-2xl border text-left transition-all cursor-pointer flex flex-col justify-between ${
+                websiteFilter === "VISIBLE_COMPLETE"
+                  ? "bg-emerald-600 text-white border-emerald-600 shadow-sm ring-2 ring-emerald-600/20"
+                  : "bg-white text-slate-800 border-emerald-200 hover:border-emerald-300 hover:bg-emerald-50/50"
+              }`}
+            >
+              <div className="flex items-center justify-between w-full mb-1">
+                <span className={`text-[11px] font-bold ${websiteFilter === "VISIBLE_COMPLETE" ? "text-emerald-100" : "text-emerald-700"}`}>
+                  Data Complete
+                </span>
+                <CheckCircle2 className={`w-4 h-4 ${websiteFilter === "VISIBLE_COMPLETE" ? "text-emerald-200" : "text-emerald-600"}`} />
+              </div>
+              <div className="text-2xl font-black font-mono tracking-tight">{websiteMetrics.visibleCompleteCount}</div>
+              <span className={`text-[10px] mt-1 ${websiteFilter === "VISIBLE_COMPLETE" ? "text-emerald-100" : "text-emerald-600"}`}>
+                100% Ready to Sell
+              </span>
+            </button>
+
+            {/* Card 4: Visible but Missing Data (Needs Info) */}
+            <button
+              type="button"
+              onClick={() => {
+                setWebsiteFilter("VISIBLE_MISSING");
+                setProductPage(1);
+              }}
+              className={`p-3.5 rounded-2xl border text-left transition-all cursor-pointer flex flex-col justify-between ${
+                websiteFilter === "VISIBLE_MISSING"
+                  ? "bg-amber-600 text-white border-amber-600 shadow-sm ring-2 ring-amber-600/30"
+                  : "bg-amber-50/50 text-slate-800 border-amber-200 hover:border-amber-300 hover:bg-amber-50"
+              }`}
+            >
+              <div className="flex items-center justify-between w-full mb-1">
+                <span className={`text-[11px] font-bold ${websiteFilter === "VISIBLE_MISSING" ? "text-amber-100" : "text-amber-800"}`}>
+                  Missing Data
+                </span>
+                <AlertTriangle className={`w-4 h-4 ${websiteFilter === "VISIBLE_MISSING" ? "text-amber-200" : "text-amber-600"}`} />
+              </div>
+              <div className="text-2xl font-black font-mono tracking-tight">{websiteMetrics.visibleMissingCount}</div>
+              <span className={`text-[10px] mt-1 font-semibold ${websiteFilter === "VISIBLE_MISSING" ? "text-amber-100" : "text-amber-700"}`}>
+                Live but Needs Info
+              </span>
+            </button>
+
+            {/* Card 5: Hidden from Website */}
+            <button
+              type="button"
+              onClick={() => {
+                setWebsiteFilter("HIDDEN");
+                setProductPage(1);
+              }}
+              className={`p-3.5 rounded-2xl border text-left transition-all cursor-pointer flex flex-col justify-between col-span-2 sm:col-span-1 ${
+                websiteFilter === "HIDDEN"
+                  ? "bg-rose-700 text-white border-rose-700 shadow-sm ring-2 ring-rose-700/20"
+                  : "bg-white text-slate-800 border-slate-200 hover:border-rose-300 hover:bg-rose-50/40"
+              }`}
+            >
+              <div className="flex items-center justify-between w-full mb-1">
+                <span className={`text-[11px] font-bold ${websiteFilter === "HIDDEN" ? "text-rose-100" : "text-slate-600"}`}>
+                  Hidden / Offline
+                </span>
+                <EyeOff className={`w-4 h-4 ${websiteFilter === "HIDDEN" ? "text-rose-200" : "text-slate-400"}`} />
+              </div>
+              <div className="text-2xl font-black font-mono tracking-tight">{websiteMetrics.hiddenCount}</div>
+              <span className={`text-[10px] mt-1 ${websiteFilter === "HIDDEN" ? "text-rose-100" : "text-slate-500"}`}>
+                Not on Storefront
+              </span>
+            </button>
+          </div>
+
           {/* Filter Bar */}
           <form method="GET" className="flex flex-col sm:flex-row gap-3">
             <div className="relative flex-1">
@@ -627,6 +874,23 @@ export default function ProductsClient({
                 className="w-full bg-white border border-[#cce7ed] rounded-lg pl-9 pr-4 py-2 text-xs text-[#0b252c] placeholder-[#6a8c96] focus:outline-none focus:ring-2 focus:ring-[#056468]"
               />
             </div>
+
+            {/* Website Status Dropdown Filter */}
+            <select
+              value={websiteFilter}
+              onChange={(e) => {
+                setWebsiteFilter(e.target.value as any);
+                setProductPage(1);
+              }}
+              className="bg-white border border-[#cce7ed] rounded-lg px-3 py-2 text-xs font-semibold text-[#0b252c] focus:outline-none focus:ring-2 focus:ring-[#056468]"
+            >
+              <option value="ALL">🌐 Website: All Products ({websiteMetrics.total})</option>
+              <option value="VISIBLE">🟢 Visible on Website ({websiteMetrics.visibleCount})</option>
+              <option value="VISIBLE_COMPLETE">✅ Visible & Complete 100% ({websiteMetrics.visibleCompleteCount})</option>
+              <option value="VISIBLE_MISSING">⚠️ Visible but Missing Info ({websiteMetrics.visibleMissingCount})</option>
+              <option value="HIDDEN">🔴 Hidden from Website ({websiteMetrics.hiddenCount})</option>
+            </select>
+
             <select
               name="categoryId"
               defaultValue={initialCategoryId}
@@ -644,25 +908,64 @@ export default function ProductsClient({
               className="px-4 py-2 bg-white hover:bg-[#f0f8fa] text-[#056468] font-medium text-xs rounded-lg border border-[#cce7ed] transition-colors shadow-sm flex items-center justify-center gap-1.5"
             >
               <SlidersHorizontal className="w-3.5 h-3.5" />
-              <span>Filter</span>
+              <span>Search</span>
             </button>
           </form>
 
+          {/* Active Filter Pill indicator if not ALL */}
+          {websiteFilter !== "ALL" && (
+            <div className="flex items-center justify-between px-3 py-2 rounded-xl bg-slate-100 border border-slate-200 text-xs text-slate-700">
+              <span className="flex items-center gap-2">
+                <span className="font-bold text-slate-900">Filtered by:</span>
+                <span className="px-2 py-0.5 rounded-full bg-white font-semibold shadow-xs border border-slate-200 text-[#056468]">
+                  {websiteFilterLabel} ({filteredProducts.length} items)
+                </span>
+              </span>
+              <button
+                type="button"
+                onClick={() => {
+                  setWebsiteFilter("ALL");
+                  setProductPage(1);
+                }}
+                className="text-[11px] font-bold text-slate-500 hover:text-slate-800 underline cursor-pointer"
+              >
+                Clear filter
+              </button>
+            </div>
+          )}
+
           {/* Products Grid */}
-          {productList.length === 0 ? (
+          {filteredProducts.length === 0 ? (
             <div className="bg-white border border-[#cce7ed] rounded-xl p-12 text-center space-y-4 shadow-sm">
               <Package className="w-12 h-12 text-[#056468] mx-auto opacity-70" />
-              <h3 className="text-base font-semibold text-[#0b252c]">No products found</h3>
+              <h3 className="text-base font-semibold text-[#0b252c]">
+                {productList.length === 0 ? "No products found" : "No products match this website filter"}
+              </h3>
               <p className="text-xs text-[#4a6870] max-w-sm mx-auto font-normal">
-                Get started by adding your first product with SKU and initial per-unit barcodes.
+                {productList.length === 0
+                  ? "Get started by adding your first product with SKU and initial per-unit barcodes."
+                  : `There are currently no products under "${websiteFilterLabel}". Try selecting "All Products" or another filter.`}
               </p>
-              <Link
-                href="/products/new"
-                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-[#056468] text-white font-medium text-xs shadow"
-              >
-                <Plus className="w-3.5 h-3.5" />
-                <span>Create Product Now</span>
-              </Link>
+              {productList.length > 0 ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setWebsiteFilter("ALL");
+                    setProductPage(1);
+                  }}
+                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-[#056468] text-white font-medium text-xs shadow cursor-pointer"
+                >
+                  <span>Reset Website Filter to All</span>
+                </button>
+              ) : (
+                <Link
+                  href="/products/new"
+                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-[#056468] text-white font-medium text-xs shadow"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  <span>Create Product Now</span>
+                </Link>
+              )}
             </div>
           ) : (
             <div>
@@ -671,6 +974,8 @@ export default function ProductsClient({
                   const variant = product.variants[0];
                   const stockQty = variant?.inventory?.quantity ?? 0;
                   const unitBarcodes = variant?.unitBarcodes || [];
+                  const isVisibleOnWebsite = (product.showOnWebsite ?? true);
+                  const audit = checkProductWebsiteData(product);
 
                   return (
                     <div
@@ -708,13 +1013,61 @@ export default function ProductsClient({
                           </div>
                         </div>
 
+                        {/* Website Data Completeness & Readiness Indicator */}
+                        {isVisibleOnWebsite ? (
+                          audit.isComplete ? (
+                            <div className="flex items-center justify-between px-2.5 py-1.5 rounded-lg bg-emerald-950/40 border border-emerald-400/30 text-[11px] text-emerald-200">
+                              <span className="flex items-center gap-1.5 font-bold">
+                                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-300 shrink-0" />
+                                <span>Website Ready (100%)</span>
+                              </span>
+                              <span className="text-[10px] text-emerald-300/80 font-medium">All 5 fields filled</span>
+                            </div>
+                          ) : (
+                            <div className="p-2.5 rounded-lg bg-amber-950/50 border border-amber-400/50 text-[11px] space-y-1.5">
+                              <div className="flex items-center justify-between">
+                                <span className="flex items-center gap-1.5 font-bold text-amber-300">
+                                  <AlertTriangle className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                                  <span>Missing Website Data ({audit.score}% filled)</span>
+                                </span>
+                                <Link
+                                  href={`/products/${product.id}`}
+                                  className="text-[10.5px] font-bold text-amber-200 hover:text-white underline inline-flex items-center gap-0.5"
+                                  title="Open product to fill missing data"
+                                >
+                                  <span>Add Data</span>
+                                  <ChevronRight className="w-3 h-3" />
+                                </Link>
+                              </div>
+                              <div className="flex flex-wrap items-center gap-1">
+                                {audit.missingFields.map((field) => (
+                                  <span
+                                    key={field}
+                                    className="px-1.5 py-0.5 rounded text-[9.5px] font-bold bg-amber-400/20 text-amber-100 border border-amber-300/30"
+                                  >
+                                    Missing {field}
+                                  </span>
+                                ))}
+                              </div>
+                            </div>
+                          )
+                        ) : (
+                          <div className="flex items-center justify-between px-2.5 py-1.5 rounded-lg bg-rose-950/40 border border-rose-400/30 text-[11px] text-rose-200">
+                            <span className="flex items-center gap-1.5 font-medium">
+                              <EyeOff className="w-3.5 h-3.5 text-rose-300 shrink-0" />
+                              <span>Hidden from Storefront</span>
+                            </span>
+                            <span className="text-[10px] text-rose-300/80">Draft / Offline</span>
+                          </div>
+                        )}
+
                         {/* Website Visibility Toggle Button */}
                         <button
                           type="button"
-                          onClick={() => toggleWebsiteVisibility(product.id, product.showOnWebsite ?? true)}
+                          onClick={() => toggleWebsiteVisibility(product.id, isVisibleOnWebsite)}
                           disabled={toggleLoading === product.id}
-                          className={`w-full py-1.5 px-3 rounded-lg text-xs font-medium transition-all flex items-center justify-between border ${
-                            (product.showOnWebsite ?? true)
+                          className={`w-full py-1.5 px-3 rounded-lg text-xs font-medium transition-all flex items-center justify-between border cursor-pointer ${
+                            isVisibleOnWebsite
                               ? "bg-white/15 border-white/20 text-white hover:bg-white/25"
                               : "bg-rose-950/40 border-rose-400/40 text-rose-200 hover:bg-rose-950/60"
                           }`}
@@ -726,13 +1079,13 @@ export default function ProductsClient({
                           <span className="font-semibold text-[11px] flex items-center gap-1">
                             {toggleLoading === product.id ? (
                               "Updating..."
-                            ) : (product.showOnWebsite ?? true) ? (
+                            ) : isVisibleOnWebsite ? (
                               <>
-                                <Eye className="w-3 h-3 text-emerald-300" /> Visible
+                                <Eye className="w-3 h-3 text-emerald-300" /> Visible on Storefront
                               </>
                             ) : (
                               <>
-                                <EyeOff className="w-3 h-3 text-rose-300" /> Hidden
+                                <EyeOff className="w-3 h-3 text-rose-300" /> Hidden / Inactive
                               </>
                             )}
                           </span>
@@ -815,7 +1168,7 @@ export default function ProductsClient({
               </div>
               <Pagination
                 currentPage={productPage}
-                totalItems={productList.length}
+                totalItems={filteredProducts.length}
                 pageSize={productPageSize}
                 onPageChange={setProductPage}
                 onPageSizeChange={setProductPageSize}
