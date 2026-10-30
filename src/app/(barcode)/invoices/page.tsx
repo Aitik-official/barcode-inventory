@@ -13,6 +13,7 @@ export default async function InvoicesPage() {
   try {
     const results = await Promise.allSettled([
       prisma.order.findMany({
+        take: 250,
         orderBy: { createdAt: "desc" },
         include: {
           items: {
@@ -29,10 +30,12 @@ export default async function InvoicesPage() {
         },
       }),
       prisma.marketplaceOrder.findMany({
+        take: 250,
         orderBy: { orderDate: "desc" },
         include: { items: true, credential: true },
       }),
       prisma.invoice.findMany({
+        take: 250,
         orderBy: { createdAt: "desc" },
         include: { order: true, customer: true },
       }),

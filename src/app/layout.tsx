@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import { AppNav } from "@/components/AppNav";
+import { NavigationProgressBar } from "@/components/NavigationProgressBar";
 import "./globals.css";
 
 const inter = Inter({
@@ -26,6 +27,7 @@ export default function RootLayout({
   return (
     <html lang="en" className={inter.variable}>
       <body className="min-h-screen bg-[#e3f2f5] text-[#0b252c] font-sans antialiased flex flex-col">
+        <NavigationProgressBar />
         <AppNav />
         <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
           {children}

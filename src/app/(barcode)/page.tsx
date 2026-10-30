@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { StatsCardsSkeleton } from "@/components/SkeletonLoader";
+import { getSessionCache, setSessionCache } from "@/lib/sessionCache";
 
 type Stats = {
   totalProducts: number;
@@ -45,13 +47,18 @@ const STEPS = [
 ];
 
 export default function DashboardPage() {
-  const [stats, setStats] = useState<Stats | null>(null);
+  const [stats, setStats] = useState<Stats | null>(() => {
+    return getSessionCache("dashboard_stats");
+  });
 
   useEffect(() => {
     fetch("/api/dashboard")
       .then((r) => r.json())
-      .then(setStats)
-      .catch(() => setStats(null));
+      .then((data) => {
+        setStats(data);
+        setSessionCache("dashboard_stats", data);
+      })
+      .catch(() => {});
   }, []);
 
   const cards = stats
@@ -163,9 +170,11 @@ export default function DashboardPage() {
             View all products
           </Link>
         </div>
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {stats
-            ? cards.map((c) => (
+        {!stats ? (
+          <StatsCardsSkeleton count={6} />
+        ) : (
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {cards.map((c) => (
                 <div
                   key={c.label}
                   className={`rounded-xl border bg-white p-4 shadow-sm ${
@@ -194,14 +203,9 @@ export default function DashboardPage() {
                     </Link>
                   )}
                 </div>
-              ))
-            : Array.from({ length: 6 }).map((_, i) => (
-                <div
-                  key={i}
-                  className="h-24 animate-pulse rounded-xl border border-slate-200 bg-slate-100"
-                />
               ))}
-        </div>
+          </div>
+        )}
       </section>
 
       {/* Quick actions */}

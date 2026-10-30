@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect, useMemo } from "react";
+import { getSessionCache, setSessionCache } from "@/lib/sessionCache";
 import {
   ScanBarcode,
   Search,
@@ -91,6 +92,41 @@ export default function InvoicesClient({
   const [isCameraActive, setIsCameraActive] = useState(false);
   const [cameraError, setCameraError] = useState<string | null>(null);
 
+  // Local state with browser-level session caching
+  const [localOrders, setLocalOrders] = useState<any[]>(() => {
+    if (orders && orders.length > 0) return orders;
+    return getSessionCache("invoices_orders_list") || [];
+  });
+  const [localMarketplaceOrders, setLocalMarketplaceOrders] = useState<any[]>(() => {
+    if (marketplaceOrders && marketplaceOrders.length > 0) return marketplaceOrders;
+    return getSessionCache("invoices_mp_orders_list") || [];
+  });
+  const [localInvoices, setLocalInvoices] = useState<any[]>(() => {
+    if (invoices && invoices.length > 0) return invoices;
+    return getSessionCache("invoices_db_list") || [];
+  });
+
+  useEffect(() => {
+    if (orders && orders.length > 0) {
+      setLocalOrders(orders);
+      setSessionCache("invoices_orders_list", orders);
+    }
+  }, [orders]);
+
+  useEffect(() => {
+    if (marketplaceOrders && marketplaceOrders.length > 0) {
+      setLocalMarketplaceOrders(marketplaceOrders);
+      setSessionCache("invoices_mp_orders_list", marketplaceOrders);
+    }
+  }, [marketplaceOrders]);
+
+  useEffect(() => {
+    if (invoices && invoices.length > 0) {
+      setLocalInvoices(invoices);
+      setSessionCache("invoices_db_list", invoices);
+    }
+  }, [invoices]);
+
   // Print Dialog State
   const [shippingInvoiceData, setShippingInvoiceData] = useState<ShippingInvoiceData | null>(null);
   const [invoiceModalMode, setInvoiceModalMode] = useState<"A4_INVOICE" | "THERMAL_LABEL">("A4_INVOICE");
@@ -121,7 +157,7 @@ export default function InvoicesClient({
     const list: UnifiedInvoiceItem[] = [];
 
     // 1. Direct Website, POS & Marketplace Dispatch Orders
-    orders.forEach((o) => {
+    (localOrders || []).forEach((o) => {
       let detectedChannel: "AMAZON" | "FLIPKART" | "WEBSITE" | "POS" = "WEBSITE";
       const notesUpper = (o.notes || "").toUpperCase();
       const numUpper = (o.orderNumber || "").toUpperCase();
@@ -142,7 +178,7 @@ export default function InvoicesClient({
         detectedChannel = "WEBSITE";
       }
 
-      const dbInvoice = invoices.find((inv) => inv.orderId === o.id || inv.orderId === o.orderNumber);
+      const dbInvoice = (localInvoices || []).find((inv) => inv.orderId === o.id || inv.orderId === o.orderNumber);
       const prefix = detectedChannel === "FLIPKART" ? "FK" : detectedChannel === "AMAZON" ? "AZ" : "INV";
       const invoiceNumber =
         dbInvoice?.invoiceNumber ||
@@ -212,7 +248,7 @@ export default function InvoicesClient({
     });
 
     // 2. Marketplace Orders (Amazon / Flipkart)
-    marketplaceOrders.forEach((m) => {
+    (localMarketplaceOrders || []).forEach((m) => {
       // Avoid duplicate entry if already loaded from direct Order table
       if (list.some((existing) => existing.orderNumber === m.channelOrderId)) {
         return;
@@ -274,7 +310,7 @@ export default function InvoicesClient({
     });
 
     return list;
-  }, [orders, marketplaceOrders, invoices]);
+  }, [localOrders, localMarketplaceOrders, localInvoices]);
 
   // Perform search / scan lookup
   const handleSearch = (term: string) => {

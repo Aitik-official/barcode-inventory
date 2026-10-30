@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
+import { getSessionCache, setSessionCache } from "@/lib/sessionCache";
 import {
   Boxes,
   History,
@@ -42,6 +43,52 @@ export default function InventoryClient({
   const [stockBatchFilter, setStockBatchFilter] = useState<"ALL" | "WEBSITE" | "AMAZON" | "FLIPKART">("ALL");
   const [searchQuery, setSearchQuery] = useState("");
   const [syncingVariantId, setSyncingVariantId] = useState<string | null>(null);
+
+  // Local state with browser-level session caching
+  const [localInventories, setLocalInventories] = useState<any[]>(() => {
+    if (inventories && inventories.length > 0) return inventories;
+    return getSessionCache("inventory_stock_list") || [];
+  });
+  const [localTransactions, setLocalTransactions] = useState<any[]>(() => {
+    if (transactions && transactions.length > 0) return transactions;
+    return getSessionCache("inventory_tx_list") || [];
+  });
+  const [localPurchaseOrders, setLocalPurchaseOrders] = useState<any[]>(() => {
+    if (purchaseOrders && purchaseOrders.length > 0) return purchaseOrders;
+    return getSessionCache("inventory_po_list") || [];
+  });
+  const [localWastes, setLocalWastes] = useState<any[]>(() => {
+    if (wastes && wastes.length > 0) return wastes;
+    return getSessionCache("inventory_waste_list") || [];
+  });
+
+  useEffect(() => {
+    if (inventories && inventories.length > 0) {
+      setLocalInventories(inventories);
+      setSessionCache("inventory_stock_list", inventories);
+    }
+  }, [inventories]);
+
+  useEffect(() => {
+    if (transactions && transactions.length > 0) {
+      setLocalTransactions(transactions);
+      setSessionCache("inventory_tx_list", transactions);
+    }
+  }, [transactions]);
+
+  useEffect(() => {
+    if (purchaseOrders && purchaseOrders.length > 0) {
+      setLocalPurchaseOrders(purchaseOrders);
+      setSessionCache("inventory_po_list", purchaseOrders);
+    }
+  }, [purchaseOrders]);
+
+  useEffect(() => {
+    if (wastes && wastes.length > 0) {
+      setLocalWastes(wastes);
+      setSessionCache("inventory_waste_list", wastes);
+    }
+  }, [wastes]);
 
   // Pagination states
   const [stockPage, setStockPage] = useState(1);
@@ -88,7 +135,7 @@ export default function InventoryClient({
 
   // Enriched Inventories
   const enrichedInventories = useMemo(() => {
-    return inventories.map((inv) => {
+    return (localInventories || []).map((inv) => {
       const mappings = mappingsByVariantId.get(inv.productVariantId) || {};
       const hasAmazon = !!mappings.amazon;
       const hasFlipkart = !!mappings.flipkart;
@@ -103,7 +150,7 @@ export default function InventoryClient({
         flipkartMapping: mappings.flipkart,
       };
     });
-  }, [inventories, mappingsByVariantId]);
+  }, [localInventories, mappingsByVariantId]);
 
   // Filtered Stock by Batch & Search
   const filteredInventories = useMemo(() => {
@@ -129,18 +176,18 @@ export default function InventoryClient({
 
   // Inventory Batch Metrics
   const metrics = useMemo(() => {
-    const totalUnits = inventories.reduce((acc, i) => acc + (i.quantity || 0), 0);
+    const totalUnits = (localInventories || []).reduce((acc, i) => acc + (i.quantity || 0), 0);
     const websiteItems = enrichedInventories.filter((i) => i.showOnWebsite).length;
     const amazonItems = enrichedInventories.filter((i) => i.hasAmazon).length;
     const flipkartItems = enrichedInventories.filter((i) => i.hasFlipkart).length;
     return {
-      totalSkus: inventories.length,
+      totalSkus: (localInventories || []).length,
       totalUnits,
       websiteItems,
       amazonItems,
       flipkartItems,
     };
-  }, [inventories, enrichedInventories]);
+  }, [localInventories, enrichedInventories]);
 
   // Paginated Slices
   const paginatedInventories = useMemo(() => {
@@ -148,16 +195,16 @@ export default function InventoryClient({
   }, [filteredInventories, stockPage, stockPageSize]);
 
   const paginatedTransactions = useMemo(() => {
-    return transactions.slice((ledgerPage - 1) * ledgerPageSize, ledgerPage * ledgerPageSize);
-  }, [transactions, ledgerPage, ledgerPageSize]);
+    return (localTransactions || []).slice((ledgerPage - 1) * ledgerPageSize, ledgerPage * ledgerPageSize);
+  }, [localTransactions, ledgerPage, ledgerPageSize]);
 
   const paginatedPOs = useMemo(() => {
-    return purchaseOrders.slice((poPage - 1) * poPageSize, poPage * poPageSize);
-  }, [purchaseOrders, poPage, poPageSize]);
+    return (localPurchaseOrders || []).slice((poPage - 1) * poPageSize, poPage * poPageSize);
+  }, [localPurchaseOrders, poPage, poPageSize]);
 
   const paginatedWastes = useMemo(() => {
-    return wastes.slice((wastePage - 1) * wastePageSize, wastePage * wastePageSize);
-  }, [wastes, wastePage, wastePageSize]);
+    return (localWastes || []).slice((wastePage - 1) * wastePageSize, wastePage * wastePageSize);
+  }, [localWastes, wastePage, wastePageSize]);
 
   // Push stock to marketplaces
   const handlePushStock = async (productVariantId: string) => {
@@ -306,7 +353,7 @@ export default function InventoryClient({
           }`}
         >
           <Warehouse className="w-3.5 h-3.5" />
-          <span>Warehouse Stock ({inventories.length})</span>
+          <span>Warehouse Stock ({localInventories.length})</span>
         </button>
 
         <button
@@ -318,7 +365,7 @@ export default function InventoryClient({
           }`}
         >
           <History className="w-3.5 h-3.5" />
-          <span>Audit Ledger ({transactions.length})</span>
+          <span>Audit Ledger ({localTransactions.length})</span>
         </button>
 
         <button
@@ -330,7 +377,7 @@ export default function InventoryClient({
           }`}
         >
           <FileSpreadsheet className="w-3.5 h-3.5" />
-          <span>Purchase Orders ({purchaseOrders.length})</span>
+          <span>Purchase Orders ({localPurchaseOrders.length})</span>
         </button>
 
         <button
@@ -342,7 +389,7 @@ export default function InventoryClient({
           }`}
         >
           <Trash2 className="w-3.5 h-3.5" />
-          <span>Write-offs ({wastes.length})</span>
+          <span>Write-offs ({localWastes.length})</span>
         </button>
       </div>
 

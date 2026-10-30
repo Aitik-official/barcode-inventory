@@ -15,11 +15,7 @@ export default async function WebsiteStorefrontPage() {
         include: {
           category: true,
           subCategory: true,
-          variants: {
-            include: {
-              unitBarcodes: true,
-            },
-          },
+          variants: true,
         },
         orderBy: { displayOrder: "asc" },
       }),

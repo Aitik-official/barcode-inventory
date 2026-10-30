@@ -4,7 +4,7 @@ import MarketplacesClient from "./MarketplacesClient";
 export const dynamic = "force-dynamic";
 
 export default async function MarketplacesPage() {
-  const [credentials, mappings, orders, variants] = await Promise.all([
+  const results = await Promise.allSettled([
     prisma.marketplaceCredential.findMany({
       orderBy: { createdAt: "desc" },
     }),
@@ -34,6 +34,11 @@ export default async function MarketplacesPage() {
       },
     }),
   ]);
+
+  const credentials = results[0].status === "fulfilled" ? results[0].value : [];
+  const mappings = results[1].status === "fulfilled" ? results[1].value : [];
+  const orders = results[2].status === "fulfilled" ? results[2].value : [];
+  const variants = results[3].status === "fulfilled" ? results[3].value : [];
 
   // Mask secrets
   const sanitizedCredentials = credentials.map((c) => ({
