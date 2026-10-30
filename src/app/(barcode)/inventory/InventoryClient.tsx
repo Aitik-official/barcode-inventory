@@ -19,6 +19,8 @@ import {
   X,
   AlertCircle,
   CheckCircle2,
+  RotateCcw,
+  AlertTriangle,
 } from "lucide-react";
 import { Pagination } from "@/components/Pagination";
 
@@ -143,6 +145,23 @@ export default function InventoryClient({
   const [wasteReason, setWasteReason] = useState("DAMAGED");
   const [wasteDesc, setWasteDesc] = useState("");
   const [wasteLoading, setWasteLoading] = useState(false);
+
+  // Return & Defective Intake Modal State
+  const [returnDefectModalOpen, setReturnDefectModalOpen] = useState(false);
+  const [returnDefectVariantId, setReturnDefectVariantId] = useState(
+    variants[0]?.id || inventories[0]?.productVariantId || ""
+  );
+  const [returnDefectType, setReturnDefectType] = useState<"RESTOCK" | "DEFECTIVE">("RESTOCK");
+  const [returnDefectQty, setReturnDefectQty] = useState(1);
+  const [returnDefectBarcode, setReturnDefectBarcode] = useState("");
+  const [returnDefectReason, setReturnDefectReason] = useState("Customer Return - Good Condition");
+  const [returnDefectDesc, setReturnDefectDesc] = useState("");
+  const [returnDefectRefOrder, setReturnDefectRefOrder] = useState("");
+  const [returnDefectLoading, setReturnDefectLoading] = useState(false);
+  const [returnDefectFeedback, setReturnDefectFeedback] = useState<{
+    type: "success" | "error";
+    text: string;
+  } | null>(null);
 
   // SKU to Marketplace Mappings Index
   const mappingsByVariantId = useMemo(() => {
@@ -321,6 +340,75 @@ export default function InventoryClient({
     }
   };
 
+  const handleProcessReturnDefect = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const targetVariantId = returnDefectVariantId || variants[0]?.id || inventories[0]?.productVariantId;
+    if (!targetVariantId) {
+      alert("Please select a product variant first.");
+      return;
+    }
+
+    setReturnDefectLoading(true);
+    setReturnDefectFeedback(null);
+
+    try {
+      const res = await fetch("/api/inventory/returns", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          productVariantId: targetVariantId,
+          type: returnDefectType,
+          quantity: Number(returnDefectQty) || 1,
+          barcode: returnDefectBarcode.trim() || undefined,
+          reason: returnDefectReason,
+          description: returnDefectDesc,
+          referenceOrder: returnDefectRefOrder.trim() || undefined,
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to process return/defect");
+
+      // Update local inventories in memory & session cache
+      setLocalInventories((prev) => {
+        const updated = prev.map((inv) => {
+          if (inv.productVariantId === targetVariantId || inv.id === targetVariantId) {
+            return { ...inv, quantity: data.newStock };
+          }
+          return inv;
+        });
+        setSessionCache("inventory_stock_list", updated);
+        return updated;
+      });
+
+      // Update local wastes if defective
+      if (data.waste) {
+        setLocalWastes((prev) => {
+          const updated = [data.waste, ...prev];
+          setSessionCache("inventory_waste_list", updated);
+          return updated;
+        });
+      }
+
+      setReturnDefectFeedback({
+        type: "success",
+        text: data.message || "Entry logged successfully!",
+      });
+
+      setTimeout(() => {
+        setReturnDefectModalOpen(false);
+        setReturnDefectFeedback(null);
+        setReturnDefectBarcode("");
+        setReturnDefectDesc("");
+        setReturnDefectRefOrder("");
+      }, 1500);
+    } catch (err: any) {
+      setReturnDefectFeedback({ type: "error", text: err.message || "Failed to process entry" });
+    } finally {
+      setReturnDefectLoading(false);
+    }
+  };
+
   return (
     <div className="space-y-6 py-2 text-[#0b252c]">
       {/* Page Header */}
@@ -335,7 +423,22 @@ export default function InventoryClient({
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
+          {/* Process Return or Defective Button */}
+          <button
+            type="button"
+            onClick={() => {
+              if (!returnDefectVariantId && (variants[0]?.id || inventories[0]?.productVariantId)) {
+                setReturnDefectVariantId(variants[0]?.id || inventories[0]?.productVariantId);
+              }
+              setReturnDefectModalOpen(true);
+            }}
+            className="px-3.5 py-2 rounded-xl bg-purple-50 hover:bg-purple-100 text-purple-700 font-bold text-xs border border-purple-200 hover:border-purple-300 shadow-xs transition-all flex items-center gap-1.5 cursor-pointer"
+          >
+            <RotateCcw className="w-4 h-4 text-purple-600" />
+            <span>Process Return / Defect</span>
+          </button>
+
           {/* Write-off Waste Button */}
           <button
             type="button"
@@ -1107,6 +1210,243 @@ export default function InventoryClient({
                   className="px-5 py-2.5 bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs rounded-xl shadow-md cursor-pointer disabled:opacity-50"
                 >
                   {wasteLoading ? "Recording..." : "Confirm & Write-off Stock"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Return & Defective Piece Intake Modal */}
+      {returnDefectModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in">
+          <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-purple-200 space-y-4 animate-in zoom-in-95 max-h-[92vh] overflow-y-auto text-slate-800">
+            <div className="flex items-start justify-between border-b border-purple-100 pb-3">
+              <div className="flex items-center gap-2.5 text-purple-700">
+                <div className="w-10 h-10 rounded-xl bg-purple-100 flex items-center justify-center shrink-0">
+                  <RotateCcw className="w-5 h-5 text-purple-600" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-base text-slate-900">Process Return / Defective Piece</h3>
+                  <p className="text-xs text-slate-500">Record customer return or write off defective inventory</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setReturnDefectModalOpen(false)}
+                className="text-slate-400 hover:text-slate-700 p-1 rounded-lg"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {returnDefectFeedback && (
+              <div
+                className={`p-3 rounded-xl text-xs font-semibold flex items-center gap-2 ${
+                  returnDefectFeedback.type === "success"
+                    ? "bg-emerald-50 text-emerald-800 border border-emerald-200"
+                    : "bg-rose-50 text-rose-800 border border-rose-200"
+                }`}
+              >
+                {returnDefectFeedback.type === "success" ? (
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                ) : (
+                  <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
+                )}
+                <span>{returnDefectFeedback.text}</span>
+              </div>
+            )}
+
+            <form onSubmit={handleProcessReturnDefect} className="space-y-4 text-xs">
+              {/* Disposition Selector */}
+              <div>
+                <label className="block font-bold text-slate-800 mb-1.5">Intake Disposition</label>
+                <div className="grid grid-cols-2 gap-2.5">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setReturnDefectType("RESTOCK");
+                      setReturnDefectReason("Customer Return - Good Condition");
+                    }}
+                    className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer ${
+                      returnDefectType === "RESTOCK"
+                        ? "border-emerald-500 bg-emerald-50/70 ring-2 ring-emerald-500/20"
+                        : "border-slate-200 bg-white hover:bg-slate-50"
+                    }`}
+                  >
+                    <div className="flex items-center gap-1.5 font-bold text-slate-900 mb-1">
+                      <PackageCheck className="w-3.5 h-3.5 text-emerald-600" />
+                      <span>Restock to Available</span>
+                    </div>
+                    <p className="text-[10px] text-slate-600">Adds back to sellable warehouse stock (+quantity).</p>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setReturnDefectType("DEFECTIVE");
+                      setReturnDefectReason("Customer Return - Defective Piece");
+                    }}
+                    className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer ${
+                      returnDefectType === "DEFECTIVE"
+                        ? "border-amber-500 bg-amber-50/70 ring-2 ring-amber-500/20"
+                        : "border-slate-200 bg-white hover:bg-slate-50"
+                    }`}
+                  >
+                    <div className="flex items-center gap-1.5 font-bold text-slate-900 mb-1">
+                      <AlertTriangle className="w-3.5 h-3.5 text-amber-600" />
+                      <span>Defective Piece</span>
+                    </div>
+                    <p className="text-[10px] text-slate-600">Deducts from stock and logs in Damaged & Waste audit ledger.</p>
+                  </button>
+                </div>
+              </div>
+
+              {/* Product Variant */}
+              <div>
+                <label className="block font-bold text-slate-800 mb-1">Product Variant *</label>
+                <select
+                  value={returnDefectVariantId}
+                  onChange={(e) => setReturnDefectVariantId(e.target.value)}
+                  className="w-full bg-[#f8fcfe] border border-[#cce7ed] rounded-xl px-3 py-2 text-slate-800 font-medium focus:ring-2 focus:ring-[#056468]"
+                  required
+                >
+                  {variants.map((v) => (
+                    <option key={v.id} value={v.id}>
+                      {v.product?.name} ({v.sku})
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Quantity & Specific Barcode */}
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-bold text-slate-800 mb-1">Quantity (Units) *</label>
+                  <input
+                    type="number"
+                    min="1"
+                    max="1000"
+                    required
+                    value={returnDefectQty}
+                    onChange={(e) => setReturnDefectQty(parseInt(e.target.value) || 1)}
+                    className="w-full bg-[#f8fcfe] border border-[#cce7ed] rounded-xl px-3 py-2 font-mono font-bold text-slate-900 focus:ring-2 focus:ring-[#056468]"
+                  />
+                </div>
+
+                <div>
+                  <label className="block font-bold text-slate-800 mb-1">
+                    Barcode / Serial # <span className="text-slate-400 font-normal">(Optional)</span>
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="e.g. 890123456789"
+                    value={returnDefectBarcode}
+                    onChange={(e) => setReturnDefectBarcode(e.target.value)}
+                    className="w-full bg-[#f8fcfe] border border-[#cce7ed] rounded-xl px-3 py-2 font-mono text-slate-900 focus:ring-2 focus:ring-[#056468]"
+                  />
+                </div>
+              </div>
+
+              {/* Reason Presets */}
+              <div>
+                <label className="block font-bold text-slate-800 mb-1">Reason</label>
+                <select
+                  value={returnDefectReason}
+                  onChange={(e) => setReturnDefectReason(e.target.value)}
+                  className="w-full bg-[#f8fcfe] border border-[#cce7ed] rounded-xl px-3 py-2 text-slate-800 font-medium"
+                >
+                  {returnDefectType === "RESTOCK" ? (
+                    <>
+                      <option value="Customer Return - Good Condition">Customer Return - Good Condition</option>
+                      <option value="Customer Return - Wrong Item Sent">Customer Return - Wrong Item Sent</option>
+                      <option value="Customer Return - Size Exchange">Customer Return - Size Exchange</option>
+                      <option value="Customer Return - Customer Changed Mind">Customer Return - Customer Changed Mind</option>
+                      <option value="Other Restock Reason">Other Restock Reason</option>
+                    </>
+                  ) : (
+                    <>
+                      <option value="Customer Return - Defective Piece">Customer Return - Defective Piece</option>
+                      <option value="Damaged in Storage / Handling">Damaged in Storage / Handling</option>
+                      <option value="Transit Damage / Courier Rough Handling">Transit Damage / Courier Rough Handling</option>
+                      <option value="Manufacturing Quality Flaw">Manufacturing Quality Flaw</option>
+                      <option value="Other Defect">Other Defect</option>
+                    </>
+                  )}
+                </select>
+              </div>
+
+              {/* Optional Reference Order # and Notes */}
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-bold text-slate-800 mb-1">
+                    Reference Order # <span className="text-slate-400 font-normal">(Optional)</span>
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="e.g. ORD-1002"
+                    value={returnDefectRefOrder}
+                    onChange={(e) => setReturnDefectRefOrder(e.target.value)}
+                    className="w-full bg-[#f8fcfe] border border-[#cce7ed] rounded-xl px-3 py-2 text-slate-900 focus:ring-2 focus:ring-[#056468]"
+                  />
+                </div>
+
+                <div>
+                  <label className="block font-bold text-slate-800 mb-1">
+                    Inspection Notes <span className="text-slate-400 font-normal">(Optional)</span>
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="e.g. Scratched body, seal broken"
+                    value={returnDefectDesc}
+                    onChange={(e) => setReturnDefectDesc(e.target.value)}
+                    className="w-full bg-[#f8fcfe] border border-[#cce7ed] rounded-xl px-3 py-2 text-slate-900 focus:ring-2 focus:ring-[#056468]"
+                  />
+                </div>
+              </div>
+
+              {/* Effect Banner */}
+              <div
+                className={`p-2.5 rounded-xl text-[11px] leading-relaxed border ${
+                  returnDefectType === "DEFECTIVE"
+                    ? "bg-amber-50 border-amber-200 text-amber-900"
+                    : "bg-emerald-50 border-emerald-200 text-emerald-900"
+                }`}
+              >
+                {returnDefectType === "DEFECTIVE" ? (
+                  <>
+                    ⚠️ <strong>Audit Effect:</strong> Unit will be marked <strong>DEFECTIVE</strong>, removed from available warehouse stock, and added to the <strong>Damaged & Waste ledger</strong>.
+                  </>
+                ) : (
+                  <>
+                    🔄 <strong>Audit Effect:</strong> Unit will be marked <strong>AVAILABLE</strong> and restored to warehouse sellable inventory count (+quantity).
+                  </>
+                )}
+              </div>
+
+              {/* Actions */}
+              <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setReturnDefectModalOpen(false)}
+                  disabled={returnDefectLoading}
+                  className="px-4 py-2 font-semibold text-slate-600 hover:text-slate-900 text-xs"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={returnDefectLoading}
+                  className={`px-5 py-2.5 font-bold text-xs rounded-xl shadow-md text-white transition-all cursor-pointer disabled:opacity-50 ${
+                    returnDefectType === "DEFECTIVE"
+                      ? "bg-amber-600 hover:bg-amber-700"
+                      : "bg-emerald-600 hover:bg-emerald-700"
+                  }`}
+                >
+                  {returnDefectLoading
+                    ? "Recording..."
+                    : returnDefectType === "DEFECTIVE"
+                    ? "Confirm Defective Shift"
+                    : "Confirm Restock to Available"}
                 </button>
               </div>
             </form>

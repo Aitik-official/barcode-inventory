@@ -188,6 +188,8 @@ export async function PATCH(req: NextRequest) {
       orderId,
       orderNumber,
       status,
+      returnType,
+      returnReason,
       customerName,
       customerEmail,
       customerPhone,
@@ -279,7 +281,9 @@ export async function PATCH(req: NextRequest) {
       if (status === "Cancelled" || status === "Returned") {
         await restoreOrderInventoryAndBarcodes(
           updated.items,
-          updated.orderNumber || updated.id
+          updated.orderNumber || updated.id,
+          status === "Returned" ? (returnType || "RESTOCK") : "RESTOCK",
+          returnReason
         );
       }
 
@@ -344,6 +348,16 @@ export async function PATCH(req: NextRequest) {
         },
         include: { items: true, credential: true },
       });
+
+      // If status changed to Cancelled or Returned, restore barcodes & inventory stock for Marketplace Order
+      if (status === "Cancelled" || status === "Returned") {
+        await restoreOrderInventoryAndBarcodes(
+          updated.items,
+          updated.channelOrderId || updated.id,
+          status === "Returned" ? (returnType || "RESTOCK") : "RESTOCK",
+          returnReason
+        );
+      }
 
       await writeAudit({
         action: "MARKETPLACE_ORDER_UPDATED",
@@ -425,19 +439,49 @@ export async function POST(req: NextRequest) {
   }
 }
 
-// Helper to restore all unit barcodes and replenish inventory quantities when an order is cancelled or deleted
-async function restoreOrderInventoryAndBarcodes(items: any[], orderReference: string) {
+// Helper to restore all unit barcodes and replenish inventory quantities when an order is cancelled or returned
+async function restoreOrderInventoryAndBarcodes(
+  items: any[],
+  orderReference: string,
+  returnType: "RESTOCK" | "DEFECTIVE" = "RESTOCK",
+  returnReason?: string
+) {
+  const isDefective = returnType === "DEFECTIVE";
+
   for (const item of items) {
     try {
-      // 1. If exact unit barcode is linked, restore it to AVAILABLE
-      if (item.unitBarcodeId) {
-        await prisma.unitBarcode.update({
-          where: { id: item.unitBarcodeId },
-          data: { status: "AVAILABLE", soldAt: null },
+      // 1. Resolve unit barcode ID (either direct link or scanned barcode)
+      let barcodeId = item.unitBarcodeId;
+      if (!barcodeId && item.scannedBarcode) {
+        const foundBarcode = await prisma.unitBarcode.findUnique({
+          where: { barcode: item.scannedBarcode },
         });
+        if (foundBarcode) barcodeId = foundBarcode.id;
       }
 
-      // 2. Resolve the ProductVariant
+      // 2. If unit barcode found, update its status
+      if (barcodeId) {
+        if (isDefective) {
+          await prisma.unitBarcode.update({
+            where: { id: barcodeId },
+            data: {
+              status: "DAMAGED",
+              reason: returnReason || `Defective customer return from order #${orderReference}`,
+            },
+          });
+        } else {
+          await prisma.unitBarcode.update({
+            where: { id: barcodeId },
+            data: {
+              status: "AVAILABLE",
+              reason: returnReason ? `Returned: ${returnReason}` : null,
+              soldAt: null,
+            },
+          });
+        }
+      }
+
+      // 3. Resolve the ProductVariant
       let variant = null;
       if (item.productVariantId) {
         variant = await prisma.productVariant.findUnique({
@@ -455,6 +499,7 @@ async function restoreOrderInventoryAndBarcodes(items: any[], orderReference: st
       }
 
       if (variant) {
+        const qty = item.quantity || 1;
         // Check if this variant has serialized unit barcodes
         const totalUnitsCount = await prisma.unitBarcode.count({
           where: { productVariantId: variant.id },
@@ -466,36 +511,88 @@ async function restoreOrderInventoryAndBarcodes(items: any[], orderReference: st
         const prevStock = inv?.quantity ?? 0;
 
         let newStock = prevStock;
-        if (totalUnitsCount > 0) {
-          // Recount available unit barcodes
-          const availableUnitsCount = await prisma.unitBarcode.count({
-            where: { productVariantId: variant.id, status: "AVAILABLE" },
+
+        if (isDefective) {
+          // If serialized, available stock is count of AVAILABLE unit barcodes
+          if (totalUnitsCount > 0) {
+            const availableUnitsCount = await prisma.unitBarcode.count({
+              where: { productVariantId: variant.id, status: "AVAILABLE" },
+            });
+            newStock = availableUnitsCount;
+          } else {
+            // Non-serialized item: was deducted on sale, keep it deducted from sellable stock
+            newStock = prevStock;
+          }
+
+          await prisma.inventory.upsert({
+            where: { productVariantId: variant.id },
+            update: { quantity: newStock },
+            create: { productVariantId: variant.id, quantity: newStock },
           });
-          newStock = availableUnitsCount;
+
+          // Log write-off in Waste table
+          try {
+            await prisma.waste.create({
+              data: {
+                productVariantId: variant.id,
+                quantity: qty,
+                reason: "DAMAGED",
+                description: returnReason || `Defective customer return from order #${orderReference}`,
+                recordedBy: "admin",
+              },
+            });
+          } catch (wErr) {
+            console.warn("Could not log waste record for return:", wErr);
+          }
+
+          // Record DAMAGE inventory transaction
+          await prisma.inventoryTransaction.create({
+            data: {
+              productVariantId: variant.id,
+              unitBarcodeId: barcodeId || null,
+              transactionType: "DAMAGE",
+              quantity: -qty,
+              previousStock: prevStock,
+              newStock,
+              referenceType: "ORDER_RETURN",
+              referenceId: orderReference,
+              note: returnReason || `Defective customer return piece from order #${orderReference}`,
+              performedBy: "admin",
+            },
+          });
         } else {
-          // Non-serialized item: add back the item quantity
-          newStock = prevStock + (item.quantity || 1);
+          // Restockable return
+          if (totalUnitsCount > 0) {
+            const availableUnitsCount = await prisma.unitBarcode.count({
+              where: { productVariantId: variant.id, status: "AVAILABLE" },
+            });
+            newStock = availableUnitsCount;
+          } else {
+            newStock = prevStock + qty;
+          }
+
+          await prisma.inventory.upsert({
+            where: { productVariantId: variant.id },
+            update: { quantity: newStock },
+            create: { productVariantId: variant.id, quantity: newStock },
+          });
+
+          // Record RETURN inventory transaction
+          await prisma.inventoryTransaction.create({
+            data: {
+              productVariantId: variant.id,
+              unitBarcodeId: barcodeId || null,
+              transactionType: "RETURN",
+              quantity: qty,
+              previousStock: prevStock,
+              newStock,
+              referenceType: "ORDER_RETURN",
+              referenceId: orderReference,
+              note: returnReason || `Restocked return from order #${orderReference}`,
+              performedBy: "admin",
+            },
+          });
         }
-
-        await prisma.inventory.upsert({
-          where: { productVariantId: variant.id },
-          update: { quantity: newStock },
-          create: { productVariantId: variant.id, quantity: newStock },
-        });
-
-        // Record inventory transaction
-        await prisma.inventoryTransaction.create({
-          data: {
-            productVariantId: variant.id,
-            unitBarcodeId: item.unitBarcodeId || null,
-            transactionType: "RETURN",
-            quantity: item.quantity || 1,
-            previousStock: prevStock,
-            newStock,
-            note: `Restored to active stock from deleted order #${orderReference}`,
-            performedBy: "system",
-          },
-        });
       }
     } catch (err) {
       console.warn(`Could not restore stock for item in order #${orderReference}:`, err);
