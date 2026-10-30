@@ -3,6 +3,7 @@
 import { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
 import { getSessionCache, setSessionCache } from "@/lib/sessionCache";
+import { runProgressiveParallelBatches } from "@/lib/progressiveBatchFetch";
 import {
   Package,
   FolderTree,
@@ -99,18 +100,31 @@ export default function ProductsClient({
 
   // Product List & Safety Delete State with browser-level session caching
   const [productList, setProductList] = useState<any[]>(() => {
+    const cached = getSessionCache("products_catalog_list");
+    if (cached && cached.length > 0) return cached;
     if (products && products.length > 0) return products;
-    return getSessionCache("products_catalog_list") || [];
+    return [];
   });
   const [categoryList, setCategoryList] = useState<any[]>(() => {
+    const cached = getSessionCache("categories_catalog_list");
+    if (cached && cached.length > 0) return cached;
     if (categories && categories.length > 0) return categories;
-    return getSessionCache("categories_catalog_list") || [];
+    return [];
   });
 
   useEffect(() => {
     if (products && products.length > 0) {
-      setProductList(products);
-      setSessionCache("products_catalog_list", products);
+      setProductList((prev) => {
+        if (prev.length > products.length) {
+          const map = new Map(prev.map((p) => [p.id, p]));
+          products.forEach((p) => map.set(p.id, { ...map.get(p.id), ...p }));
+          const merged = Array.from(map.values());
+          setSessionCache("products_catalog_list", merged);
+          return merged;
+        }
+        setSessionCache("products_catalog_list", products);
+        return products;
+      });
     }
   }, [products]);
 
@@ -120,6 +134,34 @@ export default function ProductsClient({
       setSessionCache("categories_catalog_list", categories);
     }
   }, [categories]);
+
+  // Progressive background batch fetching (2 parallel batches of 20 products)
+  useEffect(() => {
+    const cacheKey = `products_batches_complete_${initialSearch || ""}_${initialCategoryId || ""}`;
+    const queryParams = new URLSearchParams();
+    if (initialSearch) queryParams.set("search", initialSearch);
+    if (initialCategoryId) queryParams.set("categoryId", initialCategoryId);
+    const queryString = queryParams.toString();
+    const endpoint = queryString ? `/api/products?${queryString}` : "/api/products";
+
+    runProgressiveParallelBatches<any>({
+      endpoint,
+      startPage: 2,
+      pageSize: 20,
+      cacheCompletedKey: cacheKey,
+      onBatch: (newProducts: any[]) => {
+        if (newProducts.length > 0) {
+          setProductList((prev) => {
+            const map = new Map(prev.map((p) => [p.id, p]));
+            newProducts.forEach((p) => map.set(p.id, p));
+            const merged = Array.from(map.values());
+            setSessionCache("products_catalog_list", merged);
+            return merged;
+          });
+        }
+      },
+    });
+  }, [initialSearch, initialCategoryId]);
 
   const [productToDelete, setProductToDelete] = useState<any | null>(null);
   const [isDeletingProduct, setIsDeletingProduct] = useState(false);

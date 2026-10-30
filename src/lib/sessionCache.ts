@@ -1,7 +1,7 @@
 "use client";
 
 const MEMORY_CACHE = new Map<string, { timestamp: number; data: any }>();
-const DEFAULT_TTL = 5 * 60 * 1000; // 5 minutes
+const DEFAULT_TTL = 30 * 60 * 1000; // 30 minutes persistent session cache
 
 /**
  * Retrieves cached data from browser sessionStorage or memory cache.

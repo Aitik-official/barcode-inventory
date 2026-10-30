@@ -53,7 +53,7 @@ export default async function BarcodesPage({
           },
         },
         orderBy: [{ generatedAt: "desc" }, { serialNumber: "asc" }],
-        take: 300,
+        take: 25,
       }),
       prisma.unitBarcode.count(),
       prisma.unitBarcode.count({ where: { status: "AVAILABLE" } }),

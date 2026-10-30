@@ -46,33 +46,59 @@ export default function InventoryClient({
 
   // Local state with browser-level session caching
   const [localInventories, setLocalInventories] = useState<any[]>(() => {
+    const cached = getSessionCache("inventory_stock_list");
+    if (cached && cached.length > 0) return cached;
     if (inventories && inventories.length > 0) return inventories;
-    return getSessionCache("inventory_stock_list") || [];
+    return [];
   });
   const [localTransactions, setLocalTransactions] = useState<any[]>(() => {
+    const cached = getSessionCache("inventory_tx_list");
+    if (cached && cached.length > 0) return cached;
     if (transactions && transactions.length > 0) return transactions;
-    return getSessionCache("inventory_tx_list") || [];
+    return [];
   });
   const [localPurchaseOrders, setLocalPurchaseOrders] = useState<any[]>(() => {
+    const cached = getSessionCache("inventory_po_list");
+    if (cached && cached.length > 0) return cached;
     if (purchaseOrders && purchaseOrders.length > 0) return purchaseOrders;
-    return getSessionCache("inventory_po_list") || [];
+    return [];
   });
   const [localWastes, setLocalWastes] = useState<any[]>(() => {
+    const cached = getSessionCache("inventory_waste_list");
+    if (cached && cached.length > 0) return cached;
     if (wastes && wastes.length > 0) return wastes;
-    return getSessionCache("inventory_waste_list") || [];
+    return [];
   });
 
   useEffect(() => {
     if (inventories && inventories.length > 0) {
-      setLocalInventories(inventories);
-      setSessionCache("inventory_stock_list", inventories);
+      setLocalInventories((prev) => {
+        if (prev.length > inventories.length) {
+          const map = new Map(prev.map((i) => [i.id || i.productVariantId, i]));
+          inventories.forEach((i) => map.set(i.id || i.productVariantId, { ...map.get(i.id || i.productVariantId), ...i }));
+          const merged = Array.from(map.values());
+          setSessionCache("inventory_stock_list", merged);
+          return merged;
+        }
+        setSessionCache("inventory_stock_list", inventories);
+        return inventories;
+      });
     }
   }, [inventories]);
 
   useEffect(() => {
     if (transactions && transactions.length > 0) {
-      setLocalTransactions(transactions);
-      setSessionCache("inventory_tx_list", transactions);
+      setLocalTransactions((prev) => {
+        if (prev.length > transactions.length) {
+          const map = new Map(prev.map((t) => [t.id, t]));
+          transactions.forEach((t) => map.set(t.id, { ...map.get(t.id), ...t }));
+          const merged = Array.from(map.values());
+          setSessionCache("inventory_tx_list", merged);
+          return merged;
+        }
+        setSessionCache("inventory_tx_list", transactions);
+        return transactions;
+      });
     }
   }, [transactions]);
 

@@ -16,6 +16,7 @@ export default async function OrdersPage() {
   try {
     const results = await Promise.allSettled([
       prisma.order.findMany({
+        take: 20,
         orderBy: { createdAt: "desc" },
         include: {
           items: {
@@ -32,18 +33,22 @@ export default async function OrdersPage() {
         },
       }),
       prisma.marketplaceOrder.findMany({
+        take: 20,
         orderBy: { orderDate: "desc" },
         include: { items: true, credential: true },
       }),
       prisma.quotation.findMany({
+        take: 20,
         orderBy: { createdAt: "desc" },
         include: { customer: true },
       }),
       prisma.enquiry.findMany({
+        take: 20,
         orderBy: { createdAt: "desc" },
         include: { customer: true },
       }),
       prisma.invoice.findMany({
+        take: 20,
         orderBy: { createdAt: "desc" },
         include: {
           order: {
@@ -65,6 +70,7 @@ export default async function OrdersPage() {
         },
       }),
       prisma.customer.findMany({
+        take: 50,
         orderBy: { name: "asc" },
       }),
       getCompanySettings(),
@@ -202,6 +208,7 @@ export default async function OrdersPage() {
     try {
       soldBarcodes = await prisma.unitBarcode.findMany({
         where: { status: "SOLD" },
+        take: 20,
         include: {
           productVariant: { include: { product: true } },
           orderItems: { include: { order: true } },

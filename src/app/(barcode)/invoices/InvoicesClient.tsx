@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect, useMemo } from "react";
 import { getSessionCache, setSessionCache } from "@/lib/sessionCache";
+import { runProgressiveParallelBatches } from "@/lib/progressiveBatchFetch";
 import {
   ScanBarcode,
   Search,
@@ -94,29 +95,53 @@ export default function InvoicesClient({
 
   // Local state with browser-level session caching
   const [localOrders, setLocalOrders] = useState<any[]>(() => {
+    const cached = getSessionCache("invoices_orders_list");
+    if (cached && cached.length > 0) return cached;
     if (orders && orders.length > 0) return orders;
-    return getSessionCache("invoices_orders_list") || [];
+    return [];
   });
   const [localMarketplaceOrders, setLocalMarketplaceOrders] = useState<any[]>(() => {
+    const cached = getSessionCache("invoices_mp_orders_list");
+    if (cached && cached.length > 0) return cached;
     if (marketplaceOrders && marketplaceOrders.length > 0) return marketplaceOrders;
-    return getSessionCache("invoices_mp_orders_list") || [];
+    return [];
   });
   const [localInvoices, setLocalInvoices] = useState<any[]>(() => {
+    const cached = getSessionCache("invoices_db_list");
+    if (cached && cached.length > 0) return cached;
     if (invoices && invoices.length > 0) return invoices;
-    return getSessionCache("invoices_db_list") || [];
+    return [];
   });
 
   useEffect(() => {
     if (orders && orders.length > 0) {
-      setLocalOrders(orders);
-      setSessionCache("invoices_orders_list", orders);
+      setLocalOrders((prev) => {
+        if (prev.length > orders.length) {
+          const map = new Map(prev.map((o) => [o.id || o.orderNumber, o]));
+          orders.forEach((o) => map.set(o.id || o.orderNumber, { ...map.get(o.id || o.orderNumber), ...o }));
+          const merged = Array.from(map.values());
+          setSessionCache("invoices_orders_list", merged);
+          return merged;
+        }
+        setSessionCache("invoices_orders_list", orders);
+        return orders;
+      });
     }
   }, [orders]);
 
   useEffect(() => {
     if (marketplaceOrders && marketplaceOrders.length > 0) {
-      setLocalMarketplaceOrders(marketplaceOrders);
-      setSessionCache("invoices_mp_orders_list", marketplaceOrders);
+      setLocalMarketplaceOrders((prev) => {
+        if (prev.length > marketplaceOrders.length) {
+          const map = new Map(prev.map((m) => [m.id || m.channelOrderId, m]));
+          marketplaceOrders.forEach((m) => map.set(m.id || m.channelOrderId, { ...map.get(m.id || m.channelOrderId), ...m }));
+          const merged = Array.from(map.values());
+          setSessionCache("invoices_mp_orders_list", merged);
+          return merged;
+        }
+        setSessionCache("invoices_mp_orders_list", marketplaceOrders);
+        return marketplaceOrders;
+      });
     }
   }, [marketplaceOrders]);
 
@@ -126,6 +151,43 @@ export default function InvoicesClient({
       setSessionCache("invoices_db_list", invoices);
     }
   }, [invoices]);
+
+  // Progressive background batch fetching (2 parallel batches of 20 orders)
+  useEffect(() => {
+    runProgressiveParallelBatches<{ orders?: any[]; marketplaceOrders?: any[] }>({
+      endpoint: "/api/orders",
+      startPage: 2,
+      pageSize: 20,
+      cacheCompletedKey: "invoices_batches_complete",
+      onBatch: () => {},
+      extractItems: (data: any) => {
+        const newOrders = data.orders || [];
+        const newMp = data.marketplaceOrders || [];
+        if (newOrders.length > 0) {
+          setLocalOrders((prev) => {
+            const map = new Map(prev.map((o) => [o.id || o.orderNumber, o]));
+            newOrders.forEach((o: any) => map.set(o.id || o.orderNumber, o));
+            const merged = Array.from(map.values());
+            setSessionCache("invoices_orders_list", merged);
+            return merged;
+          });
+        }
+        if (newMp.length > 0) {
+          setLocalMarketplaceOrders((prev) => {
+            const map = new Map(prev.map((m) => [m.id || m.channelOrderId, m]));
+            newMp.forEach((m: any) => map.set(m.id || m.channelOrderId, m));
+            const merged = Array.from(map.values());
+            setSessionCache("invoices_mp_orders_list", merged);
+            return merged;
+          });
+        }
+        return {
+          items: [...newOrders, ...newMp],
+          hasMore: data.hasMore ?? (newOrders.length >= 20 || newMp.length >= 20),
+        };
+      },
+    });
+  }, []);
 
   // Print Dialog State
   const [shippingInvoiceData, setShippingInvoiceData] = useState<ShippingInvoiceData | null>(null);

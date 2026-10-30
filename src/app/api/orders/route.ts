@@ -136,8 +136,14 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ order, isMarketplace: false });
     }
 
-    const [orders, marketplaceOrders] = await Promise.all([
+    const page = Math.max(1, parseInt(searchParams.get("page") || "1", 10));
+    const limit = Math.min(100, Math.max(1, parseInt(searchParams.get("limit") || "20", 10)));
+    const skip = (page - 1) * limit;
+
+    const [orders, marketplaceOrders, totalOrders, totalMpOrders] = await Promise.all([
       prisma.order.findMany({
+        skip,
+        take: limit,
         orderBy: { createdAt: "desc" },
         include: {
           items: {
@@ -151,12 +157,25 @@ export async function GET(req: NextRequest) {
         },
       }),
       prisma.marketplaceOrder.findMany({
+        skip,
+        take: limit,
         orderBy: { orderDate: "desc" },
         include: { items: true, credential: true },
       }),
+      prisma.order.count(),
+      prisma.marketplaceOrder.count(),
     ]);
 
-    return NextResponse.json({ orders, marketplaceOrders });
+    const hasMore = (skip + limit) < Math.max(totalOrders, totalMpOrders);
+    return NextResponse.json({
+      orders,
+      marketplaceOrders,
+      page,
+      limit,
+      totalOrders,
+      totalMpOrders,
+      hasMore,
+    });
   } catch (err: any) {
     return NextResponse.json({ error: err.message }, { status: 500 });
   }

@@ -26,8 +26,43 @@ export async function GET(req: Request) {
       ];
     }
 
+    const isPaginated = searchParams.has("page") || searchParams.has("limit");
+    if (isPaginated) {
+      const page = Math.max(1, parseInt(searchParams.get("page") || "1", 10));
+      const limit = Math.min(100, Math.max(1, parseInt(searchParams.get("limit") || "20", 10)));
+      const skip = (page - 1) * limit;
+
+      const [products, total] = await Promise.all([
+        prisma.product.findMany({
+          where,
+          skip,
+          take: limit,
+          include: {
+            category: true,
+            subCategory: true,
+            level2Category: true,
+            variants: {
+              include: {
+                inventory: true,
+                unitBarcodes: {
+                  take: 10,
+                  orderBy: { serialNumber: "asc" },
+                },
+              },
+            },
+          },
+          orderBy: { createdAt: "desc" },
+        }),
+        prisma.product.count({ where }),
+      ]);
+
+      const hasMore = skip + limit < total;
+      return NextResponse.json({ products, page, limit, total, hasMore });
+    }
+
     const products = await prisma.product.findMany({
       where,
+      take: 200,
       include: {
         category: true,
         subCategory: true,

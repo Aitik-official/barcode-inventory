@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 
 import { getSessionCache, setSessionCache } from "@/lib/sessionCache";
+import { runProgressiveParallelBatches } from "@/lib/progressiveBatchFetch";
 
 export default function UnitBarcodesClient({
   unitBarcodes = [],
@@ -35,8 +36,10 @@ export default function UnitBarcodesClient({
 
   // Local state with instant browser session cache
   const [localBarcodes, setLocalBarcodes] = useState<any[]>(() => {
+    const cached = getSessionCache("unit_barcodes_list");
+    if (cached && cached.length > 0) return cached;
     if (unitBarcodes && unitBarcodes.length > 0) return unitBarcodes;
-    return getSessionCache("unit_barcodes_list") || [];
+    return [];
   });
 
   const [localStats, setLocalStats] = useState(() => {
@@ -46,8 +49,17 @@ export default function UnitBarcodesClient({
 
   useEffect(() => {
     if (unitBarcodes && unitBarcodes.length > 0) {
-      setLocalBarcodes(unitBarcodes);
-      setSessionCache("unit_barcodes_list", unitBarcodes);
+      setLocalBarcodes((prev) => {
+        if (prev.length > unitBarcodes.length) {
+          const map = new Map(prev.map((u) => [u.id || u.barcode, u]));
+          unitBarcodes.forEach((u) => map.set(u.id || u.barcode, { ...map.get(u.id || u.barcode), ...u }));
+          const merged = Array.from(map.values());
+          setSessionCache("unit_barcodes_list", merged);
+          return merged;
+        }
+        setSessionCache("unit_barcodes_list", unitBarcodes);
+        return unitBarcodes;
+      });
     }
   }, [unitBarcodes]);
 
@@ -99,7 +111,35 @@ export default function UnitBarcodesClient({
 
       return false;
     });
-  }, [unitBarcodes, statusFilter, search]);
+  }, [localBarcodes, statusFilter, search]);
+
+  // Progressive background batch fetching (2 parallel batches of 25 barcodes)
+  useEffect(() => {
+    const cacheKey = `barcodes_batches_complete_${initialSearch || ""}_${initialStatus || ""}`;
+    const queryParams = new URLSearchParams();
+    if (initialSearch) queryParams.set("search", initialSearch);
+    if (initialStatus && initialStatus !== "ALL") queryParams.set("status", initialStatus);
+    const queryString = queryParams.toString();
+    const endpoint = queryString ? `/api/barcodes?${queryString}` : "/api/barcodes";
+
+    runProgressiveParallelBatches<any>({
+      endpoint,
+      startPage: 2,
+      pageSize: 25,
+      cacheCompletedKey: cacheKey,
+      onBatch: (newUnits: any[]) => {
+        if (newUnits.length > 0) {
+          setLocalBarcodes((prev) => {
+            const map = new Map(prev.map((u) => [u.id || u.barcode, u]));
+            newUnits.forEach((u) => map.set(u.id || u.barcode, u));
+            const merged = Array.from(map.values());
+            setSessionCache("unit_barcodes_list", merged);
+            return merged;
+          });
+        }
+      },
+    });
+  }, [initialSearch, initialStatus]);
 
   // Reset page to 1 if filter changes
   useEffect(() => {

@@ -49,6 +49,7 @@ import {
 import { Pagination } from "@/components/Pagination";
 import { CompanySettingsData, DEFAULT_COMPANY_SETTINGS } from "@/lib/companySettingsTypes";
 import { getSessionCache, setSessionCache } from "@/lib/sessionCache";
+import { runProgressiveParallelBatches } from "@/lib/progressiveBatchFetch";
 
 interface UnifiedOrder {
   id: string;
@@ -133,29 +134,53 @@ export default function OrdersClient({
 
   // Local state with instant browser-level device caching
   const [localOrders, setLocalOrders] = useState<any[]>(() => {
+    const cached = getSessionCache("orders_hub_list");
+    if (cached && cached.length > 0) return cached;
     if (orders && orders.length > 0) return orders;
-    return getSessionCache("orders_hub_list") || [];
+    return [];
   });
   const [localMarketplaceOrders, setLocalMarketplaceOrders] = useState<any[]>(() => {
+    const cached = getSessionCache("marketplace_orders_list");
+    if (cached && cached.length > 0) return cached;
     if (marketplaceOrders && marketplaceOrders.length > 0) return marketplaceOrders;
-    return getSessionCache("marketplace_orders_list") || [];
+    return [];
   });
   const [localCustomers, setLocalCustomers] = useState<any[]>(() => {
+    const cached = getSessionCache("customers_list");
+    if (cached && cached.length > 0) return cached;
     if (customers && customers.length > 0) return customers;
-    return getSessionCache("customers_list") || [];
+    return [];
   });
 
   useEffect(() => {
     if (orders && orders.length > 0) {
-      setLocalOrders(orders);
-      setSessionCache("orders_hub_list", orders);
+      setLocalOrders((prev) => {
+        if (prev.length > orders.length) {
+          const map = new Map(prev.map((o) => [o.id || o.orderNumber, o]));
+          orders.forEach((o) => map.set(o.id || o.orderNumber, { ...map.get(o.id || o.orderNumber), ...o }));
+          const merged = Array.from(map.values());
+          setSessionCache("orders_hub_list", merged);
+          return merged;
+        }
+        setSessionCache("orders_hub_list", orders);
+        return orders;
+      });
     }
   }, [orders]);
 
   useEffect(() => {
     if (marketplaceOrders && marketplaceOrders.length > 0) {
-      setLocalMarketplaceOrders(marketplaceOrders);
-      setSessionCache("marketplace_orders_list", marketplaceOrders);
+      setLocalMarketplaceOrders((prev) => {
+        if (prev.length > marketplaceOrders.length) {
+          const map = new Map(prev.map((m) => [m.id || m.channelOrderId, m]));
+          marketplaceOrders.forEach((m) => map.set(m.id || m.channelOrderId, { ...map.get(m.id || m.channelOrderId), ...m }));
+          const merged = Array.from(map.values());
+          setSessionCache("marketplace_orders_list", merged);
+          return merged;
+        }
+        setSessionCache("marketplace_orders_list", marketplaceOrders);
+        return marketplaceOrders;
+      });
     }
   }, [marketplaceOrders]);
 
@@ -165,6 +190,43 @@ export default function OrdersClient({
       setSessionCache("customers_list", customers);
     }
   }, [customers]);
+
+  // Progressive background batch fetching (2 parallel batches of 20 items)
+  useEffect(() => {
+    runProgressiveParallelBatches<{ orders?: any[]; marketplaceOrders?: any[] }>({
+      endpoint: "/api/orders",
+      startPage: 2,
+      pageSize: 20,
+      cacheCompletedKey: "orders_hub_batches_complete",
+      onBatch: () => {},
+      extractItems: (data: any) => {
+        const newOrders = data.orders || [];
+        const newMp = data.marketplaceOrders || [];
+        if (newOrders.length > 0) {
+          setLocalOrders((prev) => {
+            const map = new Map(prev.map((o) => [o.id || o.orderNumber, o]));
+            newOrders.forEach((o: any) => map.set(o.id || o.orderNumber, o));
+            const merged = Array.from(map.values());
+            setSessionCache("orders_hub_list", merged);
+            return merged;
+          });
+        }
+        if (newMp.length > 0) {
+          setLocalMarketplaceOrders((prev) => {
+            const map = new Map(prev.map((m) => [m.id || m.channelOrderId, m]));
+            newMp.forEach((m: any) => map.set(m.id || m.channelOrderId, m));
+            const merged = Array.from(map.values());
+            setSessionCache("marketplace_orders_list", merged);
+            return merged;
+          });
+        }
+        return {
+          items: [...newOrders, ...newMp],
+          hasMore: data.hasMore ?? (newOrders.length >= 20 || newMp.length >= 20),
+        };
+      },
+    });
+  }, []);
 
   // Selected Order for Details Modal
   const [selectedDetailOrder, setSelectedDetailOrder] = useState<UnifiedOrder | null>(null);

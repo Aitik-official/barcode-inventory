@@ -39,6 +39,7 @@ export default async function ProductsPage({
     const results = await Promise.allSettled([
       prisma.product.findMany({
         where,
+        take: 20,
         include: {
           category: true,
           variants: {

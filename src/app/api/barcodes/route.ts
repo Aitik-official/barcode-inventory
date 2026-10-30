@@ -24,6 +24,33 @@ export async function GET(req: Request) {
       ];
     }
 
+    const isPaginated = searchParams.has("page") || searchParams.has("limit");
+    if (isPaginated) {
+      const page = Math.max(1, parseInt(searchParams.get("page") || "1", 10));
+      const limit = Math.min(100, Math.max(1, parseInt(searchParams.get("limit") || "20", 10)));
+      const skip = (page - 1) * limit;
+
+      const [unitBarcodes, total] = await Promise.all([
+        prisma.unitBarcode.findMany({
+          where,
+          skip,
+          take: limit,
+          include: {
+            productVariant: {
+              include: {
+                product: true,
+              },
+            },
+          },
+          orderBy: [{ generatedAt: "desc" }, { serialNumber: "asc" }],
+        }),
+        prisma.unitBarcode.count({ where }),
+      ]);
+
+      const hasMore = skip + limit < total;
+      return NextResponse.json({ unitBarcodes, page, limit, total, hasMore });
+    }
+
     const unitBarcodes = await prisma.unitBarcode.findMany({
       where,
       include: {

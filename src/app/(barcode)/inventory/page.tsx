@@ -15,6 +15,7 @@ export default async function InventoryPage() {
   try {
     const results = await Promise.allSettled([
       prisma.inventory.findMany({
+        take: 25,
         include: {
           productVariant: {
             include: {
