@@ -35,6 +35,7 @@ export default async function BarcodesPage({
   let totalCount = 0;
   let availableCount = 0;
   let soldCount = 0;
+  let damagedCount = 0;
 
   try {
     const results = await Promise.allSettled([
@@ -58,12 +59,14 @@ export default async function BarcodesPage({
       prisma.unitBarcode.count(),
       prisma.unitBarcode.count({ where: { status: "AVAILABLE" } }),
       prisma.unitBarcode.count({ where: { status: "SOLD" } }),
+      prisma.unitBarcode.count({ where: { status: "DAMAGED" } }),
     ]);
 
     if (results[0].status === "fulfilled") unitBarcodes = results[0].value || [];
     if (results[1].status === "fulfilled") totalCount = results[1].value || 0;
     if (results[2].status === "fulfilled") availableCount = results[2].value || 0;
     if (results[3].status === "fulfilled") soldCount = results[3].value || 0;
+    if (results[4].status === "fulfilled") damagedCount = results[4].value || 0;
   } catch (err) {
     console.error("Error loading barcodes page data:", err);
   }
@@ -71,7 +74,7 @@ export default async function BarcodesPage({
   return (
     <UnitBarcodesClient
       unitBarcodes={unitBarcodes}
-      stats={{ totalCount, availableCount, soldCount }}
+      stats={{ totalCount, availableCount, soldCount, damagedCount }}
       initialSearch={search}
       initialStatus={status}
     />

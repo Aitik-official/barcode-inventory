@@ -322,14 +322,31 @@ export async function PATCH(req: Request) {
       await prisma.inventoryTransaction.create({
         data: {
           productVariantId: varId,
-          transactionType: "ADJUSTMENT",
+          transactionType: status === "DAMAGED" ? "DAMAGE" : "ADJUSTMENT",
           quantity: availableCount - prevStock,
           previousStock: prevStock,
           newStock: availableCount,
-          note: `Unit status updated to ${status} for ${targetIds.length} item(s)`,
+          note: reason || `Unit status updated to ${status} for ${targetIds.length} item(s)`,
           performedBy: "admin",
         },
       });
+
+      if (status === "DAMAGED") {
+        const damagedUnitsForVariant = units.filter((u) => u.productVariantId === varId);
+        try {
+          await prisma.waste.create({
+            data: {
+              productVariantId: varId,
+              quantity: damagedUnitsForVariant.length,
+              reason: "DAMAGED",
+              description: reason || `Shifted unit barcode ${damagedUnitsForVariant.map((u) => u.barcode).join(", ")} to defective piece`,
+              recordedBy: "admin",
+            },
+          });
+        } catch (wasteErr) {
+          console.warn("Could not log waste record:", wasteErr);
+        }
+      }
     }
 
     return NextResponse.json({
