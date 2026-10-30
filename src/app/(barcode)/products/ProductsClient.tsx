@@ -26,6 +26,7 @@ import {
   AlertTriangle,
   Info,
   Check,
+  Filter,
 } from "lucide-react";
 import { PrintLabelDialog } from "@/components/PrintLabelDialog";
 import { DeleteConfirmationModal } from "@/components/DeleteConfirmationModal";
@@ -84,10 +85,19 @@ export default function ProductsClient({
   initialSearch?: string;
   initialCategoryId?: string;
 }) {
-  const [activeTab, setActiveTab] = useState<"products" | "categories" | "services">("products");
+  const [activeTab, setActiveTab] = useState<"products" | "website" | "categories" | "services">("products");
   const [websiteFilter, setWebsiteFilter] = useState<
     "ALL" | "VISIBLE" | "VISIBLE_COMPLETE" | "VISIBLE_MISSING" | "HIDDEN"
   >("ALL");
+
+  // Website Storefront Hub Dedicated States
+  const [websiteTabFilter, setWebsiteTabFilter] = useState<
+    "ALL_VISIBLE" | "VISIBLE_COMPLETE" | "VISIBLE_MISSING" | "HIDDEN" | "ALL"
+  >("ALL_VISIBLE");
+  const [websiteMissingFieldFilter, setWebsiteMissingFieldFilter] = useState<string>("ALL");
+  const [websiteSearch, setWebsiteSearch] = useState<string>("");
+  const [websitePage, setWebsitePage] = useState<number>(1);
+  const [websitePageSize, setWebsitePageSize] = useState<number>(12);
 
   // Main Category Modal State
   const [catModalOpen, setCatModalOpen] = useState(false);
@@ -621,6 +631,46 @@ export default function ProductsClient({
     });
   }, [productList, websiteFilter]);
 
+  // Dedicated Filtered Products for Website Storefront Hub
+  const filteredWebsiteProducts = useMemo(() => {
+    return (productList || []).filter((p) => {
+      const isVisible = p.showOnWebsite !== false;
+      const audit = checkProductWebsiteData(p);
+
+      // Status filter
+      if (websiteTabFilter === "ALL_VISIBLE") {
+        if (!isVisible) return false;
+      } else if (websiteTabFilter === "VISIBLE_COMPLETE") {
+        if (!isVisible || !audit.isComplete) return false;
+      } else if (websiteTabFilter === "VISIBLE_MISSING") {
+        if (!isVisible || audit.isComplete) return false;
+      } else if (websiteTabFilter === "HIDDEN") {
+        if (isVisible) return false;
+      } // "ALL" shows all catalog products
+
+      // Missing field filter
+      if (websiteMissingFieldFilter !== "ALL") {
+        if (!audit.missingFields.includes(websiteMissingFieldFilter)) return false;
+      }
+
+      // Search filter
+      if (websiteSearch.trim()) {
+        const q = websiteSearch.toLowerCase().trim();
+        const nameMatch = p.name?.toLowerCase().includes(q);
+        const skuMatch = p.variants?.some((v: any) => v.sku?.toLowerCase().includes(q));
+        const catMatch = p.category?.name?.toLowerCase().includes(q);
+        if (!nameMatch && !skuMatch && !catMatch) return false;
+      }
+
+      return true;
+    });
+  }, [productList, websiteTabFilter, websiteMissingFieldFilter, websiteSearch]);
+
+  const paginatedWebsiteProducts = useMemo(() => {
+    const start = (websitePage - 1) * websitePageSize;
+    return filteredWebsiteProducts.slice(start, start + websitePageSize);
+  }, [filteredWebsiteProducts, websitePage, websitePageSize]);
+
   // Paginated Slices
   const paginatedProducts = useMemo(() => {
     const start = (productPage - 1) * productPageSize;
@@ -668,6 +718,19 @@ export default function ProductsClient({
         <div className="flex items-center gap-2 flex-wrap">
           <button
             type="button"
+            onClick={() => setActiveTab("website")}
+            className="px-3.5 py-2 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-[#056468] font-bold text-xs border border-emerald-300 shadow-sm transition-all flex items-center gap-1.5 cursor-pointer"
+          >
+            <Globe className="w-4 h-4 text-emerald-600" />
+            <span>Website Listed ({websiteMetrics.visibleCount})</span>
+            {websiteMetrics.visibleMissingCount > 0 && (
+              <span className="px-1.5 py-0.2 rounded-full bg-amber-200 text-amber-900 border border-amber-300 text-[10px] font-bold">
+                {websiteMetrics.visibleMissingCount} need info
+              </span>
+            )}
+          </button>
+          <button
+            type="button"
             onClick={openBulkRefillModal}
             className="px-3.5 py-2 rounded-lg bg-emerald-500 hover:bg-emerald-600 active:scale-95 text-white font-bold text-xs shadow-sm transition-all flex items-center gap-1.5 cursor-pointer"
           >
@@ -693,10 +756,10 @@ export default function ProductsClient({
       </div>
 
       {/* Module Sub-Tabs */}
-      <div className="flex items-center gap-2 border-b border-[#cce7ed] pb-2">
+      <div className="flex items-center gap-2 border-b border-[#cce7ed] pb-2 overflow-x-auto">
         <button
           onClick={() => setActiveTab("products")}
-          className={`px-4 py-2 rounded-lg text-xs font-medium transition-all flex items-center gap-2 ${
+          className={`px-4 py-2 rounded-lg text-xs font-medium transition-all flex items-center gap-2 shrink-0 ${
             activeTab === "products"
               ? "bg-[#056468] text-white font-semibold shadow-sm"
               : "text-[#4a6870] hover:text-[#0b252c] hover:bg-white/60"
@@ -707,8 +770,31 @@ export default function ProductsClient({
         </button>
 
         <button
+          onClick={() => setActiveTab("website")}
+          className={`px-4 py-2 rounded-lg text-xs font-medium transition-all flex items-center gap-2 shrink-0 ${
+            activeTab === "website"
+              ? "bg-[#056468] text-white font-semibold shadow-sm"
+              : "text-[#4a6870] hover:text-[#0b252c] hover:bg-white/60"
+          }`}
+        >
+          <Globe className="w-3.5 h-3.5 text-emerald-400" />
+          <span>Website Listed Cards ({websiteMetrics.visibleCount})</span>
+          {websiteMetrics.visibleMissingCount > 0 && (
+            <span
+              className={`px-1.5 py-0.2 rounded-full text-[10px] font-bold ${
+                activeTab === "website"
+                  ? "bg-amber-400 text-amber-950"
+                  : "bg-amber-100 text-amber-800 border border-amber-300"
+              }`}
+            >
+              {websiteMetrics.visibleMissingCount} need data
+            </span>
+          )}
+        </button>
+
+        <button
           onClick={() => setActiveTab("categories")}
-          className={`px-4 py-2 rounded-lg text-xs font-medium transition-all flex items-center gap-2 ${
+          className={`px-4 py-2 rounded-lg text-xs font-medium transition-all flex items-center gap-2 shrink-0 ${
             activeTab === "categories"
               ? "bg-[#056468] text-white font-semibold shadow-sm"
               : "text-[#4a6870] hover:text-[#0b252c] hover:bg-white/60"
@@ -720,7 +806,7 @@ export default function ProductsClient({
 
         <button
           onClick={() => setActiveTab("services")}
-          className={`px-4 py-2 rounded-lg text-xs font-medium transition-all flex items-center gap-2 ${
+          className={`px-4 py-2 rounded-lg text-xs font-medium transition-all flex items-center gap-2 shrink-0 ${
             activeTab === "services"
               ? "bg-[#056468] text-white font-semibold shadow-sm"
               : "text-[#4a6870] hover:text-[#0b252c] hover:bg-white/60"
@@ -734,131 +820,39 @@ export default function ProductsClient({
       {/* TAB 1: PRODUCTS LIST */}
       {activeTab === "products" && (
         <div className="space-y-5">
-          {/* Website Readiness & Visibility Hub - Interactive Metric Filter Cards */}
-          <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
-            {/* Card 1: All Catalog */}
-            <button
-              type="button"
-              onClick={() => {
-                setWebsiteFilter("ALL");
-                setProductPage(1);
-              }}
-              className={`p-3.5 rounded-2xl border text-left transition-all cursor-pointer flex flex-col justify-between ${
-                websiteFilter === "ALL"
-                  ? "bg-slate-900 text-white border-slate-900 shadow-sm ring-2 ring-slate-900/20"
-                  : "bg-white text-slate-800 border-slate-200 hover:border-slate-300 hover:bg-slate-50/80"
-              }`}
-            >
-              <div className="flex items-center justify-between w-full mb-1">
-                <span className={`text-[11px] font-bold ${websiteFilter === "ALL" ? "text-slate-300" : "text-slate-500"}`}>
-                  All Catalog
-                </span>
-                <Package className={`w-4 h-4 ${websiteFilter === "ALL" ? "text-slate-300" : "text-slate-400"}`} />
+          {/* Compact Website Status Quick Banner */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 bg-gradient-to-r from-emerald-50 via-teal-50/50 to-white border border-[#cce7ed] rounded-xl shadow-xs">
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-lg bg-emerald-100 border border-emerald-300 text-emerald-800 flex items-center justify-center shrink-0">
+                <Globe className="w-4 h-4" />
               </div>
-              <div className="text-2xl font-black font-mono tracking-tight">{websiteMetrics.total}</div>
-              <span className={`text-[10px] mt-1 ${websiteFilter === "ALL" ? "text-slate-300" : "text-slate-500"}`}>
-                Total Master SKUs
-              </span>
-            </button>
+              <div>
+                <div className="text-xs font-bold text-[#0b252c] flex items-center gap-2">
+                  <span>Storefront Status: {websiteMetrics.visibleCount} Products Visible</span>
+                  {websiteMetrics.visibleMissingCount > 0 ? (
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 border border-amber-300">
+                      ⚠️ {websiteMetrics.visibleMissingCount} missing website data
+                    </span>
+                  ) : (
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300">
+                      ✓ All 100% complete
+                    </span>
+                  )}
+                </div>
+                <p className="text-[11px] text-[#4a6870]">
+                  {websiteMetrics.visibleCompleteCount} fully ready to sell online • {websiteMetrics.hiddenCount} offline/drafts
+                </p>
+              </div>
+            </div>
 
-            {/* Card 2: Visible on Website */}
             <button
               type="button"
-              onClick={() => {
-                setWebsiteFilter("VISIBLE");
-                setProductPage(1);
-              }}
-              className={`p-3.5 rounded-2xl border text-left transition-all cursor-pointer flex flex-col justify-between ${
-                websiteFilter === "VISIBLE"
-                  ? "bg-[#056468] text-white border-[#056468] shadow-sm ring-2 ring-[#056468]/20"
-                  : "bg-white text-slate-800 border-[#cce7ed] hover:border-[#056468]/50 hover:bg-[#f0f8fa]"
-              }`}
+              onClick={() => setActiveTab("website")}
+              className="inline-flex items-center justify-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-[#056468] hover:bg-[#044e51] text-white font-semibold text-xs shadow-sm transition cursor-pointer shrink-0"
             >
-              <div className="flex items-center justify-between w-full mb-1">
-                <span className={`text-[11px] font-bold ${websiteFilter === "VISIBLE" ? "text-emerald-100" : "text-[#056468]"}`}>
-                  Visible on Website
-                </span>
-                <Globe className={`w-4 h-4 ${websiteFilter === "VISIBLE" ? "text-emerald-200" : "text-[#056468]"}`} />
-              </div>
-              <div className="text-2xl font-black font-mono tracking-tight">{websiteMetrics.visibleCount}</div>
-              <span className={`text-[10px] mt-1 ${websiteFilter === "VISIBLE" ? "text-emerald-100" : "text-slate-500"}`}>
-                Live on Storefront
-              </span>
-            </button>
-
-            {/* Card 3: Visible & Data Complete (100% Ready) */}
-            <button
-              type="button"
-              onClick={() => {
-                setWebsiteFilter("VISIBLE_COMPLETE");
-                setProductPage(1);
-              }}
-              className={`p-3.5 rounded-2xl border text-left transition-all cursor-pointer flex flex-col justify-between ${
-                websiteFilter === "VISIBLE_COMPLETE"
-                  ? "bg-emerald-600 text-white border-emerald-600 shadow-sm ring-2 ring-emerald-600/20"
-                  : "bg-white text-slate-800 border-emerald-200 hover:border-emerald-300 hover:bg-emerald-50/50"
-              }`}
-            >
-              <div className="flex items-center justify-between w-full mb-1">
-                <span className={`text-[11px] font-bold ${websiteFilter === "VISIBLE_COMPLETE" ? "text-emerald-100" : "text-emerald-700"}`}>
-                  Data Complete
-                </span>
-                <CheckCircle2 className={`w-4 h-4 ${websiteFilter === "VISIBLE_COMPLETE" ? "text-emerald-200" : "text-emerald-600"}`} />
-              </div>
-              <div className="text-2xl font-black font-mono tracking-tight">{websiteMetrics.visibleCompleteCount}</div>
-              <span className={`text-[10px] mt-1 ${websiteFilter === "VISIBLE_COMPLETE" ? "text-emerald-100" : "text-emerald-600"}`}>
-                100% Ready to Sell
-              </span>
-            </button>
-
-            {/* Card 4: Visible but Missing Data (Needs Info) */}
-            <button
-              type="button"
-              onClick={() => {
-                setWebsiteFilter("VISIBLE_MISSING");
-                setProductPage(1);
-              }}
-              className={`p-3.5 rounded-2xl border text-left transition-all cursor-pointer flex flex-col justify-between ${
-                websiteFilter === "VISIBLE_MISSING"
-                  ? "bg-amber-600 text-white border-amber-600 shadow-sm ring-2 ring-amber-600/30"
-                  : "bg-amber-50/50 text-slate-800 border-amber-200 hover:border-amber-300 hover:bg-amber-50"
-              }`}
-            >
-              <div className="flex items-center justify-between w-full mb-1">
-                <span className={`text-[11px] font-bold ${websiteFilter === "VISIBLE_MISSING" ? "text-amber-100" : "text-amber-800"}`}>
-                  Missing Data
-                </span>
-                <AlertTriangle className={`w-4 h-4 ${websiteFilter === "VISIBLE_MISSING" ? "text-amber-200" : "text-amber-600"}`} />
-              </div>
-              <div className="text-2xl font-black font-mono tracking-tight">{websiteMetrics.visibleMissingCount}</div>
-              <span className={`text-[10px] mt-1 font-semibold ${websiteFilter === "VISIBLE_MISSING" ? "text-amber-100" : "text-amber-700"}`}>
-                Live but Needs Info
-              </span>
-            </button>
-
-            {/* Card 5: Hidden from Website */}
-            <button
-              type="button"
-              onClick={() => {
-                setWebsiteFilter("HIDDEN");
-                setProductPage(1);
-              }}
-              className={`p-3.5 rounded-2xl border text-left transition-all cursor-pointer flex flex-col justify-between col-span-2 sm:col-span-1 ${
-                websiteFilter === "HIDDEN"
-                  ? "bg-rose-700 text-white border-rose-700 shadow-sm ring-2 ring-rose-700/20"
-                  : "bg-white text-slate-800 border-slate-200 hover:border-rose-300 hover:bg-rose-50/40"
-              }`}
-            >
-              <div className="flex items-center justify-between w-full mb-1">
-                <span className={`text-[11px] font-bold ${websiteFilter === "HIDDEN" ? "text-rose-100" : "text-slate-600"}`}>
-                  Hidden / Offline
-                </span>
-                <EyeOff className={`w-4 h-4 ${websiteFilter === "HIDDEN" ? "text-rose-200" : "text-slate-400"}`} />
-              </div>
-              <div className="text-2xl font-black font-mono tracking-tight">{websiteMetrics.hiddenCount}</div>
-              <span className={`text-[10px] mt-1 ${websiteFilter === "HIDDEN" ? "text-rose-100" : "text-slate-500"}`}>
-                Not on Storefront
-              </span>
+              <Globe className="w-3.5 h-3.5" />
+              <span>Open Website Listed Cards</span>
+              <ChevronRight className="w-3.5 h-3.5" />
             </button>
           </div>
 
@@ -1013,83 +1007,37 @@ export default function ProductsClient({
                           </div>
                         </div>
 
-                        {/* Website Data Completeness & Readiness Indicator */}
-                        {isVisibleOnWebsite ? (
-                          audit.isComplete ? (
-                            <div className="flex items-center justify-between px-2.5 py-1.5 rounded-lg bg-emerald-950/40 border border-emerald-400/30 text-[11px] text-emerald-200">
-                              <span className="flex items-center gap-1.5 font-bold">
-                                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-300 shrink-0" />
-                                <span>Website Ready (100%)</span>
-                              </span>
-                              <span className="text-[10px] text-emerald-300/80 font-medium">All 5 fields filled</span>
-                            </div>
-                          ) : (
-                            <div className="p-2.5 rounded-lg bg-amber-950/50 border border-amber-400/50 text-[11px] space-y-1.5">
-                              <div className="flex items-center justify-between">
-                                <span className="flex items-center gap-1.5 font-bold text-amber-300">
-                                  <AlertTriangle className="w-3.5 h-3.5 text-amber-400 shrink-0" />
-                                  <span>Missing Website Data ({audit.score}% filled)</span>
-                                </span>
-                                <Link
-                                  href={`/products/${product.id}`}
-                                  className="text-[10.5px] font-bold text-amber-200 hover:text-white underline inline-flex items-center gap-0.5"
-                                  title="Open product to fill missing data"
-                                >
-                                  <span>Add Data</span>
-                                  <ChevronRight className="w-3 h-3" />
-                                </Link>
-                              </div>
-                              <div className="flex flex-wrap items-center gap-1">
-                                {audit.missingFields.map((field) => (
-                                  <span
-                                    key={field}
-                                    className="px-1.5 py-0.5 rounded text-[9.5px] font-bold bg-amber-400/20 text-amber-100 border border-amber-300/30"
-                                  >
-                                    Missing {field}
+                        {/* Compact Website Status Indicator */}
+                        <div className="flex items-center justify-between px-2.5 py-1.5 rounded-lg bg-black/20 border border-white/10 text-[11px]">
+                          <span className="text-emerald-100/70 text-[10.5px]">Website:</span>
+                          <div className="flex items-center gap-2">
+                            {isVisibleOnWebsite ? (
+                              <span className="inline-flex items-center gap-1 font-semibold text-emerald-300">
+                                <Globe className="w-3 h-3 text-emerald-400" />
+                                <span>Live</span>
+                                {!audit.isComplete && (
+                                  <span className="text-[9.5px] px-1.5 py-0.2 rounded bg-amber-400/30 text-amber-200 font-bold ml-0.5">
+                                    {audit.missingFields.length} missing
                                   </span>
-                                ))}
-                              </div>
-                            </div>
-                          )
-                        ) : (
-                          <div className="flex items-center justify-between px-2.5 py-1.5 rounded-lg bg-rose-950/40 border border-rose-400/30 text-[11px] text-rose-200">
-                            <span className="flex items-center gap-1.5 font-medium">
-                              <EyeOff className="w-3.5 h-3.5 text-rose-300 shrink-0" />
-                              <span>Hidden from Storefront</span>
-                            </span>
-                            <span className="text-[10px] text-rose-300/80">Draft / Offline</span>
-                          </div>
-                        )}
-
-                        {/* Website Visibility Toggle Button */}
-                        <button
-                          type="button"
-                          onClick={() => toggleWebsiteVisibility(product.id, isVisibleOnWebsite)}
-                          disabled={toggleLoading === product.id}
-                          className={`w-full py-1.5 px-3 rounded-lg text-xs font-medium transition-all flex items-center justify-between border cursor-pointer ${
-                            isVisibleOnWebsite
-                              ? "bg-white/15 border-white/20 text-white hover:bg-white/25"
-                              : "bg-rose-950/40 border-rose-400/40 text-rose-200 hover:bg-rose-950/60"
-                          }`}
-                        >
-                          <span className="flex items-center gap-1.5">
-                            <Globe className="w-3.5 h-3.5 text-emerald-200" />
-                            <span>Website Status:</span>
-                          </span>
-                          <span className="font-semibold text-[11px] flex items-center gap-1">
-                            {toggleLoading === product.id ? (
-                              "Updating..."
-                            ) : isVisibleOnWebsite ? (
-                              <>
-                                <Eye className="w-3 h-3 text-emerald-300" /> Visible on Storefront
-                              </>
+                                )}
+                              </span>
                             ) : (
-                              <>
-                                <EyeOff className="w-3 h-3 text-rose-300" /> Hidden / Inactive
-                              </>
+                              <span className="inline-flex items-center gap-1 text-rose-300">
+                                <EyeOff className="w-3 h-3" />
+                                <span>Offline</span>
+                              </span>
                             )}
-                          </span>
-                        </button>
+                            <button
+                              type="button"
+                              onClick={() => toggleWebsiteVisibility(product.id, isVisibleOnWebsite)}
+                              disabled={toggleLoading === product.id}
+                              className="text-[10px] underline text-emerald-200 hover:text-white cursor-pointer ml-1"
+                              title="Toggle Website Visibility"
+                            >
+                              {toggleLoading === product.id ? "..." : isVisibleOnWebsite ? "Hide" : "Show"}
+                            </button>
+                          </div>
+                        </div>
 
                         {/* Price & Stock Container */}
                         <div className="grid grid-cols-2 gap-2 bg-black/15 p-3 rounded-lg border border-white/10 text-xs">
@@ -1181,7 +1129,452 @@ export default function ProductsClient({
         </div>
       )}
 
-      {/* TAB 2: 3-TIER CATEGORIES */}
+      {/* TAB 2: WEBSITE STOREFRONT LISTED CARDS & DATA AUDIT */}
+      {activeTab === "website" && (
+        <div className="space-y-6">
+          {/* Header Banner */}
+          <div className="bg-gradient-to-r from-[#056468] via-[#034d50] to-[#0b252c] text-white p-5 rounded-2xl shadow-md border border-[#044e51] flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div>
+              <div className="flex items-center gap-2 text-emerald-300 text-xs font-bold uppercase tracking-wider">
+                <Globe className="w-4 h-4" />
+                <span>E-Commerce Website Storefront Hub</span>
+              </div>
+              <h2 className="text-lg font-bold text-white mt-1">Website Listed Products & Readiness Audit</h2>
+              <p className="text-xs text-emerald-100/80 mt-1 max-w-2xl">
+                Audit every product currently listed on your public website. Verify data fields (Image, Description, Category, Price, SKU) and click &quot;Add Remaining Data&quot; to complete unready items before publishing.
+              </p>
+            </div>
+
+            <div className="flex items-center gap-2 shrink-0">
+              <Link
+                href="/products/new"
+                className="px-3.5 py-2 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-xs shadow-sm transition flex items-center gap-1.5"
+              >
+                <Plus className="w-4 h-4" />
+                <span>New Store Product</span>
+              </Link>
+            </div>
+          </div>
+
+          {/* Interactive Metric Filter Cards */}
+          <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+            {/* Card 1: Visible on Website */}
+            <button
+              type="button"
+              onClick={() => {
+                setWebsiteTabFilter("ALL_VISIBLE");
+                setWebsitePage(1);
+              }}
+              className={`p-3.5 rounded-2xl border text-left transition-all cursor-pointer flex flex-col justify-between ${
+                websiteTabFilter === "ALL_VISIBLE"
+                  ? "bg-[#056468] text-white border-[#056468] shadow-md ring-2 ring-[#056468]/30"
+                  : "bg-white text-slate-800 border-[#cce7ed] hover:border-[#056468]/50 hover:bg-[#f0f8fa]"
+              }`}
+            >
+              <div className="flex items-center justify-between w-full mb-1">
+                <span className={`text-[11px] font-bold ${websiteTabFilter === "ALL_VISIBLE" ? "text-emerald-100" : "text-[#056468]"}`}>
+                  Live on Website
+                </span>
+                <Globe className={`w-4 h-4 ${websiteTabFilter === "ALL_VISIBLE" ? "text-emerald-200" : "text-[#056468]"}`} />
+              </div>
+              <div className="text-2xl font-black font-mono tracking-tight">{websiteMetrics.visibleCount}</div>
+              <span className={`text-[10px] mt-1 ${websiteTabFilter === "ALL_VISIBLE" ? "text-emerald-100" : "text-slate-500"}`}>
+                Visible to Customers
+              </span>
+            </button>
+
+            {/* Card 2: 100% Ready To Sell */}
+            <button
+              type="button"
+              onClick={() => {
+                setWebsiteTabFilter("VISIBLE_COMPLETE");
+                setWebsitePage(1);
+              }}
+              className={`p-3.5 rounded-2xl border text-left transition-all cursor-pointer flex flex-col justify-between ${
+                websiteTabFilter === "VISIBLE_COMPLETE"
+                  ? "bg-emerald-600 text-white border-emerald-600 shadow-md ring-2 ring-emerald-600/30"
+                  : "bg-white text-slate-800 border-emerald-200 hover:border-emerald-300 hover:bg-emerald-50/60"
+              }`}
+            >
+              <div className="flex items-center justify-between w-full mb-1">
+                <span className={`text-[11px] font-bold ${websiteTabFilter === "VISIBLE_COMPLETE" ? "text-emerald-100" : "text-emerald-700"}`}>
+                  100% Data Ready
+                </span>
+                <CheckCircle2 className={`w-4 h-4 ${websiteTabFilter === "VISIBLE_COMPLETE" ? "text-emerald-200" : "text-emerald-600"}`} />
+              </div>
+              <div className="text-2xl font-black font-mono tracking-tight">{websiteMetrics.visibleCompleteCount}</div>
+              <span className={`text-[10px] mt-1 ${websiteTabFilter === "VISIBLE_COMPLETE" ? "text-emerald-100" : "text-emerald-600"}`}>
+                All 5 fields filled
+              </span>
+            </button>
+
+            {/* Card 3: Missing Website Data (Needs Attention) */}
+            <button
+              type="button"
+              onClick={() => {
+                setWebsiteTabFilter("VISIBLE_MISSING");
+                setWebsitePage(1);
+              }}
+              className={`p-3.5 rounded-2xl border text-left transition-all cursor-pointer flex flex-col justify-between ${
+                websiteTabFilter === "VISIBLE_MISSING"
+                  ? "bg-amber-600 text-white border-amber-600 shadow-md ring-2 ring-amber-600/40"
+                  : "bg-amber-50/50 text-slate-800 border-amber-200 hover:border-amber-300 hover:bg-amber-50"
+              }`}
+            >
+              <div className="flex items-center justify-between w-full mb-1">
+                <span className={`text-[11px] font-bold ${websiteTabFilter === "VISIBLE_MISSING" ? "text-amber-100" : "text-amber-800"}`}>
+                  Needs Attention
+                </span>
+                <AlertTriangle className={`w-4 h-4 ${websiteTabFilter === "VISIBLE_MISSING" ? "text-amber-200" : "text-amber-600"}`} />
+              </div>
+              <div className="text-2xl font-black font-mono tracking-tight">{websiteMetrics.visibleMissingCount}</div>
+              <span className={`text-[10px] mt-1 font-semibold ${websiteTabFilter === "VISIBLE_MISSING" ? "text-amber-100" : "text-amber-700"}`}>
+                Missing Data Fields
+              </span>
+            </button>
+
+            {/* Card 4: Hidden / Offline */}
+            <button
+              type="button"
+              onClick={() => {
+                setWebsiteTabFilter("HIDDEN");
+                setWebsitePage(1);
+              }}
+              className={`p-3.5 rounded-2xl border text-left transition-all cursor-pointer flex flex-col justify-between ${
+                websiteTabFilter === "HIDDEN"
+                  ? "bg-rose-700 text-white border-rose-700 shadow-md ring-2 ring-rose-700/30"
+                  : "bg-white text-slate-800 border-slate-200 hover:border-rose-300 hover:bg-rose-50/40"
+              }`}
+            >
+              <div className="flex items-center justify-between w-full mb-1">
+                <span className={`text-[11px] font-bold ${websiteTabFilter === "HIDDEN" ? "text-rose-100" : "text-slate-600"}`}>
+                  Hidden / Offline
+                </span>
+                <EyeOff className={`w-4 h-4 ${websiteTabFilter === "HIDDEN" ? "text-rose-200" : "text-slate-400"}`} />
+              </div>
+              <div className="text-2xl font-black font-mono tracking-tight">{websiteMetrics.hiddenCount}</div>
+              <span className={`text-[10px] mt-1 ${websiteTabFilter === "HIDDEN" ? "text-rose-100" : "text-slate-500"}`}>
+                Draft / Unlisted
+              </span>
+            </button>
+
+            {/* Card 5: All Catalog SKUs */}
+            <button
+              type="button"
+              onClick={() => {
+                setWebsiteTabFilter("ALL");
+                setWebsitePage(1);
+              }}
+              className={`p-3.5 rounded-2xl border text-left transition-all cursor-pointer flex flex-col justify-between col-span-2 sm:col-span-1 ${
+                websiteTabFilter === "ALL"
+                  ? "bg-slate-900 text-white border-slate-900 shadow-md ring-2 ring-slate-900/30"
+                  : "bg-white text-slate-800 border-slate-200 hover:border-slate-300 hover:bg-slate-50"
+              }`}
+            >
+              <div className="flex items-center justify-between w-full mb-1">
+                <span className={`text-[11px] font-bold ${websiteTabFilter === "ALL" ? "text-slate-300" : "text-slate-500"}`}>
+                  All Inventory
+                </span>
+                <Package className={`w-4 h-4 ${websiteTabFilter === "ALL" ? "text-slate-300" : "text-slate-400"}`} />
+              </div>
+              <div className="text-2xl font-black font-mono tracking-tight">{websiteMetrics.total}</div>
+              <span className={`text-[10px] mt-1 ${websiteTabFilter === "ALL" ? "text-slate-300" : "text-slate-500"}`}>
+                Total Master SKUs
+              </span>
+            </button>
+          </div>
+
+          {/* Quick Filter & Search Bar */}
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-3 bg-white p-3.5 rounded-xl border border-[#cce7ed] shadow-xs">
+            <div className="relative w-full sm:w-80">
+              <Search className="w-4 h-4 absolute left-3 top-2.5 text-[#5f818b]" />
+              <input
+                type="text"
+                value={websiteSearch}
+                onChange={(e) => {
+                  setWebsiteSearch(e.target.value);
+                  setWebsitePage(1);
+                }}
+                placeholder="Search website cards by title, SKU, category..."
+                className="w-full bg-[#f8fcfe] border border-[#cce7ed] rounded-lg pl-9 pr-3 py-1.5 text-xs text-[#0b252c] placeholder-[#6a8c96] focus:outline-none focus:ring-2 focus:ring-[#056468]"
+              />
+            </div>
+
+            {/* Missing Field Quick Chips */}
+            <div className="flex items-center gap-1.5 flex-wrap w-full sm:w-auto">
+              <span className="text-[11px] font-bold text-[#4a6870] mr-1 flex items-center gap-1">
+                <Filter className="w-3 h-3" /> Filter by:
+              </span>
+              {[
+                { label: "All Fields", value: "ALL" },
+                { label: "Missing Image", value: "Image" },
+                { label: "Missing Description", value: "Description" },
+                { label: "Missing Category", value: "Category" },
+                { label: "Missing Price", value: "Price" },
+                { label: "Missing SKU", value: "SKU" },
+              ].map((chip) => (
+                <button
+                  key={chip.value}
+                  type="button"
+                  onClick={() => {
+                    setWebsiteMissingFieldFilter(chip.value);
+                    setWebsitePage(1);
+                  }}
+                  className={`px-2.5 py-1 rounded-md text-[11px] font-semibold transition cursor-pointer border ${
+                    websiteMissingFieldFilter === chip.value
+                      ? "bg-[#056468] text-white border-[#056468]"
+                      : "bg-white text-[#4a6870] border-[#cce7ed] hover:border-[#056468] hover:text-[#0b252c]"
+                  }`}
+                >
+                  {chip.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Cards Count Summary */}
+          <div className="flex items-center justify-between text-xs text-[#4a6870] px-1">
+            <span>
+              Showing <strong className="text-[#0b252c]">{filteredWebsiteProducts.length}</strong> matching website product cards
+            </span>
+            {(websiteSearch || websiteMissingFieldFilter !== "ALL" || websiteTabFilter !== "ALL_VISIBLE") && (
+              <button
+                type="button"
+                onClick={() => {
+                  setWebsiteSearch("");
+                  setWebsiteMissingFieldFilter("ALL");
+                  setWebsiteTabFilter("ALL_VISIBLE");
+                  setWebsitePage(1);
+                }}
+                className="text-[#056468] hover:underline font-semibold cursor-pointer"
+              >
+                Reset all filters
+              </button>
+            )}
+          </div>
+
+          {/* Website Listed Cards Grid */}
+          {filteredWebsiteProducts.length === 0 ? (
+            <div className="bg-white border border-[#cce7ed] rounded-2xl p-12 text-center space-y-3">
+              <Globe className="w-10 h-10 text-slate-400 mx-auto" />
+              <h3 className="text-base font-bold text-[#0b252c]">No website products match current filters</h3>
+              <p className="text-xs text-[#5f818b] max-w-md mx-auto">
+                No products found for the selected visibility or field criteria. Try resetting filters or adding new items.
+              </p>
+              <button
+                type="button"
+                onClick={() => {
+                  setWebsiteSearch("");
+                  setWebsiteMissingFieldFilter("ALL");
+                  setWebsiteTabFilter("ALL_VISIBLE");
+                  setWebsitePage(1);
+                }}
+                className="px-4 py-2 rounded-lg bg-[#056468] text-white font-medium text-xs shadow inline-flex items-center gap-1.5 cursor-pointer"
+              >
+                Reset Filters
+              </button>
+            </div>
+          ) : (
+            <div>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                {paginatedWebsiteProducts.map((product) => {
+                  const variant = product.variants?.[0];
+                  const stockQty = variant?.inventory?.quantity ?? 0;
+                  const isVisibleOnWebsite = (product.showOnWebsite ?? true);
+                  const audit = checkProductWebsiteData(product);
+
+                  return (
+                    <div
+                      key={product.id}
+                      className="bg-white rounded-2xl p-5 border border-[#cce7ed] shadow-sm hover:shadow-md transition-all flex flex-col justify-between space-y-4"
+                    >
+                      <div className="space-y-3.5">
+                        {/* Top Row: Category & Visibility Toggle */}
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="text-[10.5px] font-bold px-2.5 py-0.5 rounded-full bg-[#e3f2f5] text-[#056468] border border-[#b2dce5] truncate max-w-[140px]">
+                            {product.category?.name || "No Category"}
+                          </span>
+
+                          <button
+                            type="button"
+                            onClick={() => toggleWebsiteVisibility(product.id, isVisibleOnWebsite)}
+                            disabled={toggleLoading === product.id}
+                            className={`px-2.5 py-1 rounded-full text-[10.5px] font-bold transition flex items-center gap-1 border cursor-pointer ${
+                              isVisibleOnWebsite
+                                ? "bg-emerald-50 text-emerald-800 border-emerald-300 hover:bg-emerald-100"
+                                : "bg-rose-50 text-rose-800 border-rose-300 hover:bg-rose-100"
+                            }`}
+                            title="Click to toggle website storefront visibility"
+                          >
+                            {toggleLoading === product.id ? (
+                              <span>Saving...</span>
+                            ) : isVisibleOnWebsite ? (
+                              <>
+                                <Eye className="w-3 h-3 text-emerald-600" />
+                                <span>Live on Website</span>
+                              </>
+                            ) : (
+                              <>
+                                <EyeOff className="w-3 h-3 text-rose-600" />
+                                <span>Hidden / Offline</span>
+                              </>
+                            )}
+                          </button>
+                        </div>
+
+                        {/* Image & Product Title */}
+                        <div className="flex items-start gap-3.5">
+                          {product.imageUrl ? (
+                            <img
+                              src={product.imageUrl}
+                              alt={product.name}
+                              className="w-16 h-16 object-cover rounded-xl border border-slate-200 shrink-0 bg-slate-50"
+                            />
+                          ) : (
+                            <div className="w-16 h-16 rounded-xl bg-amber-50 border-2 border-dashed border-amber-300 flex flex-col items-center justify-center text-amber-600 shrink-0">
+                              <AlertTriangle className="w-5 h-5 text-amber-500" />
+                              <span className="text-[8px] font-bold uppercase mt-0.5">No Image</span>
+                            </div>
+                          )}
+
+                          <div className="flex-1 min-w-0">
+                            <h3 className="text-sm font-bold text-[#0b252c] leading-snug line-clamp-2">
+                              {product.name}
+                            </h3>
+                            <div className="flex items-center gap-2 mt-1 text-xs text-[#5f818b]">
+                              <span>SKU: <strong className="font-mono text-[#0b252c]">{variant?.sku || "None"}</strong></span>
+                              <span>•</span>
+                              <span>Stock: <strong className="text-emerald-700">{stockQty}</strong></span>
+                            </div>
+                            <div className="text-xs font-bold text-[#056468] mt-1">
+                              ₹{(product.offerPrice || variant?.sellingPrice || 0).toFixed(2)}
+                              {product.mrp > product.offerPrice && (
+                                <span className="line-through text-slate-400 text-[10px] ml-1.5 font-normal">
+                                  ₹{product.mrp}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Readiness Progress Bar & Score */}
+                        <div className="bg-[#f8fcfe] p-3 rounded-xl border border-[#cce7ed] space-y-2">
+                          <div className="flex items-center justify-between text-xs">
+                            <span className="font-bold text-[#0b252c] flex items-center gap-1.5">
+                              {audit.isComplete ? (
+                                <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                              ) : (
+                                <AlertTriangle className="w-4 h-4 text-amber-600" />
+                              )}
+                              <span>Storefront Readiness</span>
+                            </span>
+                            <span
+                              className={`font-black text-xs ${
+                                audit.isComplete ? "text-emerald-600" : "text-amber-600"
+                              }`}
+                            >
+                              {audit.score}% ({audit.filledFieldsCount}/{audit.totalFieldsCount})
+                            </span>
+                          </div>
+
+                          {/* Progress bar */}
+                          <div className="w-full bg-slate-200 h-1.5 rounded-full overflow-hidden">
+                            <div
+                              className={`h-full transition-all duration-300 ${
+                                audit.isComplete ? "bg-emerald-500" : "bg-amber-500"
+                              }`}
+                              style={{ width: `${audit.score}%` }}
+                            />
+                          </div>
+
+                          {/* 5-Field Checklist Badges */}
+                          <div className="grid grid-cols-5 gap-1 pt-1 text-[10px] text-center">
+                            {[
+                              { key: "Image", ok: Boolean(product.imageUrl) },
+                              { key: "Desc", ok: Boolean(product.description) },
+                              { key: "Category", ok: Boolean(product.category?.name || product.categoryId) },
+                              { key: "Price", ok: Boolean(product.offerPrice || product.mrp || variant?.sellingPrice) },
+                              { key: "SKU", ok: Boolean(variant?.sku) },
+                            ].map((item) => (
+                              <div
+                                key={item.key}
+                                className={`py-1 px-0.5 rounded font-bold border ${
+                                  item.ok
+                                    ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                                    : "bg-amber-50 text-amber-800 border-amber-300"
+                                }`}
+                              >
+                                {item.key} {item.ok ? "✓" : "✗"}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+
+                        {/* Missing Fields Pill List (If any) */}
+                        {!audit.isComplete && (
+                          <div className="p-2.5 rounded-xl bg-amber-50/70 border border-amber-200 text-xs space-y-1">
+                            <span className="text-[10px] font-bold text-amber-800 uppercase tracking-wider block">
+                              Fields Needed to Complete:
+                            </span>
+                            <div className="flex flex-wrap gap-1">
+                              {audit.missingFields.map((f) => (
+                                <span
+                                  key={f}
+                                  className="px-2 py-0.5 rounded text-[10px] font-bold bg-white text-amber-900 border border-amber-300 shadow-2xs"
+                                >
+                                  + Missing {f}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Card Action: Direct link to Add Data / Edit Product */}
+                      <div className="pt-3 border-t border-slate-100 flex items-center justify-between gap-2">
+                        <Link
+                          href={`/products/${product.id}`}
+                          className={`w-full py-2 px-3 rounded-xl font-bold text-xs transition flex items-center justify-center gap-1.5 shadow-sm ${
+                            audit.isComplete
+                              ? "bg-white hover:bg-slate-50 text-[#056468] border border-[#cce7ed]"
+                              : "bg-amber-500 hover:bg-amber-600 text-white"
+                          }`}
+                        >
+                          {audit.isComplete ? (
+                            <>
+                              <span>Edit Storefront Details</span>
+                              <ChevronRight className="w-3.5 h-3.5" />
+                            </>
+                          ) : (
+                            <>
+                              <Plus className="w-3.5 h-3.5" />
+                              <span>Add Remaining Data ({audit.missingFields.join(", ")}) →</span>
+                            </>
+                          )}
+                        </Link>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Website Cards Pagination */}
+              <Pagination
+                currentPage={websitePage}
+                totalItems={filteredWebsiteProducts.length}
+                pageSize={websitePageSize}
+                onPageChange={setWebsitePage}
+                onPageSizeChange={setWebsitePageSize}
+                pageSizeOptions={[9, 12, 24, 48, 96]}
+                itemLabel="website products"
+                className="mt-6 border border-[#cce7ed] rounded-xl shadow-xs"
+              />
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* TAB 3: 3-TIER CATEGORIES */}
       {activeTab === "categories" && (
         <div className="space-y-6">
           {/* Action Header for Categories */}
