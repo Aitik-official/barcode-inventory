@@ -107,7 +107,7 @@ export default function OrdersClient({
   soldBarcodes = [],
   initialCompanySettings,
   initialSearch = "",
-  initialSearchType = "ALL",
+  initialSearchType,
 }: {
   orders: any[];
   marketplaceOrders?: any[];
@@ -118,14 +118,11 @@ export default function OrdersClient({
   soldBarcodes?: any[];
   initialCompanySettings?: CompanySettingsData;
   initialSearch?: string;
-  initialSearchType?: "ALL" | "SKU" | "ORDER" | "BUYER" | "BARCODE";
+  initialSearchType?: string;
 }) {
   const [activeTab, setActiveTab] = useState<"orders" | "quotations" | "enquiries" | "invoices" | "settings">("orders");
   const [channelBatchFilter, setChannelBatchFilter] = useState<"ALL" | "WEBSITE" | "AMAZON" | "FLIPKART" | "POS">("ALL");
   const [searchQuery, setSearchQuery] = useState(initialSearch);
-  const [searchType, setSearchType] = useState<"ALL" | "SKU" | "ORDER" | "BUYER" | "BARCODE">(
-    (initialSearchType as any) || "ALL"
-  );
   const [statusFilter, setStatusFilter] = useState<string>("ALL");
   const [selectedOrderIds, setSelectedOrderIds] = useState<string[]>([]);
   const [shippingInvoiceData, setShippingInvoiceData] = useState<ShippingInvoiceData | null>(null);
@@ -603,56 +600,30 @@ export default function OrdersClient({
       if (statusFilter !== "ALL" && ord.status.toUpperCase() !== statusFilter.toUpperCase()) {
         return false;
       }
-      // Search Query & Targeted Field Filter (SKU, Order #, Buyer, Barcode)
+      // Universal Instant Search (Matches Product SKU, Title, Order #, Customer, Phone, Email, Barcode, Tracking)
       if (searchQuery.trim()) {
         const q = searchQuery.toLowerCase().trim();
-
-        if (searchType === "SKU") {
-          // Strictly match Product / Variant SKU, ASIN/FSN, or Product Title
-          const matchesSku = ord.items.some(
-            (i) =>
-              i.sku.toLowerCase().includes(q) ||
-              (i.asinOrFsn || "").toLowerCase().includes(q) ||
-              i.title.toLowerCase().includes(q)
-          );
-          if (!matchesSku) return false;
-        } else if (searchType === "ORDER") {
-          if (!ord.orderNumber.toLowerCase().includes(q)) return false;
-        } else if (searchType === "BUYER") {
-          const matchesBuyer =
-            ord.customerName.toLowerCase().includes(q) ||
-            (ord.customerPhone || "").toLowerCase().includes(q) ||
-            (ord.customerEmail || "").toLowerCase().includes(q) ||
-            (ord.shippingAddress || "").toLowerCase().includes(q);
-          if (!matchesBuyer) return false;
-        } else if (searchType === "BARCODE") {
-          const matchesBarcode = ord.items.some(
-            (i) => (i.unitBarcode || "").toLowerCase().includes(q)
-          );
-          if (!matchesBarcode) return false;
-        } else {
-          // ALL FIELDS: Matches Order #, Customer, Tracking, or any item SKU / Title / Barcode
-          const matchesNum = ord.orderNumber.toLowerCase().includes(q);
-          const matchesCust =
-            ord.customerName.toLowerCase().includes(q) ||
-            (ord.customerPhone || "").toLowerCase().includes(q) ||
-            (ord.customerEmail || "").toLowerCase().includes(q);
-          const matchesTracking = (ord.trackingNumber || "").toLowerCase().includes(q);
-          const matchesSku = ord.items.some(
-            (i) =>
-              i.sku.toLowerCase().includes(q) ||
-              (i.asinOrFsn || "").toLowerCase().includes(q) ||
-              i.title.toLowerCase().includes(q) ||
-              (i.unitBarcode || "").toLowerCase().includes(q)
-          );
-          if (!matchesNum && !matchesCust && !matchesTracking && !matchesSku) {
-            return false;
-          }
+        const matchesNum = ord.orderNumber.toLowerCase().includes(q);
+        const matchesCust =
+          ord.customerName.toLowerCase().includes(q) ||
+          (ord.customerPhone || "").toLowerCase().includes(q) ||
+          (ord.customerEmail || "").toLowerCase().includes(q) ||
+          (ord.shippingAddress || "").toLowerCase().includes(q);
+        const matchesTracking = (ord.trackingNumber || "").toLowerCase().includes(q);
+        const matchesSku = ord.items.some(
+          (i) =>
+            i.sku.toLowerCase().includes(q) ||
+            (i.asinOrFsn || "").toLowerCase().includes(q) ||
+            i.title.toLowerCase().includes(q) ||
+            (i.unitBarcode || "").toLowerCase().includes(q)
+        );
+        if (!matchesNum && !matchesCust && !matchesTracking && !matchesSku) {
+          return false;
         }
       }
       return true;
     });
-  }, [unifiedOrders, channelBatchFilter, statusFilter, searchQuery, searchType]);
+  }, [unifiedOrders, channelBatchFilter, statusFilter, searchQuery]);
 
   // Pagination States
   const [ordersPage, setOrdersPage] = useState(1);
@@ -1412,85 +1383,34 @@ export default function OrdersClient({
                 ))}
               </div>
 
-              {/* Search Target Selector & Status Filter */}
-              <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
-                {/* Search input with target mode selector */}
-                <div className="flex items-center rounded-lg border border-slate-200 bg-white overflow-hidden shadow-2xs focus-within:ring-2 focus-within:ring-[#056468]/30 focus-within:border-[#056468]">
-                  <select
-                    value={searchType}
+              {/* Clean Professional Search & Status Filter */}
+              <div className="flex items-center gap-2">
+                <div className="relative w-44 sm:w-60">
+                  <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-slate-400" />
+                  <input
+                    type="text"
+                    value={searchQuery}
                     onChange={(e) => {
-                      setSearchType(e.target.value as any);
+                      setSearchQuery(e.target.value);
                       setOrdersPage(1);
                     }}
-                    className="bg-slate-50 border-r border-slate-200 px-2 py-1.5 text-[11px] font-bold text-slate-700 focus:outline-none cursor-pointer"
-                    title="Choose search criteria"
-                  >
-                    <option value="ALL">🔍 All</option>
-                    <option value="SKU">🏷️ SKU</option>
-                    <option value="ORDER">📦 Order #</option>
-                    <option value="BUYER">👤 Buyer</option>
-                    <option value="BARCODE">🔲 Barcode</option>
-                  </select>
-
-                  <div className="relative flex-1 min-w-[170px] sm:w-56">
-                    <input
-                      type="text"
-                      value={searchQuery}
-                      onChange={(e) => {
-                        setSearchQuery(e.target.value);
+                    placeholder="Search SKU, Order #, Buyer..."
+                    className="w-full bg-slate-50 border border-slate-200 rounded-lg pl-8 pr-7 py-1.5 text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#056468]"
+                  />
+                  {searchQuery && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSearchQuery("");
                         setOrdersPage(1);
                       }}
-                      placeholder={
-                        searchType === "SKU"
-                          ? "Enter Product SKU..."
-                          : searchType === "ORDER"
-                          ? "Enter Order #..."
-                          : searchType === "BUYER"
-                          ? "Enter Customer Name..."
-                          : searchType === "BARCODE"
-                          ? "Enter Unit Barcode..."
-                          : "Search Order #, SKU, Buyer..."
-                      }
-                      className="w-full bg-transparent px-2.5 py-1.5 text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none"
-                    />
-                    {searchQuery && (
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setSearchQuery("");
-                          setOrdersPage(1);
-                        }}
-                        className="absolute right-2 top-2 text-slate-400 hover:text-slate-700"
-                        title="Clear search"
-                      >
-                        <X className="w-3.5 h-3.5" />
-                      </button>
-                    )}
-                  </div>
-                </div>
-
-                {/* Quick 1-Click SKU Search Filter Toggle */}
-                <button
-                  type="button"
-                  onClick={() => {
-                    setSearchType((prev) => (prev === "SKU" ? "ALL" : "SKU"));
-                    setOrdersPage(1);
-                  }}
-                  className={`px-2.5 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 cursor-pointer border shrink-0 ${
-                    searchType === "SKU"
-                      ? "bg-amber-500 text-white border-amber-600 shadow-xs"
-                      : "bg-white text-slate-600 border-slate-200 hover:border-amber-400 hover:text-amber-800"
-                  }`}
-                  title="Filter orders specifically by Product SKU"
-                >
-                  <Tag className="w-3.5 h-3.5" />
-                  <span>SKU Filter</span>
-                  {searchType === "SKU" && (
-                    <span className="text-[9.5px] bg-white/25 text-white px-1 py-0.2 rounded font-bold">
-                      Active
-                    </span>
+                      className="absolute right-2 top-2 text-slate-400 hover:text-slate-700 cursor-pointer"
+                      title="Clear search"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
                   )}
-                </button>
+                </div>
 
                 <select
                   value={statusFilter}
@@ -1512,28 +1432,21 @@ export default function OrdersClient({
               </div>
             </div>
 
-            {/* Active Search / SKU Filter Feedback Pill */}
+            {/* Subtle Active Search Counter */}
             {searchQuery.trim() && (
-              <div className="flex items-center justify-between px-3 py-1.5 rounded-xl bg-amber-50 border border-amber-200 text-xs">
-                <div className="flex items-center gap-2">
-                  <Tag className="w-3.5 h-3.5 text-amber-700" />
-                  <span className="text-amber-900 font-medium">
-                    Found <strong>{filteredOrders.length}</strong> order(s) matching{" "}
-                    <strong className="underline">
-                      {searchType === "SKU" ? "Product SKU" : searchType === "ORDER" ? "Order #" : searchType === "BUYER" ? "Customer" : "Search"}
-                    </strong>: &quot;{searchQuery}&quot;
-                  </span>
-                </div>
+              <div className="flex items-center justify-between text-xs text-slate-500 pt-0.5 px-0.5">
+                <span>
+                  Showing <strong className="text-slate-800">{filteredOrders.length}</strong> matching order(s) for &quot;{searchQuery}&quot;
+                </span>
                 <button
                   type="button"
                   onClick={() => {
                     setSearchQuery("");
-                    setSearchType("ALL");
                     setOrdersPage(1);
                   }}
-                  className="text-amber-800 hover:text-amber-950 font-bold text-[11px] underline cursor-pointer"
+                  className="text-[#056468] hover:underline font-semibold cursor-pointer text-[11px]"
                 >
-                  Reset Search
+                  Clear search
                 </button>
               </div>
             )}
