@@ -42,6 +42,7 @@ import {
   Trash2,
   AlertTriangle,
   RotateCcw,
+  Tag,
 } from "lucide-react";
 import {
   PrintShippingInvoiceDialog,
@@ -105,6 +106,8 @@ export default function OrdersClient({
   customers = [],
   soldBarcodes = [],
   initialCompanySettings,
+  initialSearch = "",
+  initialSearchType = "ALL",
 }: {
   orders: any[];
   marketplaceOrders?: any[];
@@ -114,10 +117,15 @@ export default function OrdersClient({
   customers: any[];
   soldBarcodes?: any[];
   initialCompanySettings?: CompanySettingsData;
+  initialSearch?: string;
+  initialSearchType?: "ALL" | "SKU" | "ORDER" | "BUYER" | "BARCODE";
 }) {
   const [activeTab, setActiveTab] = useState<"orders" | "quotations" | "enquiries" | "invoices" | "settings">("orders");
   const [channelBatchFilter, setChannelBatchFilter] = useState<"ALL" | "WEBSITE" | "AMAZON" | "FLIPKART" | "POS">("ALL");
-  const [searchQuery, setSearchQuery] = useState("");
+  const [searchQuery, setSearchQuery] = useState(initialSearch);
+  const [searchType, setSearchType] = useState<"ALL" | "SKU" | "ORDER" | "BUYER" | "BARCODE">(
+    (initialSearchType as any) || "ALL"
+  );
   const [statusFilter, setStatusFilter] = useState<string>("ALL");
   const [selectedOrderIds, setSelectedOrderIds] = useState<string[]>([]);
   const [shippingInvoiceData, setShippingInvoiceData] = useState<ShippingInvoiceData | null>(null);
@@ -595,22 +603,56 @@ export default function OrdersClient({
       if (statusFilter !== "ALL" && ord.status.toUpperCase() !== statusFilter.toUpperCase()) {
         return false;
       }
-      // Search Query
+      // Search Query & Targeted Field Filter (SKU, Order #, Buyer, Barcode)
       if (searchQuery.trim()) {
         const q = searchQuery.toLowerCase().trim();
-        const matchesNum = ord.orderNumber.toLowerCase().includes(q);
-        const matchesCust = ord.customerName.toLowerCase().includes(q);
-        const matchesTracking = (ord.trackingNumber || "").toLowerCase().includes(q);
-        const matchesSku = ord.items.some(
-          (i) => i.sku.toLowerCase().includes(q) || (i.asinOrFsn || "").toLowerCase().includes(q)
-        );
-        if (!matchesNum && !matchesCust && !matchesTracking && !matchesSku) {
-          return false;
+
+        if (searchType === "SKU") {
+          // Strictly match Product / Variant SKU, ASIN/FSN, or Product Title
+          const matchesSku = ord.items.some(
+            (i) =>
+              i.sku.toLowerCase().includes(q) ||
+              (i.asinOrFsn || "").toLowerCase().includes(q) ||
+              i.title.toLowerCase().includes(q)
+          );
+          if (!matchesSku) return false;
+        } else if (searchType === "ORDER") {
+          if (!ord.orderNumber.toLowerCase().includes(q)) return false;
+        } else if (searchType === "BUYER") {
+          const matchesBuyer =
+            ord.customerName.toLowerCase().includes(q) ||
+            (ord.customerPhone || "").toLowerCase().includes(q) ||
+            (ord.customerEmail || "").toLowerCase().includes(q) ||
+            (ord.shippingAddress || "").toLowerCase().includes(q);
+          if (!matchesBuyer) return false;
+        } else if (searchType === "BARCODE") {
+          const matchesBarcode = ord.items.some(
+            (i) => (i.unitBarcode || "").toLowerCase().includes(q)
+          );
+          if (!matchesBarcode) return false;
+        } else {
+          // ALL FIELDS: Matches Order #, Customer, Tracking, or any item SKU / Title / Barcode
+          const matchesNum = ord.orderNumber.toLowerCase().includes(q);
+          const matchesCust =
+            ord.customerName.toLowerCase().includes(q) ||
+            (ord.customerPhone || "").toLowerCase().includes(q) ||
+            (ord.customerEmail || "").toLowerCase().includes(q);
+          const matchesTracking = (ord.trackingNumber || "").toLowerCase().includes(q);
+          const matchesSku = ord.items.some(
+            (i) =>
+              i.sku.toLowerCase().includes(q) ||
+              (i.asinOrFsn || "").toLowerCase().includes(q) ||
+              i.title.toLowerCase().includes(q) ||
+              (i.unitBarcode || "").toLowerCase().includes(q)
+          );
+          if (!matchesNum && !matchesCust && !matchesTracking && !matchesSku) {
+            return false;
+          }
         }
       }
       return true;
     });
-  }, [unifiedOrders, channelBatchFilter, statusFilter, searchQuery]);
+  }, [unifiedOrders, channelBatchFilter, statusFilter, searchQuery, searchType]);
 
   // Pagination States
   const [ordersPage, setOrdersPage] = useState(1);
@@ -1370,23 +1412,93 @@ export default function OrdersClient({
                 ))}
               </div>
 
-              {/* Search & Status Filter */}
-              <div className="flex items-center gap-2">
-                <div className="relative flex-1 md:w-64">
-                  <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-slate-400" />
-                  <input
-                    type="text"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder="Search Order #, SKU, Buyer..."
-                    className="w-full bg-slate-50 border border-slate-200 rounded-lg pl-8 pr-3 py-1.5 text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#056468]"
-                  />
+              {/* Search Target Selector & Status Filter */}
+              <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
+                {/* Search input with target mode selector */}
+                <div className="flex items-center rounded-lg border border-slate-200 bg-white overflow-hidden shadow-2xs focus-within:ring-2 focus-within:ring-[#056468]/30 focus-within:border-[#056468]">
+                  <select
+                    value={searchType}
+                    onChange={(e) => {
+                      setSearchType(e.target.value as any);
+                      setOrdersPage(1);
+                    }}
+                    className="bg-slate-50 border-r border-slate-200 px-2 py-1.5 text-[11px] font-bold text-slate-700 focus:outline-none cursor-pointer"
+                    title="Choose search criteria"
+                  >
+                    <option value="ALL">🔍 All</option>
+                    <option value="SKU">🏷️ SKU</option>
+                    <option value="ORDER">📦 Order #</option>
+                    <option value="BUYER">👤 Buyer</option>
+                    <option value="BARCODE">🔲 Barcode</option>
+                  </select>
+
+                  <div className="relative flex-1 min-w-[170px] sm:w-56">
+                    <input
+                      type="text"
+                      value={searchQuery}
+                      onChange={(e) => {
+                        setSearchQuery(e.target.value);
+                        setOrdersPage(1);
+                      }}
+                      placeholder={
+                        searchType === "SKU"
+                          ? "Enter Product SKU..."
+                          : searchType === "ORDER"
+                          ? "Enter Order #..."
+                          : searchType === "BUYER"
+                          ? "Enter Customer Name..."
+                          : searchType === "BARCODE"
+                          ? "Enter Unit Barcode..."
+                          : "Search Order #, SKU, Buyer..."
+                      }
+                      className="w-full bg-transparent px-2.5 py-1.5 text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none"
+                    />
+                    {searchQuery && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSearchQuery("");
+                          setOrdersPage(1);
+                        }}
+                        className="absolute right-2 top-2 text-slate-400 hover:text-slate-700"
+                        title="Clear search"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    )}
+                  </div>
                 </div>
+
+                {/* Quick 1-Click SKU Search Filter Toggle */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSearchType((prev) => (prev === "SKU" ? "ALL" : "SKU"));
+                    setOrdersPage(1);
+                  }}
+                  className={`px-2.5 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 cursor-pointer border shrink-0 ${
+                    searchType === "SKU"
+                      ? "bg-amber-500 text-white border-amber-600 shadow-xs"
+                      : "bg-white text-slate-600 border-slate-200 hover:border-amber-400 hover:text-amber-800"
+                  }`}
+                  title="Filter orders specifically by Product SKU"
+                >
+                  <Tag className="w-3.5 h-3.5" />
+                  <span>SKU Filter</span>
+                  {searchType === "SKU" && (
+                    <span className="text-[9.5px] bg-white/25 text-white px-1 py-0.2 rounded font-bold">
+                      Active
+                    </span>
+                  )}
+                </button>
 
                 <select
                   value={statusFilter}
-                  onChange={(e) => setStatusFilter(e.target.value)}
-                  className="bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs text-slate-700 font-medium"
+                  onChange={(e) => {
+                    setStatusFilter(e.target.value);
+                    setOrdersPage(1);
+                  }}
+                  className="bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs text-slate-700 font-medium cursor-pointer"
                 >
                   <option value="ALL">All Statuses</option>
                   <option value="ORDER PLACED">Order Placed</option>
@@ -1399,6 +1511,32 @@ export default function OrdersClient({
                 </select>
               </div>
             </div>
+
+            {/* Active Search / SKU Filter Feedback Pill */}
+            {searchQuery.trim() && (
+              <div className="flex items-center justify-between px-3 py-1.5 rounded-xl bg-amber-50 border border-amber-200 text-xs">
+                <div className="flex items-center gap-2">
+                  <Tag className="w-3.5 h-3.5 text-amber-700" />
+                  <span className="text-amber-900 font-medium">
+                    Found <strong>{filteredOrders.length}</strong> order(s) matching{" "}
+                    <strong className="underline">
+                      {searchType === "SKU" ? "Product SKU" : searchType === "ORDER" ? "Order #" : searchType === "BUYER" ? "Customer" : "Search"}
+                    </strong>: &quot;{searchQuery}&quot;
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSearchQuery("");
+                    setSearchType("ALL");
+                    setOrdersPage(1);
+                  }}
+                  className="text-amber-800 hover:text-amber-950 font-bold text-[11px] underline cursor-pointer"
+                >
+                  Reset Search
+                </button>
+              </div>
+            )}
 
             {/* Batch Selection Action Bar */}
             {selectedOrderIds.length > 0 && (
@@ -1583,41 +1721,76 @@ export default function OrdersClient({
                             )}
                           </td>
 
-                          {/* Items & SKU */}
-                          <td className="py-2.5 px-2 max-w-[210px]">
+                          {/* Items & SKU - Highlight Matched SKU */}
+                          <td className="py-2.5 px-2 max-w-[220px]">
                             <div className="space-y-1">
-                              {ord.items.slice(0, 2).map((itm, idx) => (
-                                <div key={idx} className="flex items-center gap-1.5 whitespace-nowrap text-[11px] leading-tight">
-                                  <span className="font-bold text-[#056468] shrink-0 text-[10.5px]">{itm.quantity}x</span>
-                                  <span
-                                    className="font-mono font-semibold text-slate-800 bg-slate-100 border border-slate-200 px-1.5 py-0.5 rounded text-[10px] truncate max-w-[110px] inline-block shrink-0"
-                                    title={itm.sku || itm.title}
-                                  >
-                                    {itm.sku || itm.title}
-                                  </span>
-                                  {itm.asinOrFsn && (
-                                    <span
-                                      className="text-[9px] font-mono font-semibold text-amber-800 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200 truncate max-w-[85px] inline-block shrink-0"
-                                      title={`ASIN/FSN: ${itm.asinOrFsn}`}
-                                    >
-                                      {itm.asinOrFsn}
-                                    </span>
-                                  )}
-                                  {itm.unitBarcode && (
-                                    <span
-                                      className="text-[9px] font-mono font-semibold text-emerald-800 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200 truncate max-w-[85px] inline-block shrink-0"
-                                      title={`Barcode: ${itm.unitBarcode}`}
-                                    >
-                                      {itm.unitBarcode}
-                                    </span>
-                                  )}
-                                </div>
-                              ))}
-                              {ord.items.length > 2 && (
-                                <span className="text-[9.5px] text-slate-400 italic block">
-                                  +{ord.items.length - 2} more item(s)
-                                </span>
-                              )}
+                              {(() => {
+                                const q = searchQuery.toLowerCase().trim();
+                                // Bring matched SKU items to the top
+                                const sortedItems = [...ord.items].sort((a, b) => {
+                                  if (!q) return 0;
+                                  const aMatch =
+                                    a.sku.toLowerCase().includes(q) ||
+                                    (a.asinOrFsn || "").toLowerCase().includes(q) ||
+                                    a.title.toLowerCase().includes(q);
+                                  const bMatch =
+                                    b.sku.toLowerCase().includes(q) ||
+                                    (b.asinOrFsn || "").toLowerCase().includes(q) ||
+                                    b.title.toLowerCase().includes(q);
+                                  return (bMatch ? 1 : 0) - (aMatch ? 1 : 0);
+                                });
+
+                                return (
+                                  <>
+                                    {sortedItems.slice(0, 2).map((itm, idx) => {
+                                      const isSkuMatch = Boolean(
+                                        q &&
+                                          (itm.sku.toLowerCase().includes(q) ||
+                                            (itm.asinOrFsn || "").toLowerCase().includes(q) ||
+                                            itm.title.toLowerCase().includes(q))
+                                      );
+
+                                      return (
+                                        <div key={idx} className="flex items-center gap-1.5 whitespace-nowrap text-[11px] leading-tight">
+                                          <span className="font-bold text-[#056468] shrink-0 text-[10.5px]">{itm.quantity}x</span>
+                                          <span
+                                            className={`font-mono font-semibold px-1.5 py-0.5 rounded text-[10px] truncate max-w-[125px] inline-flex items-center gap-1 shrink-0 ${
+                                              isSkuMatch
+                                                ? "bg-amber-100 text-amber-950 border-2 border-amber-400 font-bold shadow-xs"
+                                                : "text-slate-800 bg-slate-100 border border-slate-200"
+                                            }`}
+                                            title={itm.sku || itm.title}
+                                          >
+                                            {isSkuMatch && <Tag className="w-2.5 h-2.5 text-amber-600 shrink-0" />}
+                                            <span>{itm.sku || itm.title}</span>
+                                          </span>
+                                          {itm.asinOrFsn && (
+                                            <span
+                                              className="text-[9px] font-mono font-semibold text-amber-800 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200 truncate max-w-[85px] inline-block shrink-0"
+                                              title={`ASIN/FSN: ${itm.asinOrFsn}`}
+                                            >
+                                              {itm.asinOrFsn}
+                                            </span>
+                                          )}
+                                          {itm.unitBarcode && (
+                                            <span
+                                              className="text-[9px] font-mono font-semibold text-emerald-800 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200 truncate max-w-[85px] inline-block shrink-0"
+                                              title={`Barcode: ${itm.unitBarcode}`}
+                                            >
+                                              {itm.unitBarcode}
+                                            </span>
+                                          )}
+                                        </div>
+                                      );
+                                    })}
+                                    {sortedItems.length > 2 && (
+                                      <span className="text-[9.5px] text-slate-400 italic block">
+                                        +{sortedItems.length - 2} more item(s)
+                                      </span>
+                                    )}
+                                  </>
+                                );
+                              })()}
                             </div>
                           </td>
 
@@ -3005,8 +3178,19 @@ export default function OrdersClient({
                       <div className="flex-1 min-w-0">
                         <div className="font-bold text-slate-900 text-xs">{item.title}</div>
                         <div className="flex flex-wrap items-center gap-2 text-[11px] text-slate-500 mt-1">
-                          <span>
-                            SKU: <strong className="font-mono text-slate-700">{item.sku}</strong>
+                          <span className="inline-flex items-center gap-1">
+                            SKU:{" "}
+                            <strong
+                              className={`font-mono px-1.5 py-0.2 rounded ${
+                                searchQuery.trim() &&
+                                (item.sku.toLowerCase().includes(searchQuery.toLowerCase().trim()) ||
+                                  (item.asinOrFsn || "").toLowerCase().includes(searchQuery.toLowerCase().trim()))
+                                  ? "bg-amber-100 text-amber-950 border border-amber-400 font-bold"
+                                  : "text-slate-700 bg-slate-100"
+                              }`}
+                            >
+                              {item.sku}
+                            </strong>
                           </span>
                           {item.asinOrFsn && (
                             <span className="font-mono bg-amber-50 text-amber-800 border border-amber-200 px-1.5 py-0.2 rounded text-[10px]">

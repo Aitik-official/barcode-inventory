@@ -139,9 +139,107 @@ export async function GET(req: NextRequest) {
     const page = Math.max(1, parseInt(searchParams.get("page") || "1", 10));
     const limit = Math.min(100, Math.max(1, parseInt(searchParams.get("limit") || "20", 10)));
     const skip = (page - 1) * limit;
+    const search = (searchParams.get("search") || "").trim();
+    const searchType = (searchParams.get("searchType") || "ALL").trim();
+
+    // Build Prisma where filter for standard orders
+    const orderWhere: any = {};
+    // Build Prisma where filter for marketplace orders
+    const mpWhere: any = {};
+
+    if (search) {
+      if (searchType === "SKU") {
+        orderWhere.items = {
+          some: {
+            OR: [
+              { sku: { contains: search, mode: "insensitive" } },
+              { name: { contains: search, mode: "insensitive" } },
+              { productVariant: { sku: { contains: search, mode: "insensitive" } } },
+              { productVariant: { product: { name: { contains: search, mode: "insensitive" } } } },
+            ],
+          },
+        };
+
+        mpWhere.items = {
+          some: {
+            OR: [
+              { channelSku: { contains: search, mode: "insensitive" } },
+              { asinOrFsn: { contains: search, mode: "insensitive" } },
+              { title: { contains: search, mode: "insensitive" } },
+            ],
+          },
+        };
+      } else if (searchType === "ORDER") {
+        orderWhere.orderNumber = { contains: search, mode: "insensitive" };
+        mpWhere.channelOrderId = { contains: search, mode: "insensitive" };
+      } else if (searchType === "BUYER") {
+        orderWhere.OR = [
+          { customerName: { contains: search, mode: "insensitive" } },
+          { customerEmail: { contains: search, mode: "insensitive" } },
+          { customerPhone: { contains: search, mode: "insensitive" } },
+          { shippingAddress: { contains: search, mode: "insensitive" } },
+        ];
+        mpWhere.OR = [
+          { buyerName: { contains: search, mode: "insensitive" } },
+          { buyerCity: { contains: search, mode: "insensitive" } },
+          { shippingAddress: { contains: search, mode: "insensitive" } },
+        ];
+      } else if (searchType === "BARCODE") {
+        orderWhere.items = {
+          some: {
+            unitBarcode: { barcode: { contains: search, mode: "insensitive" } },
+          },
+        };
+        mpWhere.items = {
+          some: {
+            scannedBarcode: { contains: search, mode: "insensitive" },
+          },
+        };
+      } else {
+        // ALL FIELDS
+        orderWhere.OR = [
+          { orderNumber: { contains: search, mode: "insensitive" } },
+          { customerName: { contains: search, mode: "insensitive" } },
+          { customerEmail: { contains: search, mode: "insensitive" } },
+          { customerPhone: { contains: search, mode: "insensitive" } },
+          { notes: { contains: search, mode: "insensitive" } },
+          {
+            items: {
+              some: {
+                OR: [
+                  { sku: { contains: search, mode: "insensitive" } },
+                  { name: { contains: search, mode: "insensitive" } },
+                  { productVariant: { sku: { contains: search, mode: "insensitive" } } },
+                  { unitBarcode: { barcode: { contains: search, mode: "insensitive" } } },
+                ],
+              },
+            },
+          },
+        ];
+
+        mpWhere.OR = [
+          { channelOrderId: { contains: search, mode: "insensitive" } },
+          { buyerName: { contains: search, mode: "insensitive" } },
+          { trackingNumber: { contains: search, mode: "insensitive" } },
+          {
+            items: {
+              some: {
+                OR: [
+                  { channelSku: { contains: search, mode: "insensitive" } },
+                  { asinOrFsn: { contains: search, mode: "insensitive" } },
+                  { title: { contains: search, mode: "insensitive" } },
+                  { scannedBarcode: { contains: search, mode: "insensitive" } },
+                ],
+              },
+            },
+          },
+        ];
+      }
+    }
 
     const [orders, marketplaceOrders, totalOrders, totalMpOrders] = await Promise.all([
       prisma.order.findMany({
+        where: orderWhere,
         skip,
         take: limit,
         orderBy: { createdAt: "desc" },
@@ -157,13 +255,14 @@ export async function GET(req: NextRequest) {
         },
       }),
       prisma.marketplaceOrder.findMany({
+        where: mpWhere,
         skip,
         take: limit,
         orderBy: { orderDate: "desc" },
         include: { items: true, credential: true },
       }),
-      prisma.order.count(),
-      prisma.marketplaceOrder.count(),
+      prisma.order.count({ where: orderWhere }),
+      prisma.marketplaceOrder.count({ where: mpWhere }),
     ]);
 
     const hasMore = (skip + limit) < Math.max(totalOrders, totalMpOrders);

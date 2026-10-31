@@ -4,7 +4,15 @@ import OrdersClient from "./OrdersClient";
 
 export const revalidate = 0;
 
-export default async function OrdersPage() {
+export default async function OrdersPage({
+  searchParams,
+}: {
+  searchParams?: Promise<{ search?: string; sku?: string; searchType?: string }>;
+}) {
+  const sp = searchParams ? await searchParams : {};
+  const initialSearch = sp.sku || sp.search || "";
+  const initialSearchType = sp.sku ? "SKU" : (sp.searchType || "ALL");
+
   let orders: any[] = [];
   let marketplaceOrders: any[] = [];
   let quotations: any[] = [];
@@ -226,6 +234,8 @@ export default async function OrdersPage() {
         customers={customers}
         soldBarcodes={soldBarcodes}
         initialCompanySettings={companySettings}
+        initialSearch={initialSearch}
+        initialSearchType={initialSearchType as any}
       />
     );
   } catch (err) {
@@ -240,6 +250,8 @@ export default async function OrdersPage() {
         customers={customers}
         soldBarcodes={[]}
         initialCompanySettings={companySettings}
+        initialSearch={initialSearch}
+        initialSearchType={initialSearchType as any}
       />
     );
   }
