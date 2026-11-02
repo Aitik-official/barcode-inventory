@@ -142,6 +142,16 @@ export async function DELETE(req: Request) {
       const targetIds = unitsToRemove.map((u) => u.id);
       const serialNumbers = unitsToRemove.map((u) => `#${u.serialNumber}`).reverse();
 
+      // Unlink any OrderItems or Transactions to prevent relation constraint violations
+      await prisma.orderItem.updateMany({
+        where: { unitBarcodeId: { in: targetIds } },
+        data: { unitBarcodeId: null },
+      });
+      await prisma.inventoryTransaction.updateMany({
+        where: { unitBarcodeId: { in: targetIds } },
+        data: { unitBarcodeId: null },
+      });
+
       // Delete the unit barcodes
       await prisma.unitBarcode.deleteMany({
         where: { id: { in: targetIds } },
@@ -205,6 +215,16 @@ export async function DELETE(req: Request) {
       }
 
       const variantIds = Array.from(new Set(units.map((u) => u.productVariantId)));
+
+      // Unlink any OrderItems or Transactions to prevent relation constraint violations
+      await prisma.orderItem.updateMany({
+        where: { unitBarcodeId: { in: idsToDelete } },
+        data: { unitBarcodeId: null },
+      });
+      await prisma.inventoryTransaction.updateMany({
+        where: { unitBarcodeId: { in: idsToDelete } },
+        data: { unitBarcodeId: null },
+      });
 
       // Delete the unit barcodes
       await prisma.unitBarcode.deleteMany({
