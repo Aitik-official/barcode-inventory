@@ -176,7 +176,9 @@ exports.Prisma.UnitBarcodeScalarFieldEnum = {
   generatedBy: 'generatedBy',
   soldAt: 'soldAt',
   deactivatedAt: 'deactivatedAt',
-  reason: 'reason'
+  reason: 'reason',
+  isReturned: 'isReturned',
+  returnedAt: 'returnedAt'
 };
 
 exports.Prisma.InventoryScalarFieldEnum = {

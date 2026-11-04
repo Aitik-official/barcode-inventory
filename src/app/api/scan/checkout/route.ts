@@ -50,6 +50,7 @@ export async function POST(req: Request) {
             data: {
               status: "SOLD",
               soldAt: new Date(),
+              isReturned: false,
             },
           });
 
@@ -103,7 +104,7 @@ export async function POST(req: Request) {
             product: true,
             unitBarcodes: {
               where: { status: "AVAILABLE" },
-              orderBy: { serialNumber: "asc" },
+              orderBy: [{ isReturned: "desc" }, { returnedAt: "desc" }, { serialNumber: "asc" }],
               take: qty,
             },
           },
@@ -123,7 +124,7 @@ export async function POST(req: Request) {
         for (const unit of variant.unitBarcodes) {
           await prisma.unitBarcode.update({
             where: { id: unit.id },
-            data: { status: "SOLD", soldAt: new Date() },
+            data: { status: "SOLD", soldAt: new Date(), isReturned: false },
           });
 
           const availableCount = await prisma.unitBarcode.count({

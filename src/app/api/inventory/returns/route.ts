@@ -64,6 +64,8 @@ export async function POST(req: Request) {
           data: {
             status: "DAMAGED",
             reason: fullNote || "Defective piece",
+            isReturned: true,
+            returnedAt: new Date(),
           },
         });
       } else if (totalUnitsCount > 0) {
@@ -78,6 +80,8 @@ export async function POST(req: Request) {
             data: {
               status: "DAMAGED",
               reason: fullNote || "Defective piece",
+              isReturned: true,
+              returnedAt: new Date(),
             },
           });
         }
@@ -133,6 +137,8 @@ export async function POST(req: Request) {
             status: "AVAILABLE",
             reason: fullNote || "Customer return restocked",
             soldAt: null,
+            isReturned: true,
+            returnedAt: new Date(),
           },
         });
       }

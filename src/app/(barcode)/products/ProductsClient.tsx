@@ -971,6 +971,18 @@ export default function ProductsClient({
                   const isVisibleOnWebsite = (product.showOnWebsite ?? true);
                   const audit = checkProductWebsiteData(product);
 
+                  // Sort unit barcodes so returned available barcodes are placed on top
+                  const sortedUnitBarcodes = [...unitBarcodes].sort((a: any, b: any) => {
+                    const aRet = a.status === "AVAILABLE" && (a.isReturned || (a.reason || "").toLowerCase().includes("return") || (a.reason || "").toLowerCase().includes("restock"));
+                    const bRet = b.status === "AVAILABLE" && (b.isReturned || (b.reason || "").toLowerCase().includes("return") || (b.reason || "").toLowerCase().includes("restock"));
+                    if (aRet && !bRet) return -1;
+                    if (!aRet && bRet) return 1;
+                    return (a.serialNumber || 0) - (b.serialNumber || 0);
+                  });
+                  const returnedUnitsCount = unitBarcodes.filter(
+                    (u: any) => u.status === "AVAILABLE" && (u.isReturned || (u.reason || "").toLowerCase().includes("return") || (u.reason || "").toLowerCase().includes("restock"))
+                  ).length;
+
                   return (
                     <div
                       key={product.id}
@@ -1057,7 +1069,13 @@ export default function ProductsClient({
                             <div className="font-bold text-emerald-200 text-base">
                               {stockQty} Units
                             </div>
-                            <div className="text-emerald-100/70 text-[10px]">Per-Unit Serialized</div>
+                            {returnedUnitsCount > 0 ? (
+                              <div className="text-amber-300 font-bold text-[10px] flex items-center gap-1">
+                                <span>🔄 {returnedUnitsCount} Returned (Top)</span>
+                              </div>
+                            ) : (
+                              <div className="text-emerald-100/70 text-[10px]">Per-Unit Serialized</div>
+                            )}
                           </div>
                         </div>
 
@@ -1070,10 +1088,19 @@ export default function ProductsClient({
                             </div>
                             <div className="flex items-center justify-between">
                               <span>Barcode Tag:</span>
-                              <span className="font-mono text-[11px] text-emerald-200 truncate max-w-[170px]">
-                                {unitBarcodes.length > 0
-                                  ? `${unitBarcodes[0].barcode}..`
-                                  : "No units generated"}
+                              <span className="font-mono text-[11px] text-emerald-200 truncate max-w-[170px] flex items-center gap-1">
+                                {sortedUnitBarcodes.length > 0 ? (
+                                  <>
+                                    <span>{sortedUnitBarcodes[0].barcode}..</span>
+                                    {(sortedUnitBarcodes[0].isReturned || (sortedUnitBarcodes[0].reason || "").toLowerCase().includes("return") || (sortedUnitBarcodes[0].reason || "").toLowerCase().includes("restock")) && (
+                                      <span className="bg-amber-400 text-[#043e41] font-black text-[9px] px-1 py-0.2 rounded uppercase">
+                                        Returned
+                                      </span>
+                                    )}
+                                  </>
+                                ) : (
+                                  "No units generated"
+                                )}
                               </span>
                             </div>
                           </div>

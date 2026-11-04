@@ -7217,6 +7217,8 @@ export namespace Prisma {
     soldAt: Date | null
     deactivatedAt: Date | null
     reason: string | null
+    isReturned: boolean | null
+    returnedAt: Date | null
   }
 
   export type UnitBarcodeMaxAggregateOutputType = {
@@ -7231,6 +7233,8 @@ export namespace Prisma {
     soldAt: Date | null
     deactivatedAt: Date | null
     reason: string | null
+    isReturned: boolean | null
+    returnedAt: Date | null
   }
 
   export type UnitBarcodeCountAggregateOutputType = {
@@ -7245,6 +7249,8 @@ export namespace Prisma {
     soldAt: number
     deactivatedAt: number
     reason: number
+    isReturned: number
+    returnedAt: number
     _all: number
   }
 
@@ -7271,6 +7277,8 @@ export namespace Prisma {
     soldAt?: true
     deactivatedAt?: true
     reason?: true
+    isReturned?: true
+    returnedAt?: true
   }
 
   export type UnitBarcodeMaxAggregateInputType = {
@@ -7285,6 +7293,8 @@ export namespace Prisma {
     soldAt?: true
     deactivatedAt?: true
     reason?: true
+    isReturned?: true
+    returnedAt?: true
   }
 
   export type UnitBarcodeCountAggregateInputType = {
@@ -7299,6 +7309,8 @@ export namespace Prisma {
     soldAt?: true
     deactivatedAt?: true
     reason?: true
+    isReturned?: true
+    returnedAt?: true
     _all?: true
   }
 
@@ -7400,6 +7412,8 @@ export namespace Prisma {
     soldAt: Date | null
     deactivatedAt: Date | null
     reason: string | null
+    isReturned: boolean
+    returnedAt: Date | null
     _count: UnitBarcodeCountAggregateOutputType | null
     _avg: UnitBarcodeAvgAggregateOutputType | null
     _sum: UnitBarcodeSumAggregateOutputType | null
@@ -7433,6 +7447,8 @@ export namespace Prisma {
     soldAt?: boolean
     deactivatedAt?: boolean
     reason?: boolean
+    isReturned?: boolean
+    returnedAt?: boolean
     productVariant?: boolean | ProductVariantDefaultArgs<ExtArgs>
     transactions?: boolean | UnitBarcode$transactionsArgs<ExtArgs>
     orderItems?: boolean | UnitBarcode$orderItemsArgs<ExtArgs>
@@ -7453,9 +7469,11 @@ export namespace Prisma {
     soldAt?: boolean
     deactivatedAt?: boolean
     reason?: boolean
+    isReturned?: boolean
+    returnedAt?: boolean
   }
 
-  export type UnitBarcodeOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "productVariantId" | "barcode" | "serialNumber" | "status" | "printedCount" | "generatedAt" | "generatedBy" | "soldAt" | "deactivatedAt" | "reason", ExtArgs["result"]["unitBarcode"]>
+  export type UnitBarcodeOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "productVariantId" | "barcode" | "serialNumber" | "status" | "printedCount" | "generatedAt" | "generatedBy" | "soldAt" | "deactivatedAt" | "reason" | "isReturned" | "returnedAt", ExtArgs["result"]["unitBarcode"]>
   export type UnitBarcodeInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     productVariant?: boolean | ProductVariantDefaultArgs<ExtArgs>
     transactions?: boolean | UnitBarcode$transactionsArgs<ExtArgs>
@@ -7482,6 +7500,8 @@ export namespace Prisma {
       soldAt: Date | null
       deactivatedAt: Date | null
       reason: string | null
+      isReturned: boolean
+      returnedAt: Date | null
     }, ExtArgs["result"]["unitBarcode"]>
     composites: {}
   }
@@ -7888,6 +7908,8 @@ export namespace Prisma {
     readonly soldAt: FieldRef<"UnitBarcode", 'DateTime'>
     readonly deactivatedAt: FieldRef<"UnitBarcode", 'DateTime'>
     readonly reason: FieldRef<"UnitBarcode", 'String'>
+    readonly isReturned: FieldRef<"UnitBarcode", 'Boolean'>
+    readonly returnedAt: FieldRef<"UnitBarcode", 'DateTime'>
   }
     
 
@@ -31696,7 +31718,9 @@ export namespace Prisma {
     generatedBy: 'generatedBy',
     soldAt: 'soldAt',
     deactivatedAt: 'deactivatedAt',
-    reason: 'reason'
+    reason: 'reason',
+    isReturned: 'isReturned',
+    returnedAt: 'returnedAt'
   };
 
   export type UnitBarcodeScalarFieldEnum = (typeof UnitBarcodeScalarFieldEnum)[keyof typeof UnitBarcodeScalarFieldEnum]
@@ -32540,6 +32564,8 @@ export namespace Prisma {
     soldAt?: DateTimeNullableFilter<"UnitBarcode"> | Date | string | null
     deactivatedAt?: DateTimeNullableFilter<"UnitBarcode"> | Date | string | null
     reason?: StringNullableFilter<"UnitBarcode"> | string | null
+    isReturned?: BoolFilter<"UnitBarcode"> | boolean
+    returnedAt?: DateTimeNullableFilter<"UnitBarcode"> | Date | string | null
     productVariant?: XOR<ProductVariantScalarRelationFilter, ProductVariantWhereInput>
     transactions?: InventoryTransactionListRelationFilter
     orderItems?: OrderItemListRelationFilter
@@ -32557,6 +32583,8 @@ export namespace Prisma {
     soldAt?: SortOrder
     deactivatedAt?: SortOrder
     reason?: SortOrder
+    isReturned?: SortOrder
+    returnedAt?: SortOrder
     productVariant?: ProductVariantOrderByWithRelationInput
     transactions?: InventoryTransactionOrderByRelationAggregateInput
     orderItems?: OrderItemOrderByRelationAggregateInput
@@ -32577,6 +32605,8 @@ export namespace Prisma {
     soldAt?: DateTimeNullableFilter<"UnitBarcode"> | Date | string | null
     deactivatedAt?: DateTimeNullableFilter<"UnitBarcode"> | Date | string | null
     reason?: StringNullableFilter<"UnitBarcode"> | string | null
+    isReturned?: BoolFilter<"UnitBarcode"> | boolean
+    returnedAt?: DateTimeNullableFilter<"UnitBarcode"> | Date | string | null
     productVariant?: XOR<ProductVariantScalarRelationFilter, ProductVariantWhereInput>
     transactions?: InventoryTransactionListRelationFilter
     orderItems?: OrderItemListRelationFilter
@@ -32594,6 +32624,8 @@ export namespace Prisma {
     soldAt?: SortOrder
     deactivatedAt?: SortOrder
     reason?: SortOrder
+    isReturned?: SortOrder
+    returnedAt?: SortOrder
     _count?: UnitBarcodeCountOrderByAggregateInput
     _avg?: UnitBarcodeAvgOrderByAggregateInput
     _max?: UnitBarcodeMaxOrderByAggregateInput
@@ -32616,6 +32648,8 @@ export namespace Prisma {
     soldAt?: DateTimeNullableWithAggregatesFilter<"UnitBarcode"> | Date | string | null
     deactivatedAt?: DateTimeNullableWithAggregatesFilter<"UnitBarcode"> | Date | string | null
     reason?: StringNullableWithAggregatesFilter<"UnitBarcode"> | string | null
+    isReturned?: BoolWithAggregatesFilter<"UnitBarcode"> | boolean
+    returnedAt?: DateTimeNullableWithAggregatesFilter<"UnitBarcode"> | Date | string | null
   }
 
   export type InventoryWhereInput = {
@@ -35034,6 +35068,8 @@ export namespace Prisma {
     soldAt?: Date | string | null
     deactivatedAt?: Date | string | null
     reason?: string | null
+    isReturned?: boolean
+    returnedAt?: Date | string | null
     productVariant: ProductVariantCreateNestedOneWithoutUnitBarcodesInput
     transactions?: InventoryTransactionCreateNestedManyWithoutUnitBarcodeInput
     orderItems?: OrderItemCreateNestedManyWithoutUnitBarcodeInput
@@ -35051,6 +35087,8 @@ export namespace Prisma {
     soldAt?: Date | string | null
     deactivatedAt?: Date | string | null
     reason?: string | null
+    isReturned?: boolean
+    returnedAt?: Date | string | null
     transactions?: InventoryTransactionUncheckedCreateNestedManyWithoutUnitBarcodeInput
     orderItems?: OrderItemUncheckedCreateNestedManyWithoutUnitBarcodeInput
   }
@@ -35065,6 +35103,8 @@ export namespace Prisma {
     soldAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     deactivatedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     reason?: NullableStringFieldUpdateOperationsInput | string | null
+    isReturned?: BoolFieldUpdateOperationsInput | boolean
+    returnedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     productVariant?: ProductVariantUpdateOneRequiredWithoutUnitBarcodesNestedInput
     transactions?: InventoryTransactionUpdateManyWithoutUnitBarcodeNestedInput
     orderItems?: OrderItemUpdateManyWithoutUnitBarcodeNestedInput
@@ -35081,6 +35121,8 @@ export namespace Prisma {
     soldAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     deactivatedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     reason?: NullableStringFieldUpdateOperationsInput | string | null
+    isReturned?: BoolFieldUpdateOperationsInput | boolean
+    returnedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     transactions?: InventoryTransactionUncheckedUpdateManyWithoutUnitBarcodeNestedInput
     orderItems?: OrderItemUncheckedUpdateManyWithoutUnitBarcodeNestedInput
   }
@@ -35097,6 +35139,8 @@ export namespace Prisma {
     soldAt?: Date | string | null
     deactivatedAt?: Date | string | null
     reason?: string | null
+    isReturned?: boolean
+    returnedAt?: Date | string | null
   }
 
   export type UnitBarcodeUpdateManyMutationInput = {
@@ -35109,6 +35153,8 @@ export namespace Prisma {
     soldAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     deactivatedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     reason?: NullableStringFieldUpdateOperationsInput | string | null
+    isReturned?: BoolFieldUpdateOperationsInput | boolean
+    returnedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   }
 
   export type UnitBarcodeUncheckedUpdateManyInput = {
@@ -35122,6 +35168,8 @@ export namespace Prisma {
     soldAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     deactivatedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     reason?: NullableStringFieldUpdateOperationsInput | string | null
+    isReturned?: BoolFieldUpdateOperationsInput | boolean
+    returnedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   }
 
   export type InventoryCreateInput = {
@@ -37837,6 +37885,8 @@ export namespace Prisma {
     soldAt?: SortOrder
     deactivatedAt?: SortOrder
     reason?: SortOrder
+    isReturned?: SortOrder
+    returnedAt?: SortOrder
   }
 
   export type UnitBarcodeAvgOrderByAggregateInput = {
@@ -37856,6 +37906,8 @@ export namespace Prisma {
     soldAt?: SortOrder
     deactivatedAt?: SortOrder
     reason?: SortOrder
+    isReturned?: SortOrder
+    returnedAt?: SortOrder
   }
 
   export type UnitBarcodeMinOrderByAggregateInput = {
@@ -37870,6 +37922,8 @@ export namespace Prisma {
     soldAt?: SortOrder
     deactivatedAt?: SortOrder
     reason?: SortOrder
+    isReturned?: SortOrder
+    returnedAt?: SortOrder
   }
 
   export type UnitBarcodeSumOrderByAggregateInput = {
@@ -41701,6 +41755,8 @@ export namespace Prisma {
     soldAt?: Date | string | null
     deactivatedAt?: Date | string | null
     reason?: string | null
+    isReturned?: boolean
+    returnedAt?: Date | string | null
     transactions?: InventoryTransactionCreateNestedManyWithoutUnitBarcodeInput
     orderItems?: OrderItemCreateNestedManyWithoutUnitBarcodeInput
   }
@@ -41716,6 +41772,8 @@ export namespace Prisma {
     soldAt?: Date | string | null
     deactivatedAt?: Date | string | null
     reason?: string | null
+    isReturned?: boolean
+    returnedAt?: Date | string | null
     transactions?: InventoryTransactionUncheckedCreateNestedManyWithoutUnitBarcodeInput
     orderItems?: OrderItemUncheckedCreateNestedManyWithoutUnitBarcodeInput
   }
@@ -41999,6 +42057,8 @@ export namespace Prisma {
     soldAt?: DateTimeNullableFilter<"UnitBarcode"> | Date | string | null
     deactivatedAt?: DateTimeNullableFilter<"UnitBarcode"> | Date | string | null
     reason?: StringNullableFilter<"UnitBarcode"> | string | null
+    isReturned?: BoolFilter<"UnitBarcode"> | boolean
+    returnedAt?: DateTimeNullableFilter<"UnitBarcode"> | Date | string | null
   }
 
   export type InventoryUpsertWithoutProductVariantInput = {
@@ -42525,6 +42585,8 @@ export namespace Prisma {
     soldAt?: Date | string | null
     deactivatedAt?: Date | string | null
     reason?: string | null
+    isReturned?: boolean
+    returnedAt?: Date | string | null
     productVariant: ProductVariantCreateNestedOneWithoutUnitBarcodesInput
     orderItems?: OrderItemCreateNestedManyWithoutUnitBarcodeInput
   }
@@ -42541,6 +42603,8 @@ export namespace Prisma {
     soldAt?: Date | string | null
     deactivatedAt?: Date | string | null
     reason?: string | null
+    isReturned?: boolean
+    returnedAt?: Date | string | null
     orderItems?: OrderItemUncheckedCreateNestedManyWithoutUnitBarcodeInput
   }
 
@@ -42619,6 +42683,8 @@ export namespace Prisma {
     soldAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     deactivatedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     reason?: NullableStringFieldUpdateOperationsInput | string | null
+    isReturned?: BoolFieldUpdateOperationsInput | boolean
+    returnedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     productVariant?: ProductVariantUpdateOneRequiredWithoutUnitBarcodesNestedInput
     orderItems?: OrderItemUpdateManyWithoutUnitBarcodeNestedInput
   }
@@ -42634,6 +42700,8 @@ export namespace Prisma {
     soldAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     deactivatedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     reason?: NullableStringFieldUpdateOperationsInput | string | null
+    isReturned?: BoolFieldUpdateOperationsInput | boolean
+    returnedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     orderItems?: OrderItemUncheckedUpdateManyWithoutUnitBarcodeNestedInput
   }
 
@@ -43692,6 +43760,8 @@ export namespace Prisma {
     soldAt?: Date | string | null
     deactivatedAt?: Date | string | null
     reason?: string | null
+    isReturned?: boolean
+    returnedAt?: Date | string | null
     productVariant: ProductVariantCreateNestedOneWithoutUnitBarcodesInput
     transactions?: InventoryTransactionCreateNestedManyWithoutUnitBarcodeInput
   }
@@ -43708,6 +43778,8 @@ export namespace Prisma {
     soldAt?: Date | string | null
     deactivatedAt?: Date | string | null
     reason?: string | null
+    isReturned?: boolean
+    returnedAt?: Date | string | null
     transactions?: InventoryTransactionUncheckedCreateNestedManyWithoutUnitBarcodeInput
   }
 
@@ -43831,6 +43903,8 @@ export namespace Prisma {
     soldAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     deactivatedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     reason?: NullableStringFieldUpdateOperationsInput | string | null
+    isReturned?: BoolFieldUpdateOperationsInput | boolean
+    returnedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     productVariant?: ProductVariantUpdateOneRequiredWithoutUnitBarcodesNestedInput
     transactions?: InventoryTransactionUpdateManyWithoutUnitBarcodeNestedInput
   }
@@ -43846,6 +43920,8 @@ export namespace Prisma {
     soldAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     deactivatedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     reason?: NullableStringFieldUpdateOperationsInput | string | null
+    isReturned?: BoolFieldUpdateOperationsInput | boolean
+    returnedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     transactions?: InventoryTransactionUncheckedUpdateManyWithoutUnitBarcodeNestedInput
   }
 
@@ -45588,6 +45664,8 @@ export namespace Prisma {
     soldAt?: Date | string | null
     deactivatedAt?: Date | string | null
     reason?: string | null
+    isReturned?: boolean
+    returnedAt?: Date | string | null
   }
 
   export type InventoryTransactionCreateManyProductVariantInput = {
@@ -45655,6 +45733,8 @@ export namespace Prisma {
     soldAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     deactivatedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     reason?: NullableStringFieldUpdateOperationsInput | string | null
+    isReturned?: BoolFieldUpdateOperationsInput | boolean
+    returnedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     transactions?: InventoryTransactionUpdateManyWithoutUnitBarcodeNestedInput
     orderItems?: OrderItemUpdateManyWithoutUnitBarcodeNestedInput
   }
@@ -45669,6 +45749,8 @@ export namespace Prisma {
     soldAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     deactivatedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     reason?: NullableStringFieldUpdateOperationsInput | string | null
+    isReturned?: BoolFieldUpdateOperationsInput | boolean
+    returnedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     transactions?: InventoryTransactionUncheckedUpdateManyWithoutUnitBarcodeNestedInput
     orderItems?: OrderItemUncheckedUpdateManyWithoutUnitBarcodeNestedInput
   }
@@ -45683,6 +45765,8 @@ export namespace Prisma {
     soldAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     deactivatedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     reason?: NullableStringFieldUpdateOperationsInput | string | null
+    isReturned?: BoolFieldUpdateOperationsInput | boolean
+    returnedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   }
 
   export type InventoryTransactionUpdateWithoutProductVariantInput = {

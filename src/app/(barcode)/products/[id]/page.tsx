@@ -23,7 +23,7 @@ export default async function ProductDetailPage({
           include: {
             inventory: true,
             unitBarcodes: {
-              orderBy: { serialNumber: "asc" },
+              orderBy: [{ isReturned: "desc" }, { returnedAt: "desc" }, { serialNumber: "asc" }],
             },
             transactions: {
               take: 10,

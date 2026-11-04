@@ -62,6 +62,7 @@ export async function POST(req: Request) {
         status: "SOLD",
         soldAt: new Date(),
         reason: `Dispatched for ${order.channel} Order #${order.channelOrderId}`,
+        isReturned: false,
       },
     });
 

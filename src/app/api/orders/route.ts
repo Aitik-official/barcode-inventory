@@ -566,6 +566,8 @@ async function restoreOrderInventoryAndBarcodes(
             data: {
               status: "DAMAGED",
               reason: returnReason || `Defective customer return from order #${orderReference}`,
+              isReturned: true,
+              returnedAt: new Date(),
             },
           });
         } else {
@@ -573,8 +575,10 @@ async function restoreOrderInventoryAndBarcodes(
             where: { id: barcodeId },
             data: {
               status: "AVAILABLE",
-              reason: returnReason ? `Returned: ${returnReason}` : null,
+              reason: returnReason ? `Returned: ${returnReason}` : "Customer return restocked",
               soldAt: null,
+              isReturned: true,
+              returnedAt: new Date(),
             },
           });
         }

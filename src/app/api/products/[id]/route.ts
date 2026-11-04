@@ -12,7 +12,9 @@ export async function GET(_req: NextRequest, { params }: Params) {
       variants: {
         include: {
           inventory: true,
-          unitBarcodes: { orderBy: { serialNumber: "asc" } },
+          unitBarcodes: {
+            orderBy: [{ isReturned: "desc" }, { returnedAt: "desc" }, { serialNumber: "asc" }],
+          },
           transactions: { orderBy: { createdAt: "desc" }, take: 20 },
         },
       },
@@ -129,7 +131,9 @@ export async function PUT(req: NextRequest, { params }: Params) {
         variants: {
           include: {
             inventory: true,
-            unitBarcodes: { orderBy: { serialNumber: "asc" } },
+            unitBarcodes: {
+            orderBy: [{ isReturned: "desc" }, { returnedAt: "desc" }, { serialNumber: "asc" }],
+          },
             transactions: { orderBy: { createdAt: "desc" }, take: 20 },
           },
         },

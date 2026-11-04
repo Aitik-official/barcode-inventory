@@ -42,7 +42,7 @@ export async function GET(req: Request) {
               },
             },
           },
-          orderBy: [{ generatedAt: "desc" }, { serialNumber: "asc" }],
+          orderBy: [{ isReturned: "desc" }, { returnedAt: "desc" }, { generatedAt: "desc" }, { serialNumber: "asc" }],
         }),
         prisma.unitBarcode.count({ where }),
       ]);
@@ -60,7 +60,7 @@ export async function GET(req: Request) {
           },
         },
       },
-      orderBy: [{ generatedAt: "desc" }, { serialNumber: "asc" }],
+      orderBy: [{ isReturned: "desc" }, { returnedAt: "desc" }, { generatedAt: "desc" }, { serialNumber: "asc" }],
       take: 200,
     });
 
@@ -307,12 +307,17 @@ export async function PATCH(req: Request) {
     }
 
     // Update status
+    const isReturning = Boolean(
+      reason && (reason.toLowerCase().includes("return") || reason.toLowerCase().includes("restock"))
+    );
     await prisma.unitBarcode.updateMany({
       where: { id: { in: targetIds } },
       data: {
         status,
         soldAt: status === "AVAILABLE" ? null : undefined,
         reason: reason || null,
+        ...(isReturning ? { isReturned: true, returnedAt: new Date() } : {}),
+        ...(status === "SOLD" ? { isReturned: false } : {}),
       },
     });
 

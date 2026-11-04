@@ -61,18 +61,50 @@ export default function ProductDetailClient({
   const unitBarcodes = variant?.unitBarcodes || [];
   const inventory = variant?.inventory;
 
+  const isReturnedUnit = (u: any) => {
+    if (!u) return false;
+    if (u.isReturned) return true;
+    if (u.returnedAt) return true;
+    const r = (u.reason || "").toLowerCase();
+    return r.includes("return") || r.includes("restock");
+  };
+
   const availableUnits = unitBarcodes.filter((u: any) => u.status === "AVAILABLE");
   const availableCount = availableUnits.length;
+  const returnedUnits = availableUnits.filter(isReturnedUnit);
+  const returnedCount = returnedUnits.length;
   const soldUnits = unitBarcodes.filter((u: any) => u.status === "SOLD");
   const soldCount = soldUnits.length;
   const damagedCount = unitBarcodes.filter((u: any) => u.status === "DAMAGED").length;
 
   // Filter Barcodes Status (Default: AVAILABLE - hides sold/scanned items from active view)
-  const [unitFilterStatus, setUnitFilterStatus] = useState<"AVAILABLE" | "ALL" | "SOLD" | "DAMAGED">("AVAILABLE");
+  const [unitFilterStatus, setUnitFilterStatus] = useState<"AVAILABLE" | "ALL" | "SOLD" | "DAMAGED" | "RETURNED">("AVAILABLE");
 
   const filteredUnits = useMemo(() => {
-    if (unitFilterStatus === "ALL") return unitBarcodes;
-    return unitBarcodes.filter((u: any) => u.status === unitFilterStatus);
+    let list = unitBarcodes;
+    if (unitFilterStatus === "RETURNED") {
+      list = unitBarcodes.filter((u: any) => u.status === "AVAILABLE" && isReturnedUnit(u));
+    } else if (unitFilterStatus !== "ALL") {
+      list = unitBarcodes.filter((u: any) => u.status === unitFilterStatus);
+    }
+
+    // Sort: Returned available barcodes always placed at the TOP so reusing them is faster & easier!
+    return [...list].sort((a: any, b: any) => {
+      const aRet = a.status === "AVAILABLE" && isReturnedUnit(a);
+      const bRet = b.status === "AVAILABLE" && isReturnedUnit(b);
+      if (aRet && !bRet) return -1;
+      if (!aRet && bRet) return 1;
+
+      // If both returned, sort newest return first
+      if (aRet && bRet) {
+        const aDate = a.returnedAt ? new Date(a.returnedAt).getTime() : 0;
+        const bDate = b.returnedAt ? new Date(b.returnedAt).getTime() : 0;
+        if (bDate !== aDate) return bDate - aDate;
+      }
+
+      // Then sort by serialNumber
+      return (a.serialNumber || 0) - (b.serialNumber || 0);
+    });
   }, [unitBarcodes, unitFilterStatus]);
 
   // Pagination for Unit Barcodes
@@ -774,15 +806,21 @@ export default function ProductDetailClient({
       <div className="bg-white border border-[#cce7ed] rounded-xl p-5 shadow-xs space-y-4">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b border-[#cce7ed] pb-3">
           <div>
-            <h2 className="text-base font-semibold text-[#0b252c] flex items-center gap-2">
+            <h2 className="text-base font-semibold text-[#0b252c] flex items-center gap-2 flex-wrap">
               <ScanBarcode className="w-5 h-5 text-[#056468]" />
               <span>Per-Unit Serial Barcode Registry</span>
               <span className="text-xs px-2.5 py-0.5 rounded-full bg-[#e3f2f5] text-[#056468] font-mono border border-[#cce7ed]">
                 {availableCount} Available / {unitBarcodes.length} Total
               </span>
+              {returnedCount > 0 && (
+                <span className="text-xs px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-900 font-bold border border-amber-300 flex items-center gap-1 shadow-2xs">
+                  <RotateCcw className="w-3 h-3 text-amber-700" />
+                  <span>{returnedCount} Returned (Top Priority for Fast Reuse)</span>
+                </span>
+              )}
             </h2>
             <p className="text-xs text-[#4a6870] mt-0.5">
-              Individual sequential 12-digit Code 128 barcodes. Sold and scanned barcodes are hidden from active view by default.
+              Individual sequential 12-digit Code 128 barcodes. Returned barcodes are automatically placed on top so they can be reused first.
             </p>
           </div>
 
@@ -803,6 +841,24 @@ export default function ProductDetailClient({
               >
                 Available ({availableCount})
               </button>
+              {returnedCount > 0 && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setUnitFilterStatus("RETURNED");
+                    setBarcodePage(1);
+                  }}
+                  className={`px-2.5 py-1 rounded-lg font-bold transition-all cursor-pointer flex items-center gap-1 ${
+                    unitFilterStatus === "RETURNED"
+                      ? "bg-amber-500 text-white shadow-xs"
+                      : "text-amber-800 bg-amber-100/70 hover:bg-amber-200/80 border border-amber-300"
+                  }`}
+                  title="Filter only returned units ready for reuse"
+                >
+                  <RotateCcw className="w-3 h-3" />
+                  <span>Returned ({returnedCount})</span>
+                </button>
+              )}
               <button
                 type="button"
                 onClick={() => {
@@ -918,13 +974,18 @@ export default function ProductDetailClient({
                 const isSelected = selectedIds.has(unit.id);
                 const isAvailable = unit.status === "AVAILABLE";
                 const isSold = unit.status === "SOLD";
+                const isReturned = isAvailable && isReturnedUnit(unit);
 
                 return (
                   <div
                     key={unit.id}
                     onClick={() => toggleSelect(unit.id)}
                     className={`p-3 rounded-xl border transition-all cursor-pointer select-none relative flex flex-col justify-between space-y-2 ${
-                      isSelected
+                      isReturned
+                        ? isSelected
+                          ? "bg-amber-100/90 border-amber-500 shadow-md ring-2 ring-amber-400"
+                          : "bg-gradient-to-b from-amber-50/90 to-white border-amber-300 ring-1 ring-amber-300/60 hover:border-amber-500 shadow-2xs"
+                        : isSelected
                         ? "bg-[#e3f2f5] border-[#056468] shadow-xs"
                         : "bg-[#f8fcfe] border-[#cce7ed] hover:border-[#056468]/50"
                     }`}
@@ -935,29 +996,50 @@ export default function ProductDetailClient({
                         <div
                           className={`w-4 h-4 rounded flex items-center justify-center border ${
                             isSelected
-                              ? "bg-[#056468] border-[#056468] text-white"
+                              ? isReturned ? "bg-amber-600 border-amber-600 text-white" : "bg-[#056468] border-[#056468] text-white"
                               : "border-[#5f818b] bg-white"
                           }`}
                         >
                           {isSelected && <CheckCircle2 className="w-3.5 h-3.5" />}
                         </div>
-                        <span className="font-mono text-xs font-bold text-[#056468]">
+                        <span className={`font-mono text-xs font-bold ${isReturned ? "text-amber-900" : "text-[#056468]"}`}>
                           #{unit.serialNumber}
                         </span>
                       </div>
 
-                      <span
-                        className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                          isAvailable
-                            ? "bg-emerald-100 text-emerald-800"
-                            : isSold
-                            ? "bg-purple-100 text-purple-800"
-                            : "bg-slate-200 text-slate-700"
-                        }`}
-                      >
-                        {unit.status}
-                      </span>
+                      <div className="flex items-center gap-1">
+                        {isReturned ? (
+                          <span className="text-[9.5px] font-black px-2 py-0.5 rounded-full bg-amber-500 text-white flex items-center gap-1 shadow-2xs uppercase tracking-wide">
+                            <RotateCcw className="w-2.5 h-2.5" />
+                            <span>Returned (Reuse First)</span>
+                          </span>
+                        ) : (
+                          <span
+                            className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                              isAvailable
+                                ? "bg-emerald-100 text-emerald-800"
+                                : isSold
+                                ? "bg-purple-100 text-purple-800"
+                                : "bg-slate-200 text-slate-700"
+                            }`}
+                          >
+                            {unit.status}
+                          </span>
+                        )}
+                      </div>
                     </div>
+
+                    {/* Returned Piece Note / Reason */}
+                    {isReturned && (
+                      <div className="px-2 py-1 rounded bg-amber-100/70 border border-amber-200/80 text-[10.5px] text-amber-900 font-medium flex items-center justify-between gap-1">
+                        <span className="truncate" title={unit.reason || "Customer return restocked"}>
+                          🔄 {unit.reason || "Customer return restocked"}
+                        </span>
+                        <span className="shrink-0 text-[9px] bg-amber-700 text-white font-bold px-1.5 py-0.2 rounded">
+                          Top
+                        </span>
+                      </div>
+                    )}
 
                     {/* Visual Code 128 Barcode */}
                     <div className="py-1">
@@ -977,6 +1059,26 @@ export default function ProductDetailClient({
                       </span>
 
                       <div className="flex items-center gap-1">
+                        {/* Quick 1-click Reuse / Copy button */}
+                        {isReturned && (
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              navigator.clipboard?.writeText(unit.barcode);
+                              setFeedback({
+                                type: "success",
+                                message: `Copied returned barcode ${unit.barcode}! Ready to reuse in POS scan or Order dispatch.`,
+                              });
+                              setTimeout(() => setFeedback(null), 3500);
+                            }}
+                            className="px-2 py-1 rounded bg-amber-600 hover:bg-amber-700 text-white font-bold text-[10px] flex items-center gap-1 transition-all shadow-2xs cursor-pointer"
+                            title="Copy this returned barcode to reuse in POS Checkout or Order dispatch immediately"
+                          >
+                            <Zap className="w-3 h-3 fill-current" />
+                            <span>Reuse</span>
+                          </button>
+                        )}
                         {/* Reopen button if SOLD or DAMAGED */}
                         {!isAvailable && (
                           <button

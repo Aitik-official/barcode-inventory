@@ -46,8 +46,8 @@ export default async function ProductsPage({
             include: {
               inventory: true,
               unitBarcodes: {
-                take: 5,
-                orderBy: { serialNumber: "asc" },
+                take: 10,
+                orderBy: [{ isReturned: "desc" }, { returnedAt: "desc" }, { serialNumber: "asc" }],
               },
             },
           },

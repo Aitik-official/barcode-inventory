@@ -91,11 +91,14 @@ model UnitBarcode {
   soldAt           DateTime?
   deactivatedAt    DateTime?
   reason           String?
+  isReturned       Boolean        @default(false)
+  returnedAt       DateTime?
   transactions     InventoryTransaction[]
   orderItems       OrderItem[]
 
   @@index([productVariantId])
   @@index([status])
+  @@index([isReturned])
 }
 
 model Inventory {

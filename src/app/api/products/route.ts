@@ -46,7 +46,7 @@ export async function GET(req: Request) {
                 inventory: true,
                 unitBarcodes: {
                   take: 10,
-                  orderBy: { serialNumber: "asc" },
+                  orderBy: [{ isReturned: "desc" }, { returnedAt: "desc" }, { serialNumber: "asc" }],
                 },
               },
             },
@@ -72,7 +72,7 @@ export async function GET(req: Request) {
             inventory: true,
             unitBarcodes: {
               take: 50,
-              orderBy: { serialNumber: "asc" },
+              orderBy: [{ isReturned: "desc" }, { returnedAt: "desc" }, { serialNumber: "asc" }],
             },
           },
         },
