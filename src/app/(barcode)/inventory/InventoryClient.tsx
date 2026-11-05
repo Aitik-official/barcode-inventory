@@ -21,8 +21,10 @@ import {
   CheckCircle2,
   RotateCcw,
   AlertTriangle,
+  Download,
 } from "lucide-react";
 import { Pagination } from "@/components/Pagination";
+import { InventoryExportReport } from "@/components/InventoryExportReport";
 
 export default function InventoryClient({
   inventories = [],
@@ -41,7 +43,7 @@ export default function InventoryClient({
   variants: any[];
   marketplaceMappings?: any[];
 }) {
-  const [activeTab, setActiveTab] = useState<"stock" | "ledger" | "po" | "waste">("stock");
+  const [activeTab, setActiveTab] = useState<"stock" | "ledger" | "po" | "waste" | "export">("stock");
   const [stockBatchFilter, setStockBatchFilter] = useState<"ALL" | "WEBSITE" | "AMAZON" | "FLIPKART">("ALL");
   const [searchQuery, setSearchQuery] = useState("");
   const [syncingVariantId, setSyncingVariantId] = useState<string | null>(null);
@@ -468,6 +470,16 @@ export default function InventoryClient({
             <Plus className="w-4 h-4" />
             <span>Create Purchase Order</span>
           </button>
+
+          {/* Export Report Quick Action */}
+          <button
+            type="button"
+            onClick={() => setActiveTab("export")}
+            className="px-3.5 py-2 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-800 font-bold text-xs border border-emerald-200 hover:border-emerald-300 shadow-xs transition-all flex items-center gap-1.5 cursor-pointer"
+          >
+            <Download className="w-4 h-4 text-emerald-700" />
+            <span>Export Stock Data</span>
+          </button>
         </div>
       </div>
 
@@ -519,6 +531,18 @@ export default function InventoryClient({
         >
           <Trash2 className="w-3.5 h-3.5" />
           <span>Write-offs ({localWastes.length})</span>
+        </button>
+
+        <button
+          onClick={() => setActiveTab("export")}
+          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 shrink-0 ${
+            activeTab === "export"
+              ? "bg-emerald-700 text-white shadow-sm"
+              : "text-emerald-800 hover:text-emerald-950 bg-emerald-50 hover:bg-emerald-100/70 border border-emerald-200"
+          }`}
+        >
+          <Download className="w-3.5 h-3.5" />
+          <span>Export Stock Report</span>
         </button>
       </div>
 
@@ -1021,6 +1045,11 @@ export default function InventoryClient({
             onPageSizeChange={setWastePageSize}
           />
         </div>
+      )}
+
+      {/* TAB 5: EXPORT & MOVEMENT REPORT */}
+      {activeTab === "export" && (
+        <InventoryExportReport />
       )}
 
       {/* Create PO Modal */}
