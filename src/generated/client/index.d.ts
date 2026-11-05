@@ -5941,6 +5941,9 @@ export namespace Prisma {
     status: string | null
     createdAt: Date | null
     updatedAt: Date | null
+    lastActedBy: string | null
+    lastActedAt: Date | null
+    lastAction: string | null
   }
 
   export type ProductVariantMaxAggregateOutputType = {
@@ -5955,6 +5958,9 @@ export namespace Prisma {
     status: string | null
     createdAt: Date | null
     updatedAt: Date | null
+    lastActedBy: string | null
+    lastActedAt: Date | null
+    lastAction: string | null
   }
 
   export type ProductVariantCountAggregateOutputType = {
@@ -5969,6 +5975,9 @@ export namespace Prisma {
     status: number
     createdAt: number
     updatedAt: number
+    lastActedBy: number
+    lastActedAt: number
+    lastAction: number
     _all: number
   }
 
@@ -5995,6 +6004,9 @@ export namespace Prisma {
     status?: true
     createdAt?: true
     updatedAt?: true
+    lastActedBy?: true
+    lastActedAt?: true
+    lastAction?: true
   }
 
   export type ProductVariantMaxAggregateInputType = {
@@ -6009,6 +6021,9 @@ export namespace Prisma {
     status?: true
     createdAt?: true
     updatedAt?: true
+    lastActedBy?: true
+    lastActedAt?: true
+    lastAction?: true
   }
 
   export type ProductVariantCountAggregateInputType = {
@@ -6023,6 +6038,9 @@ export namespace Prisma {
     status?: true
     createdAt?: true
     updatedAt?: true
+    lastActedBy?: true
+    lastActedAt?: true
+    lastAction?: true
     _all?: true
   }
 
@@ -6124,6 +6142,9 @@ export namespace Prisma {
     status: string
     createdAt: Date
     updatedAt: Date
+    lastActedBy: string | null
+    lastActedAt: Date | null
+    lastAction: string | null
     _count: ProductVariantCountAggregateOutputType | null
     _avg: ProductVariantAvgAggregateOutputType | null
     _sum: ProductVariantSumAggregateOutputType | null
@@ -6157,6 +6178,9 @@ export namespace Prisma {
     status?: boolean
     createdAt?: boolean
     updatedAt?: boolean
+    lastActedBy?: boolean
+    lastActedAt?: boolean
+    lastAction?: boolean
     product?: boolean | ProductDefaultArgs<ExtArgs>
     unitBarcodes?: boolean | ProductVariant$unitBarcodesArgs<ExtArgs>
     inventory?: boolean | ProductVariant$inventoryArgs<ExtArgs>
@@ -6182,9 +6206,12 @@ export namespace Prisma {
     status?: boolean
     createdAt?: boolean
     updatedAt?: boolean
+    lastActedBy?: boolean
+    lastActedAt?: boolean
+    lastAction?: boolean
   }
 
-  export type ProductVariantOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "productId" | "sku" | "color" | "size" | "unit" | "purchasePrice" | "sellingPrice" | "status" | "createdAt" | "updatedAt", ExtArgs["result"]["productVariant"]>
+  export type ProductVariantOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "productId" | "sku" | "color" | "size" | "unit" | "purchasePrice" | "sellingPrice" | "status" | "createdAt" | "updatedAt" | "lastActedBy" | "lastActedAt" | "lastAction", ExtArgs["result"]["productVariant"]>
   export type ProductVariantInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     product?: boolean | ProductDefaultArgs<ExtArgs>
     unitBarcodes?: boolean | ProductVariant$unitBarcodesArgs<ExtArgs>
@@ -6221,6 +6248,9 @@ export namespace Prisma {
       status: string
       createdAt: Date
       updatedAt: Date
+      lastActedBy: string | null
+      lastActedAt: Date | null
+      lastAction: string | null
     }, ExtArgs["result"]["productVariant"]>
     composites: {}
   }
@@ -6632,6 +6662,9 @@ export namespace Prisma {
     readonly status: FieldRef<"ProductVariant", 'String'>
     readonly createdAt: FieldRef<"ProductVariant", 'DateTime'>
     readonly updatedAt: FieldRef<"ProductVariant", 'DateTime'>
+    readonly lastActedBy: FieldRef<"ProductVariant", 'String'>
+    readonly lastActedAt: FieldRef<"ProductVariant", 'DateTime'>
+    readonly lastAction: FieldRef<"ProductVariant", 'String'>
   }
     
 
@@ -23842,6 +23875,8 @@ export namespace Prisma {
     action: string | null
     entity: string | null
     entityId: string | null
+    sku: string | null
+    productName: string | null
     details: string | null
     performedBy: string | null
     createdAt: Date | null
@@ -23852,6 +23887,8 @@ export namespace Prisma {
     action: string | null
     entity: string | null
     entityId: string | null
+    sku: string | null
+    productName: string | null
     details: string | null
     performedBy: string | null
     createdAt: Date | null
@@ -23862,6 +23899,8 @@ export namespace Prisma {
     action: number
     entity: number
     entityId: number
+    sku: number
+    productName: number
     details: number
     performedBy: number
     createdAt: number
@@ -23874,6 +23913,8 @@ export namespace Prisma {
     action?: true
     entity?: true
     entityId?: true
+    sku?: true
+    productName?: true
     details?: true
     performedBy?: true
     createdAt?: true
@@ -23884,6 +23925,8 @@ export namespace Prisma {
     action?: true
     entity?: true
     entityId?: true
+    sku?: true
+    productName?: true
     details?: true
     performedBy?: true
     createdAt?: true
@@ -23894,6 +23937,8 @@ export namespace Prisma {
     action?: true
     entity?: true
     entityId?: true
+    sku?: true
+    productName?: true
     details?: true
     performedBy?: true
     createdAt?: true
@@ -23977,6 +24022,8 @@ export namespace Prisma {
     action: string
     entity: string | null
     entityId: string | null
+    sku: string | null
+    productName: string | null
     details: string | null
     performedBy: string
     createdAt: Date
@@ -24004,6 +24051,8 @@ export namespace Prisma {
     action?: boolean
     entity?: boolean
     entityId?: boolean
+    sku?: boolean
+    productName?: boolean
     details?: boolean
     performedBy?: boolean
     createdAt?: boolean
@@ -24016,12 +24065,14 @@ export namespace Prisma {
     action?: boolean
     entity?: boolean
     entityId?: boolean
+    sku?: boolean
+    productName?: boolean
     details?: boolean
     performedBy?: boolean
     createdAt?: boolean
   }
 
-  export type AuditLogOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "action" | "entity" | "entityId" | "details" | "performedBy" | "createdAt", ExtArgs["result"]["auditLog"]>
+  export type AuditLogOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "action" | "entity" | "entityId" | "sku" | "productName" | "details" | "performedBy" | "createdAt", ExtArgs["result"]["auditLog"]>
 
   export type $AuditLogPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     name: "AuditLog"
@@ -24031,6 +24082,8 @@ export namespace Prisma {
       action: string
       entity: string | null
       entityId: string | null
+      sku: string | null
+      productName: string | null
       details: string | null
       performedBy: string
       createdAt: Date
@@ -24430,6 +24483,8 @@ export namespace Prisma {
     readonly action: FieldRef<"AuditLog", 'String'>
     readonly entity: FieldRef<"AuditLog", 'String'>
     readonly entityId: FieldRef<"AuditLog", 'String'>
+    readonly sku: FieldRef<"AuditLog", 'String'>
+    readonly productName: FieldRef<"AuditLog", 'String'>
     readonly details: FieldRef<"AuditLog", 'String'>
     readonly performedBy: FieldRef<"AuditLog", 'String'>
     readonly createdAt: FieldRef<"AuditLog", 'DateTime'>
@@ -31701,7 +31756,10 @@ export namespace Prisma {
     sellingPrice: 'sellingPrice',
     status: 'status',
     createdAt: 'createdAt',
-    updatedAt: 'updatedAt'
+    updatedAt: 'updatedAt',
+    lastActedBy: 'lastActedBy',
+    lastActedAt: 'lastActedAt',
+    lastAction: 'lastAction'
   };
 
   export type ProductVariantScalarFieldEnum = (typeof ProductVariantScalarFieldEnum)[keyof typeof ProductVariantScalarFieldEnum]
@@ -31963,6 +32021,8 @@ export namespace Prisma {
     action: 'action',
     entity: 'entity',
     entityId: 'entityId',
+    sku: 'sku',
+    productName: 'productName',
     details: 'details',
     performedBy: 'performedBy',
     createdAt: 'createdAt'
@@ -32456,6 +32516,9 @@ export namespace Prisma {
     status?: StringFilter<"ProductVariant"> | string
     createdAt?: DateTimeFilter<"ProductVariant"> | Date | string
     updatedAt?: DateTimeFilter<"ProductVariant"> | Date | string
+    lastActedBy?: StringNullableFilter<"ProductVariant"> | string | null
+    lastActedAt?: DateTimeNullableFilter<"ProductVariant"> | Date | string | null
+    lastAction?: StringNullableFilter<"ProductVariant"> | string | null
     product?: XOR<ProductScalarRelationFilter, ProductWhereInput>
     unitBarcodes?: UnitBarcodeListRelationFilter
     inventory?: XOR<InventoryNullableScalarRelationFilter, InventoryWhereInput> | null
@@ -32478,6 +32541,9 @@ export namespace Prisma {
     status?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
+    lastActedBy?: SortOrder
+    lastActedAt?: SortOrder
+    lastAction?: SortOrder
     product?: ProductOrderByWithRelationInput
     unitBarcodes?: UnitBarcodeOrderByRelationAggregateInput
     inventory?: InventoryOrderByWithRelationInput
@@ -32503,6 +32569,9 @@ export namespace Prisma {
     status?: StringFilter<"ProductVariant"> | string
     createdAt?: DateTimeFilter<"ProductVariant"> | Date | string
     updatedAt?: DateTimeFilter<"ProductVariant"> | Date | string
+    lastActedBy?: StringNullableFilter<"ProductVariant"> | string | null
+    lastActedAt?: DateTimeNullableFilter<"ProductVariant"> | Date | string | null
+    lastAction?: StringNullableFilter<"ProductVariant"> | string | null
     product?: XOR<ProductScalarRelationFilter, ProductWhereInput>
     unitBarcodes?: UnitBarcodeListRelationFilter
     inventory?: XOR<InventoryNullableScalarRelationFilter, InventoryWhereInput> | null
@@ -32525,6 +32594,9 @@ export namespace Prisma {
     status?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
+    lastActedBy?: SortOrder
+    lastActedAt?: SortOrder
+    lastAction?: SortOrder
     _count?: ProductVariantCountOrderByAggregateInput
     _avg?: ProductVariantAvgOrderByAggregateInput
     _max?: ProductVariantMaxOrderByAggregateInput
@@ -32547,6 +32619,9 @@ export namespace Prisma {
     status?: StringWithAggregatesFilter<"ProductVariant"> | string
     createdAt?: DateTimeWithAggregatesFilter<"ProductVariant"> | Date | string
     updatedAt?: DateTimeWithAggregatesFilter<"ProductVariant"> | Date | string
+    lastActedBy?: StringNullableWithAggregatesFilter<"ProductVariant"> | string | null
+    lastActedAt?: DateTimeNullableWithAggregatesFilter<"ProductVariant"> | Date | string | null
+    lastAction?: StringNullableWithAggregatesFilter<"ProductVariant"> | string | null
   }
 
   export type UnitBarcodeWhereInput = {
@@ -33884,6 +33959,8 @@ export namespace Prisma {
     action?: StringFilter<"AuditLog"> | string
     entity?: StringNullableFilter<"AuditLog"> | string | null
     entityId?: StringNullableFilter<"AuditLog"> | string | null
+    sku?: StringNullableFilter<"AuditLog"> | string | null
+    productName?: StringNullableFilter<"AuditLog"> | string | null
     details?: StringNullableFilter<"AuditLog"> | string | null
     performedBy?: StringFilter<"AuditLog"> | string
     createdAt?: DateTimeFilter<"AuditLog"> | Date | string
@@ -33894,6 +33971,8 @@ export namespace Prisma {
     action?: SortOrder
     entity?: SortOrder
     entityId?: SortOrder
+    sku?: SortOrder
+    productName?: SortOrder
     details?: SortOrder
     performedBy?: SortOrder
     createdAt?: SortOrder
@@ -33907,6 +33986,8 @@ export namespace Prisma {
     action?: StringFilter<"AuditLog"> | string
     entity?: StringNullableFilter<"AuditLog"> | string | null
     entityId?: StringNullableFilter<"AuditLog"> | string | null
+    sku?: StringNullableFilter<"AuditLog"> | string | null
+    productName?: StringNullableFilter<"AuditLog"> | string | null
     details?: StringNullableFilter<"AuditLog"> | string | null
     performedBy?: StringFilter<"AuditLog"> | string
     createdAt?: DateTimeFilter<"AuditLog"> | Date | string
@@ -33917,6 +33998,8 @@ export namespace Prisma {
     action?: SortOrder
     entity?: SortOrder
     entityId?: SortOrder
+    sku?: SortOrder
+    productName?: SortOrder
     details?: SortOrder
     performedBy?: SortOrder
     createdAt?: SortOrder
@@ -33933,6 +34016,8 @@ export namespace Prisma {
     action?: StringWithAggregatesFilter<"AuditLog"> | string
     entity?: StringNullableWithAggregatesFilter<"AuditLog"> | string | null
     entityId?: StringNullableWithAggregatesFilter<"AuditLog"> | string | null
+    sku?: StringNullableWithAggregatesFilter<"AuditLog"> | string | null
+    productName?: StringNullableWithAggregatesFilter<"AuditLog"> | string | null
     details?: StringNullableWithAggregatesFilter<"AuditLog"> | string | null
     performedBy?: StringWithAggregatesFilter<"AuditLog"> | string
     createdAt?: DateTimeWithAggregatesFilter<"AuditLog"> | Date | string
@@ -34947,6 +35032,9 @@ export namespace Prisma {
     status?: string
     createdAt?: Date | string
     updatedAt?: Date | string
+    lastActedBy?: string | null
+    lastActedAt?: Date | string | null
+    lastAction?: string | null
     product: ProductCreateNestedOneWithoutVariantsInput
     unitBarcodes?: UnitBarcodeCreateNestedManyWithoutProductVariantInput
     inventory?: InventoryCreateNestedOneWithoutProductVariantInput
@@ -34969,6 +35057,9 @@ export namespace Prisma {
     status?: string
     createdAt?: Date | string
     updatedAt?: Date | string
+    lastActedBy?: string | null
+    lastActedAt?: Date | string | null
+    lastAction?: string | null
     unitBarcodes?: UnitBarcodeUncheckedCreateNestedManyWithoutProductVariantInput
     inventory?: InventoryUncheckedCreateNestedOneWithoutProductVariantInput
     transactions?: InventoryTransactionUncheckedCreateNestedManyWithoutProductVariantInput
@@ -34988,6 +35079,9 @@ export namespace Prisma {
     status?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    lastActedBy?: NullableStringFieldUpdateOperationsInput | string | null
+    lastActedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    lastAction?: NullableStringFieldUpdateOperationsInput | string | null
     product?: ProductUpdateOneRequiredWithoutVariantsNestedInput
     unitBarcodes?: UnitBarcodeUpdateManyWithoutProductVariantNestedInput
     inventory?: InventoryUpdateOneWithoutProductVariantNestedInput
@@ -35009,6 +35103,9 @@ export namespace Prisma {
     status?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    lastActedBy?: NullableStringFieldUpdateOperationsInput | string | null
+    lastActedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    lastAction?: NullableStringFieldUpdateOperationsInput | string | null
     unitBarcodes?: UnitBarcodeUncheckedUpdateManyWithoutProductVariantNestedInput
     inventory?: InventoryUncheckedUpdateOneWithoutProductVariantNestedInput
     transactions?: InventoryTransactionUncheckedUpdateManyWithoutProductVariantNestedInput
@@ -35030,6 +35127,9 @@ export namespace Prisma {
     status?: string
     createdAt?: Date | string
     updatedAt?: Date | string
+    lastActedBy?: string | null
+    lastActedAt?: Date | string | null
+    lastAction?: string | null
   }
 
   export type ProductVariantUpdateManyMutationInput = {
@@ -35042,6 +35142,9 @@ export namespace Prisma {
     status?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    lastActedBy?: NullableStringFieldUpdateOperationsInput | string | null
+    lastActedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    lastAction?: NullableStringFieldUpdateOperationsInput | string | null
   }
 
   export type ProductVariantUncheckedUpdateManyInput = {
@@ -35055,6 +35158,9 @@ export namespace Prisma {
     status?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    lastActedBy?: NullableStringFieldUpdateOperationsInput | string | null
+    lastActedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    lastAction?: NullableStringFieldUpdateOperationsInput | string | null
   }
 
   export type UnitBarcodeCreateInput = {
@@ -36473,6 +36579,8 @@ export namespace Prisma {
     action: string
     entity?: string | null
     entityId?: string | null
+    sku?: string | null
+    productName?: string | null
     details?: string | null
     performedBy?: string
     createdAt?: Date | string
@@ -36483,6 +36591,8 @@ export namespace Prisma {
     action: string
     entity?: string | null
     entityId?: string | null
+    sku?: string | null
+    productName?: string | null
     details?: string | null
     performedBy?: string
     createdAt?: Date | string
@@ -36492,6 +36602,8 @@ export namespace Prisma {
     action?: StringFieldUpdateOperationsInput | string
     entity?: NullableStringFieldUpdateOperationsInput | string | null
     entityId?: NullableStringFieldUpdateOperationsInput | string | null
+    sku?: NullableStringFieldUpdateOperationsInput | string | null
+    productName?: NullableStringFieldUpdateOperationsInput | string | null
     details?: NullableStringFieldUpdateOperationsInput | string | null
     performedBy?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -36501,6 +36613,8 @@ export namespace Prisma {
     action?: StringFieldUpdateOperationsInput | string
     entity?: NullableStringFieldUpdateOperationsInput | string | null
     entityId?: NullableStringFieldUpdateOperationsInput | string | null
+    sku?: NullableStringFieldUpdateOperationsInput | string | null
+    productName?: NullableStringFieldUpdateOperationsInput | string | null
     details?: NullableStringFieldUpdateOperationsInput | string | null
     performedBy?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -36511,6 +36625,8 @@ export namespace Prisma {
     action: string
     entity?: string | null
     entityId?: string | null
+    sku?: string | null
+    productName?: string | null
     details?: string | null
     performedBy?: string
     createdAt?: Date | string
@@ -36520,6 +36636,8 @@ export namespace Prisma {
     action?: StringFieldUpdateOperationsInput | string
     entity?: NullableStringFieldUpdateOperationsInput | string | null
     entityId?: NullableStringFieldUpdateOperationsInput | string | null
+    sku?: NullableStringFieldUpdateOperationsInput | string | null
+    productName?: NullableStringFieldUpdateOperationsInput | string | null
     details?: NullableStringFieldUpdateOperationsInput | string | null
     performedBy?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -36529,6 +36647,8 @@ export namespace Prisma {
     action?: StringFieldUpdateOperationsInput | string
     entity?: NullableStringFieldUpdateOperationsInput | string | null
     entityId?: NullableStringFieldUpdateOperationsInput | string | null
+    sku?: NullableStringFieldUpdateOperationsInput | string | null
+    productName?: NullableStringFieldUpdateOperationsInput | string | null
     details?: NullableStringFieldUpdateOperationsInput | string | null
     performedBy?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -37734,6 +37854,18 @@ export namespace Prisma {
     _max?: NestedIntFilter<$PrismaModel>
   }
 
+  export type DateTimeNullableFilter<$PrismaModel = never> = {
+    equals?: Date | string | DateTimeFieldRefInput<$PrismaModel> | null
+    in?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel> | null
+    notIn?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel> | null
+    lt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    lte?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    gt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    gte?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    not?: NestedDateTimeNullableFilter<$PrismaModel> | Date | string | null
+    isSet?: boolean
+  }
+
   export type ProductScalarRelationFilter = {
     is?: ProductWhereInput
     isNot?: ProductWhereInput
@@ -37816,6 +37948,9 @@ export namespace Prisma {
     status?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
+    lastActedBy?: SortOrder
+    lastActedAt?: SortOrder
+    lastAction?: SortOrder
   }
 
   export type ProductVariantAvgOrderByAggregateInput = {
@@ -37835,6 +37970,9 @@ export namespace Prisma {
     status?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
+    lastActedBy?: SortOrder
+    lastActedAt?: SortOrder
+    lastAction?: SortOrder
   }
 
   export type ProductVariantMinOrderByAggregateInput = {
@@ -37849,6 +37987,9 @@ export namespace Prisma {
     status?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
+    lastActedBy?: SortOrder
+    lastActedAt?: SortOrder
+    lastAction?: SortOrder
   }
 
   export type ProductVariantSumOrderByAggregateInput = {
@@ -37856,7 +37997,7 @@ export namespace Prisma {
     sellingPrice?: SortOrder
   }
 
-  export type DateTimeNullableFilter<$PrismaModel = never> = {
+  export type DateTimeNullableWithAggregatesFilter<$PrismaModel = never> = {
     equals?: Date | string | DateTimeFieldRefInput<$PrismaModel> | null
     in?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel> | null
     notIn?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel> | null
@@ -37864,7 +38005,10 @@ export namespace Prisma {
     lte?: Date | string | DateTimeFieldRefInput<$PrismaModel>
     gt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
     gte?: Date | string | DateTimeFieldRefInput<$PrismaModel>
-    not?: NestedDateTimeNullableFilter<$PrismaModel> | Date | string | null
+    not?: NestedDateTimeNullableWithAggregatesFilter<$PrismaModel> | Date | string | null
+    _count?: NestedIntNullableFilter<$PrismaModel>
+    _min?: NestedDateTimeNullableFilter<$PrismaModel>
+    _max?: NestedDateTimeNullableFilter<$PrismaModel>
     isSet?: boolean
   }
 
@@ -37929,21 +38073,6 @@ export namespace Prisma {
   export type UnitBarcodeSumOrderByAggregateInput = {
     serialNumber?: SortOrder
     printedCount?: SortOrder
-  }
-
-  export type DateTimeNullableWithAggregatesFilter<$PrismaModel = never> = {
-    equals?: Date | string | DateTimeFieldRefInput<$PrismaModel> | null
-    in?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel> | null
-    notIn?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel> | null
-    lt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
-    lte?: Date | string | DateTimeFieldRefInput<$PrismaModel>
-    gt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
-    gte?: Date | string | DateTimeFieldRefInput<$PrismaModel>
-    not?: NestedDateTimeNullableWithAggregatesFilter<$PrismaModel> | Date | string | null
-    _count?: NestedIntNullableFilter<$PrismaModel>
-    _min?: NestedDateTimeNullableFilter<$PrismaModel>
-    _max?: NestedDateTimeNullableFilter<$PrismaModel>
-    isSet?: boolean
   }
 
   export type InventoryCountOrderByAggregateInput = {
@@ -38748,6 +38877,8 @@ export namespace Prisma {
     action?: SortOrder
     entity?: SortOrder
     entityId?: SortOrder
+    sku?: SortOrder
+    productName?: SortOrder
     details?: SortOrder
     performedBy?: SortOrder
     createdAt?: SortOrder
@@ -38758,6 +38889,8 @@ export namespace Prisma {
     action?: SortOrder
     entity?: SortOrder
     entityId?: SortOrder
+    sku?: SortOrder
+    productName?: SortOrder
     details?: SortOrder
     performedBy?: SortOrder
     createdAt?: SortOrder
@@ -38768,6 +38901,8 @@ export namespace Prisma {
     action?: SortOrder
     entity?: SortOrder
     entityId?: SortOrder
+    sku?: SortOrder
+    productName?: SortOrder
     details?: SortOrder
     performedBy?: SortOrder
     createdAt?: SortOrder
@@ -39645,6 +39780,11 @@ export namespace Prisma {
     connect?: OrderItemWhereUniqueInput | OrderItemWhereUniqueInput[]
   }
 
+  export type NullableDateTimeFieldUpdateOperationsInput = {
+    set?: Date | string | null
+    unset?: boolean
+  }
+
   export type ProductUpdateOneRequiredWithoutVariantsNestedInput = {
     create?: XOR<ProductCreateWithoutVariantsInput, ProductUncheckedCreateWithoutVariantsInput>
     connectOrCreate?: ProductCreateOrConnectWithoutVariantsInput
@@ -39873,11 +40013,6 @@ export namespace Prisma {
     connectOrCreate?: OrderItemCreateOrConnectWithoutUnitBarcodeInput | OrderItemCreateOrConnectWithoutUnitBarcodeInput[]
     createMany?: OrderItemCreateManyUnitBarcodeInputEnvelope
     connect?: OrderItemWhereUniqueInput | OrderItemWhereUniqueInput[]
-  }
-
-  export type NullableDateTimeFieldUpdateOperationsInput = {
-    set?: Date | string | null
-    unset?: boolean
   }
 
   export type ProductVariantUpdateOneRequiredWithoutUnitBarcodesNestedInput = {
@@ -41509,6 +41644,9 @@ export namespace Prisma {
     status?: string
     createdAt?: Date | string
     updatedAt?: Date | string
+    lastActedBy?: string | null
+    lastActedAt?: Date | string | null
+    lastAction?: string | null
     unitBarcodes?: UnitBarcodeCreateNestedManyWithoutProductVariantInput
     inventory?: InventoryCreateNestedOneWithoutProductVariantInput
     transactions?: InventoryTransactionCreateNestedManyWithoutProductVariantInput
@@ -41529,6 +41667,9 @@ export namespace Prisma {
     status?: string
     createdAt?: Date | string
     updatedAt?: Date | string
+    lastActedBy?: string | null
+    lastActedAt?: Date | string | null
+    lastAction?: string | null
     unitBarcodes?: UnitBarcodeUncheckedCreateNestedManyWithoutProductVariantInput
     inventory?: InventoryUncheckedCreateNestedOneWithoutProductVariantInput
     transactions?: InventoryTransactionUncheckedCreateNestedManyWithoutProductVariantInput
@@ -41683,6 +41824,9 @@ export namespace Prisma {
     status?: StringFilter<"ProductVariant"> | string
     createdAt?: DateTimeFilter<"ProductVariant"> | Date | string
     updatedAt?: DateTimeFilter<"ProductVariant"> | Date | string
+    lastActedBy?: StringNullableFilter<"ProductVariant"> | string | null
+    lastActedAt?: DateTimeNullableFilter<"ProductVariant"> | Date | string | null
+    lastAction?: StringNullableFilter<"ProductVariant"> | string | null
   }
 
   export type ProductCreateWithoutVariantsInput = {
@@ -42252,6 +42396,9 @@ export namespace Prisma {
     status?: string
     createdAt?: Date | string
     updatedAt?: Date | string
+    lastActedBy?: string | null
+    lastActedAt?: Date | string | null
+    lastAction?: string | null
     product: ProductCreateNestedOneWithoutVariantsInput
     inventory?: InventoryCreateNestedOneWithoutProductVariantInput
     transactions?: InventoryTransactionCreateNestedManyWithoutProductVariantInput
@@ -42273,6 +42420,9 @@ export namespace Prisma {
     status?: string
     createdAt?: Date | string
     updatedAt?: Date | string
+    lastActedBy?: string | null
+    lastActedAt?: Date | string | null
+    lastAction?: string | null
     inventory?: InventoryUncheckedCreateNestedOneWithoutProductVariantInput
     transactions?: InventoryTransactionUncheckedCreateNestedManyWithoutProductVariantInput
     printJobs?: PrintJobUncheckedCreateNestedManyWithoutProductVariantInput
@@ -42375,6 +42525,9 @@ export namespace Prisma {
     status?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    lastActedBy?: NullableStringFieldUpdateOperationsInput | string | null
+    lastActedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    lastAction?: NullableStringFieldUpdateOperationsInput | string | null
     product?: ProductUpdateOneRequiredWithoutVariantsNestedInput
     inventory?: InventoryUpdateOneWithoutProductVariantNestedInput
     transactions?: InventoryTransactionUpdateManyWithoutProductVariantNestedInput
@@ -42395,6 +42548,9 @@ export namespace Prisma {
     status?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    lastActedBy?: NullableStringFieldUpdateOperationsInput | string | null
+    lastActedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    lastAction?: NullableStringFieldUpdateOperationsInput | string | null
     inventory?: InventoryUncheckedUpdateOneWithoutProductVariantNestedInput
     transactions?: InventoryTransactionUncheckedUpdateManyWithoutProductVariantNestedInput
     printJobs?: PrintJobUncheckedUpdateManyWithoutProductVariantNestedInput
@@ -42446,6 +42602,9 @@ export namespace Prisma {
     status?: string
     createdAt?: Date | string
     updatedAt?: Date | string
+    lastActedBy?: string | null
+    lastActedAt?: Date | string | null
+    lastAction?: string | null
     product: ProductCreateNestedOneWithoutVariantsInput
     unitBarcodes?: UnitBarcodeCreateNestedManyWithoutProductVariantInput
     transactions?: InventoryTransactionCreateNestedManyWithoutProductVariantInput
@@ -42467,6 +42626,9 @@ export namespace Prisma {
     status?: string
     createdAt?: Date | string
     updatedAt?: Date | string
+    lastActedBy?: string | null
+    lastActedAt?: Date | string | null
+    lastAction?: string | null
     unitBarcodes?: UnitBarcodeUncheckedCreateNestedManyWithoutProductVariantInput
     transactions?: InventoryTransactionUncheckedCreateNestedManyWithoutProductVariantInput
     printJobs?: PrintJobUncheckedCreateNestedManyWithoutProductVariantInput
@@ -42501,6 +42663,9 @@ export namespace Prisma {
     status?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    lastActedBy?: NullableStringFieldUpdateOperationsInput | string | null
+    lastActedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    lastAction?: NullableStringFieldUpdateOperationsInput | string | null
     product?: ProductUpdateOneRequiredWithoutVariantsNestedInput
     unitBarcodes?: UnitBarcodeUpdateManyWithoutProductVariantNestedInput
     transactions?: InventoryTransactionUpdateManyWithoutProductVariantNestedInput
@@ -42521,6 +42686,9 @@ export namespace Prisma {
     status?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    lastActedBy?: NullableStringFieldUpdateOperationsInput | string | null
+    lastActedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    lastAction?: NullableStringFieldUpdateOperationsInput | string | null
     unitBarcodes?: UnitBarcodeUncheckedUpdateManyWithoutProductVariantNestedInput
     transactions?: InventoryTransactionUncheckedUpdateManyWithoutProductVariantNestedInput
     printJobs?: PrintJobUncheckedUpdateManyWithoutProductVariantNestedInput
@@ -42540,6 +42708,9 @@ export namespace Prisma {
     status?: string
     createdAt?: Date | string
     updatedAt?: Date | string
+    lastActedBy?: string | null
+    lastActedAt?: Date | string | null
+    lastAction?: string | null
     product: ProductCreateNestedOneWithoutVariantsInput
     unitBarcodes?: UnitBarcodeCreateNestedManyWithoutProductVariantInput
     inventory?: InventoryCreateNestedOneWithoutProductVariantInput
@@ -42561,6 +42732,9 @@ export namespace Prisma {
     status?: string
     createdAt?: Date | string
     updatedAt?: Date | string
+    lastActedBy?: string | null
+    lastActedAt?: Date | string | null
+    lastAction?: string | null
     unitBarcodes?: UnitBarcodeUncheckedCreateNestedManyWithoutProductVariantInput
     inventory?: InventoryUncheckedCreateNestedOneWithoutProductVariantInput
     printJobs?: PrintJobUncheckedCreateNestedManyWithoutProductVariantInput
@@ -42634,6 +42808,9 @@ export namespace Prisma {
     status?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    lastActedBy?: NullableStringFieldUpdateOperationsInput | string | null
+    lastActedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    lastAction?: NullableStringFieldUpdateOperationsInput | string | null
     product?: ProductUpdateOneRequiredWithoutVariantsNestedInput
     unitBarcodes?: UnitBarcodeUpdateManyWithoutProductVariantNestedInput
     inventory?: InventoryUpdateOneWithoutProductVariantNestedInput
@@ -42654,6 +42831,9 @@ export namespace Prisma {
     status?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    lastActedBy?: NullableStringFieldUpdateOperationsInput | string | null
+    lastActedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    lastAction?: NullableStringFieldUpdateOperationsInput | string | null
     unitBarcodes?: UnitBarcodeUncheckedUpdateManyWithoutProductVariantNestedInput
     inventory?: InventoryUncheckedUpdateOneWithoutProductVariantNestedInput
     printJobs?: PrintJobUncheckedUpdateManyWithoutProductVariantNestedInput
@@ -42716,6 +42896,9 @@ export namespace Prisma {
     status?: string
     createdAt?: Date | string
     updatedAt?: Date | string
+    lastActedBy?: string | null
+    lastActedAt?: Date | string | null
+    lastAction?: string | null
     product: ProductCreateNestedOneWithoutVariantsInput
     unitBarcodes?: UnitBarcodeCreateNestedManyWithoutProductVariantInput
     inventory?: InventoryCreateNestedOneWithoutProductVariantInput
@@ -42737,6 +42920,9 @@ export namespace Prisma {
     status?: string
     createdAt?: Date | string
     updatedAt?: Date | string
+    lastActedBy?: string | null
+    lastActedAt?: Date | string | null
+    lastAction?: string | null
     unitBarcodes?: UnitBarcodeUncheckedCreateNestedManyWithoutProductVariantInput
     inventory?: InventoryUncheckedCreateNestedOneWithoutProductVariantInput
     transactions?: InventoryTransactionUncheckedCreateNestedManyWithoutProductVariantInput
@@ -42771,6 +42957,9 @@ export namespace Prisma {
     status?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    lastActedBy?: NullableStringFieldUpdateOperationsInput | string | null
+    lastActedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    lastAction?: NullableStringFieldUpdateOperationsInput | string | null
     product?: ProductUpdateOneRequiredWithoutVariantsNestedInput
     unitBarcodes?: UnitBarcodeUpdateManyWithoutProductVariantNestedInput
     inventory?: InventoryUpdateOneWithoutProductVariantNestedInput
@@ -42791,6 +42980,9 @@ export namespace Prisma {
     status?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    lastActedBy?: NullableStringFieldUpdateOperationsInput | string | null
+    lastActedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    lastAction?: NullableStringFieldUpdateOperationsInput | string | null
     unitBarcodes?: UnitBarcodeUncheckedUpdateManyWithoutProductVariantNestedInput
     inventory?: InventoryUncheckedUpdateOneWithoutProductVariantNestedInput
     transactions?: InventoryTransactionUncheckedUpdateManyWithoutProductVariantNestedInput
@@ -43715,6 +43907,9 @@ export namespace Prisma {
     status?: string
     createdAt?: Date | string
     updatedAt?: Date | string
+    lastActedBy?: string | null
+    lastActedAt?: Date | string | null
+    lastAction?: string | null
     product: ProductCreateNestedOneWithoutVariantsInput
     unitBarcodes?: UnitBarcodeCreateNestedManyWithoutProductVariantInput
     inventory?: InventoryCreateNestedOneWithoutProductVariantInput
@@ -43736,6 +43931,9 @@ export namespace Prisma {
     status?: string
     createdAt?: Date | string
     updatedAt?: Date | string
+    lastActedBy?: string | null
+    lastActedAt?: Date | string | null
+    lastAction?: string | null
     unitBarcodes?: UnitBarcodeUncheckedCreateNestedManyWithoutProductVariantInput
     inventory?: InventoryUncheckedCreateNestedOneWithoutProductVariantInput
     transactions?: InventoryTransactionUncheckedCreateNestedManyWithoutProductVariantInput
@@ -43854,6 +44052,9 @@ export namespace Prisma {
     status?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    lastActedBy?: NullableStringFieldUpdateOperationsInput | string | null
+    lastActedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    lastAction?: NullableStringFieldUpdateOperationsInput | string | null
     product?: ProductUpdateOneRequiredWithoutVariantsNestedInput
     unitBarcodes?: UnitBarcodeUpdateManyWithoutProductVariantNestedInput
     inventory?: InventoryUpdateOneWithoutProductVariantNestedInput
@@ -43874,6 +44075,9 @@ export namespace Prisma {
     status?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    lastActedBy?: NullableStringFieldUpdateOperationsInput | string | null
+    lastActedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    lastAction?: NullableStringFieldUpdateOperationsInput | string | null
     unitBarcodes?: UnitBarcodeUncheckedUpdateManyWithoutProductVariantNestedInput
     inventory?: InventoryUncheckedUpdateOneWithoutProductVariantNestedInput
     transactions?: InventoryTransactionUncheckedUpdateManyWithoutProductVariantNestedInput
@@ -44377,6 +44581,9 @@ export namespace Prisma {
     status?: string
     createdAt?: Date | string
     updatedAt?: Date | string
+    lastActedBy?: string | null
+    lastActedAt?: Date | string | null
+    lastAction?: string | null
     product: ProductCreateNestedOneWithoutVariantsInput
     unitBarcodes?: UnitBarcodeCreateNestedManyWithoutProductVariantInput
     inventory?: InventoryCreateNestedOneWithoutProductVariantInput
@@ -44398,6 +44605,9 @@ export namespace Prisma {
     status?: string
     createdAt?: Date | string
     updatedAt?: Date | string
+    lastActedBy?: string | null
+    lastActedAt?: Date | string | null
+    lastAction?: string | null
     unitBarcodes?: UnitBarcodeUncheckedCreateNestedManyWithoutProductVariantInput
     inventory?: InventoryUncheckedCreateNestedOneWithoutProductVariantInput
     transactions?: InventoryTransactionUncheckedCreateNestedManyWithoutProductVariantInput
@@ -44485,6 +44695,9 @@ export namespace Prisma {
     status?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    lastActedBy?: NullableStringFieldUpdateOperationsInput | string | null
+    lastActedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    lastAction?: NullableStringFieldUpdateOperationsInput | string | null
     product?: ProductUpdateOneRequiredWithoutVariantsNestedInput
     unitBarcodes?: UnitBarcodeUpdateManyWithoutProductVariantNestedInput
     inventory?: InventoryUpdateOneWithoutProductVariantNestedInput
@@ -44505,6 +44718,9 @@ export namespace Prisma {
     status?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    lastActedBy?: NullableStringFieldUpdateOperationsInput | string | null
+    lastActedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    lastAction?: NullableStringFieldUpdateOperationsInput | string | null
     unitBarcodes?: UnitBarcodeUncheckedUpdateManyWithoutProductVariantNestedInput
     inventory?: InventoryUncheckedUpdateOneWithoutProductVariantNestedInput
     transactions?: InventoryTransactionUncheckedUpdateManyWithoutProductVariantNestedInput
@@ -44524,6 +44740,9 @@ export namespace Prisma {
     status?: string
     createdAt?: Date | string
     updatedAt?: Date | string
+    lastActedBy?: string | null
+    lastActedAt?: Date | string | null
+    lastAction?: string | null
     product: ProductCreateNestedOneWithoutVariantsInput
     unitBarcodes?: UnitBarcodeCreateNestedManyWithoutProductVariantInput
     inventory?: InventoryCreateNestedOneWithoutProductVariantInput
@@ -44545,6 +44764,9 @@ export namespace Prisma {
     status?: string
     createdAt?: Date | string
     updatedAt?: Date | string
+    lastActedBy?: string | null
+    lastActedAt?: Date | string | null
+    lastAction?: string | null
     unitBarcodes?: UnitBarcodeUncheckedCreateNestedManyWithoutProductVariantInput
     inventory?: InventoryUncheckedCreateNestedOneWithoutProductVariantInput
     transactions?: InventoryTransactionUncheckedCreateNestedManyWithoutProductVariantInput
@@ -44620,6 +44842,9 @@ export namespace Prisma {
     status?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    lastActedBy?: NullableStringFieldUpdateOperationsInput | string | null
+    lastActedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    lastAction?: NullableStringFieldUpdateOperationsInput | string | null
     product?: ProductUpdateOneRequiredWithoutVariantsNestedInput
     unitBarcodes?: UnitBarcodeUpdateManyWithoutProductVariantNestedInput
     inventory?: InventoryUpdateOneWithoutProductVariantNestedInput
@@ -44640,6 +44865,9 @@ export namespace Prisma {
     status?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    lastActedBy?: NullableStringFieldUpdateOperationsInput | string | null
+    lastActedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    lastAction?: NullableStringFieldUpdateOperationsInput | string | null
     unitBarcodes?: UnitBarcodeUncheckedUpdateManyWithoutProductVariantNestedInput
     inventory?: InventoryUncheckedUpdateOneWithoutProductVariantNestedInput
     transactions?: InventoryTransactionUncheckedUpdateManyWithoutProductVariantNestedInput
@@ -45601,6 +45829,9 @@ export namespace Prisma {
     status?: string
     createdAt?: Date | string
     updatedAt?: Date | string
+    lastActedBy?: string | null
+    lastActedAt?: Date | string | null
+    lastAction?: string | null
   }
 
   export type ProductVariantUpdateWithoutProductInput = {
@@ -45613,6 +45844,9 @@ export namespace Prisma {
     status?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    lastActedBy?: NullableStringFieldUpdateOperationsInput | string | null
+    lastActedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    lastAction?: NullableStringFieldUpdateOperationsInput | string | null
     unitBarcodes?: UnitBarcodeUpdateManyWithoutProductVariantNestedInput
     inventory?: InventoryUpdateOneWithoutProductVariantNestedInput
     transactions?: InventoryTransactionUpdateManyWithoutProductVariantNestedInput
@@ -45632,6 +45866,9 @@ export namespace Prisma {
     status?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    lastActedBy?: NullableStringFieldUpdateOperationsInput | string | null
+    lastActedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    lastAction?: NullableStringFieldUpdateOperationsInput | string | null
     unitBarcodes?: UnitBarcodeUncheckedUpdateManyWithoutProductVariantNestedInput
     inventory?: InventoryUncheckedUpdateOneWithoutProductVariantNestedInput
     transactions?: InventoryTransactionUncheckedUpdateManyWithoutProductVariantNestedInput
@@ -45651,6 +45888,9 @@ export namespace Prisma {
     status?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    lastActedBy?: NullableStringFieldUpdateOperationsInput | string | null
+    lastActedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    lastAction?: NullableStringFieldUpdateOperationsInput | string | null
   }
 
   export type UnitBarcodeCreateManyProductVariantInput = {

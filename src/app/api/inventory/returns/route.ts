@@ -175,18 +175,18 @@ export async function POST(req: Request) {
       });
     }
 
+    const vRec = await prisma.productVariant.findUnique({
+      where: { id: productVariantId },
+      include: { product: true },
+    });
     await writeAudit({
-      action: isDefective ? "STOCK_DEFECT_RECORDED" : "STOCK_RETURN_RESTOCKED",
-      entity: "ProductVariant",
+      action: isDefective ? "RETURN_DEFECTIVE" : "RETURN_RESTOCKED",
+      entity: "VARIANT",
       entityId: productVariantId,
-      details: JSON.stringify({
-        type,
-        quantity: qty,
-        unitBarcode: targetBarcode?.barcode,
-        previousStock: prevStock,
-        newStock,
-        reason: fullNote,
-      }),
+      sku: vRec?.sku,
+      productName: vRec?.product?.name,
+      details: `${isDefective ? "Defective" : "Restocked"} return of ${qty} unit(s) for SKU "${vRec?.sku}": ${fullNote || "Customer return"}`,
+      performedBy: performedBy || "Admin",
     });
 
     return NextResponse.json({

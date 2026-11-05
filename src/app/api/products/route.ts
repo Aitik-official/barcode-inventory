@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { buildSku, buildSlug, ensureUniqueSku, generateUnitBarcodesForVariant } from "@/lib/barcode";
+import { writeAudit, resolveActor } from "@/lib/audit";
 
 export async function GET(req: Request) {
   try {
@@ -187,6 +188,18 @@ export async function POST(req: Request) {
         note: `Initial product stock (${qtyNum} per-unit barcodes created)`,
       });
     }
+
+    // Write audit trail and update SKU last acted info
+    const actor = resolveActor(req, "Admin");
+    await writeAudit({
+      action: "CREATE_PRODUCT",
+      entity: "PRODUCT",
+      entityId: product.id,
+      sku: variant.sku,
+      productName: product.name,
+      details: `Created product "${product.name}" with SKU "${variant.sku}" and ${qtyNum} initial stock units`,
+      performedBy: actor,
+    });
 
     // Return complete product with variant and unit barcodes
     const fullProduct = await prisma.product.findUnique({

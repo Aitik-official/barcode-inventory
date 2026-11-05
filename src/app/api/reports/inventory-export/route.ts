@@ -9,6 +9,7 @@ export async function GET(req: Request) {
     const format = searchParams.get("format"); // "csv" | "json"
     const search = (searchParams.get("search") || "").trim().toLowerCase();
     const statusFilter = searchParams.get("status"); // "ALL" | "IN_STOCK" | "LOW_STOCK" | "OUT_OF_STOCK"
+    const userFilter = searchParams.get("user"); // filter by specific user/actor
 
     const products = await prisma.product.findMany({
       include: {
@@ -22,18 +23,24 @@ export async function GET(req: Request) {
                 status: true,
                 isReturned: true,
                 reason: true,
+                generatedBy: true,
               },
             },
             wasteRecords: {
               select: {
                 quantity: true,
+                recordedBy: true,
               },
             },
             transactions: {
               select: {
                 transactionType: true,
                 quantity: true,
+                performedBy: true,
+                createdAt: true,
               },
+              orderBy: { createdAt: "desc" },
+              take: 5,
             },
           },
         },
@@ -52,6 +59,9 @@ export async function GET(req: Request) {
       damage: number;
       closingStock: number;
       stockStatus: string;
+      lastActedBy: string;
+      lastAction: string;
+      lastActedAt: string;
       offerPrice: number;
       valuation: number;
       category: string;
@@ -108,6 +118,29 @@ export async function GET(req: Request) {
           stockStatus = "Low Stock";
         }
 
+        // 7. Last Acted Person & Action
+        const lastActedBy =
+          v.lastActedBy ||
+          v.transactions?.[0]?.performedBy ||
+          barcodes[0]?.generatedBy ||
+          "Admin";
+        const lastAction =
+          v.lastAction ||
+          v.transactions?.[0]?.transactionType ||
+          "INITIALIZED";
+        const lastActedAtRaw =
+          v.lastActedAt ||
+          v.transactions?.[0]?.createdAt ||
+          v.updatedAt ||
+          prod.updatedAt;
+        const lastActedAt = new Date(lastActedAtRaw).toLocaleString("en-IN", {
+          day: "2-digit",
+          month: "short",
+          year: "numeric",
+          hour: "2-digit",
+          minute: "2-digit",
+        });
+
         const price = prod.offerPrice || v.sellingPrice || 0;
         const valuation = closingStock * price;
 
@@ -121,6 +154,9 @@ export async function GET(req: Request) {
           damage,
           closingStock,
           stockStatus,
+          lastActedBy,
+          lastAction,
+          lastActedAt,
           offerPrice: price,
           valuation,
           category: prod.category?.name || "General",
@@ -128,14 +164,15 @@ export async function GET(req: Request) {
       }
     }
 
-    // Filter by search and status
+    // Filter by search, status, and user
     let filteredRows = rows;
     if (search) {
       filteredRows = filteredRows.filter(
         (r) =>
           r.productName.toLowerCase().includes(search) ||
           r.sku.toLowerCase().includes(search) ||
-          r.category.toLowerCase().includes(search)
+          r.category.toLowerCase().includes(search) ||
+          r.lastActedBy.toLowerCase().includes(search)
       );
     }
     if (statusFilter && statusFilter !== "ALL") {
@@ -146,6 +183,11 @@ export async function GET(req: Request) {
           ? "Low Stock"
           : "In Stock";
       filteredRows = filteredRows.filter((r) => r.stockStatus === targetStatus);
+    }
+    if (userFilter && userFilter !== "ALL") {
+      filteredRows = filteredRows.filter((r) =>
+        r.lastActedBy.toLowerCase().includes(userFilter.toLowerCase())
+      );
     }
 
     // Re-index filtered rows
@@ -163,6 +205,9 @@ export async function GET(req: Request) {
         "Damage",
         "Closing stock",
         "Stock status",
+        "Last Acted By",
+        "Last Action",
+        "Last Acted At",
       ];
 
       const csvLines = [
@@ -178,6 +223,9 @@ export async function GET(req: Request) {
             r.damage,
             r.closingStock,
             `"${r.stockStatus}"`,
+            `"${r.lastActedBy.replace(/"/g, '""')}"`,
+            `"${r.lastAction.replace(/"/g, '""')}"`,
+            `"${r.lastActedAt}"`,
           ].join(",")
         ),
       ];
@@ -207,6 +255,7 @@ export async function GET(req: Request) {
       inStockCount: filteredRows.filter((r) => r.stockStatus === "In Stock").length,
       lowStockCount: filteredRows.filter((r) => r.stockStatus === "Low Stock").length,
       outOfStockCount: filteredRows.filter((r) => r.stockStatus === "Out of Stock").length,
+      distinctUsers: Array.from(new Set(rows.map((r) => r.lastActedBy))).filter(Boolean),
     };
 
     return NextResponse.json({

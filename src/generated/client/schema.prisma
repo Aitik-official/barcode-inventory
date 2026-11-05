@@ -68,6 +68,9 @@ model ProductVariant {
   status         String                 @default("ACTIVE") // ACTIVE | INACTIVE
   createdAt      DateTime               @default(now())
   updatedAt      DateTime               @updatedAt
+  lastActedBy    String?
+  lastActedAt    DateTime?
+  lastAction     String?
   unitBarcodes   UnitBarcode[]
   inventory      Inventory?
   transactions   InventoryTransaction[]
@@ -329,11 +332,16 @@ model AuditLog {
   action      String
   entity      String?
   entityId    String?
+  sku         String?
+  productName String?
   details     String?
   performedBy String   @default("system")
   createdAt   DateTime @default(now())
 
   @@index([createdAt])
+  @@index([sku])
+  @@index([performedBy])
+  @@index([action])
 }
 
 model MarketplaceCredential {

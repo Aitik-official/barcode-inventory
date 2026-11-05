@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { hashPassword, getDefaultPermissionsForRole, RoleType } from "@/lib/permissions";
+import { writeAudit, resolveActor } from "@/lib/audit";
 
 /**
  * GET /api/users
@@ -103,6 +104,15 @@ export async function POST(req: Request) {
       },
     });
 
+    const actor = resolveActor(req, "Admin");
+    await writeAudit({
+      action: "CREATE_USER",
+      entity: "USER",
+      entityId: newUser.id,
+      details: `Created user "${newUser.name}" (${newUser.email}) with role ${assignedRole}`,
+      performedBy: actor,
+    });
+
     return NextResponse.json({
       success: true,
       user: newUser,
@@ -172,6 +182,15 @@ export async function PUT(req: Request) {
       },
     });
 
+    const actor = resolveActor(req, "Admin");
+    await writeAudit({
+      action: "UPDATE_USER",
+      entity: "USER",
+      entityId: id,
+      details: `Updated user "${updated.name}" (${updated.email}): ${Object.keys(updateData).join(", ")}`,
+      performedBy: actor,
+    });
+
     return NextResponse.json({
       success: true,
       user: updated,
@@ -215,6 +234,15 @@ export async function DELETE(req: Request) {
     }
 
     await prisma.user.delete({ where: { id } });
+
+    const actor = resolveActor(req, "Admin");
+    await writeAudit({
+      action: "DELETE_USER",
+      entity: "USER",
+      entityId: id,
+      details: `Deleted user "${user.name}" (${user.email})`,
+      performedBy: actor,
+    });
 
     return NextResponse.json({
       success: true,

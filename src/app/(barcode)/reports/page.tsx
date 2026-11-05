@@ -24,6 +24,7 @@ export default async function ReportsPage() {
                 status: true,
                 isReturned: true,
                 reason: true,
+                generatedBy: true,
               },
             },
             wasteRecords: {
@@ -35,6 +36,8 @@ export default async function ReportsPage() {
               select: {
                 transactionType: true,
                 quantity: true,
+                performedBy: true,
+                createdAt: true,
               },
             },
           },
@@ -99,6 +102,28 @@ export default async function ReportsPage() {
         stockStatus = "Low Stock";
       }
 
+      const lastActedBy =
+        v.lastActedBy ||
+        v.transactions?.[0]?.performedBy ||
+        barcodes[0]?.generatedBy ||
+        "Admin";
+      const lastAction =
+        v.lastAction ||
+        v.transactions?.[0]?.transactionType ||
+        "INITIALIZED";
+      const lastActedAtRaw =
+        v.lastActedAt ||
+        v.transactions?.[0]?.createdAt ||
+        v.updatedAt ||
+        prod.updatedAt;
+      const lastActedAt = new Date(lastActedAtRaw).toLocaleString("en-IN", {
+        day: "2-digit",
+        month: "short",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+
       const price = prod.offerPrice || v.sellingPrice || 0;
       const valuation = closingStock * price;
 
@@ -112,6 +137,9 @@ export default async function ReportsPage() {
         damage,
         closingStock,
         stockStatus,
+        lastActedBy,
+        lastAction,
+        lastActedAt,
         offerPrice: price,
         valuation,
         category: prod.category?.name || "General",

@@ -162,7 +162,10 @@ exports.Prisma.ProductVariantScalarFieldEnum = {
   sellingPrice: 'sellingPrice',
   status: 'status',
   createdAt: 'createdAt',
-  updatedAt: 'updatedAt'
+  updatedAt: 'updatedAt',
+  lastActedBy: 'lastActedBy',
+  lastActedAt: 'lastActedAt',
+  lastAction: 'lastAction'
 };
 
 exports.Prisma.UnitBarcodeScalarFieldEnum = {
@@ -376,6 +379,8 @@ exports.Prisma.AuditLogScalarFieldEnum = {
   action: 'action',
   entity: 'entity',
   entityId: 'entityId',
+  sku: 'sku',
+  productName: 'productName',
   details: 'details',
   performedBy: 'performedBy',
   createdAt: 'createdAt'

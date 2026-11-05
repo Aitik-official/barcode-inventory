@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { writeAudit, resolveActor } from "@/lib/audit";
 
 export async function GET() {
   try {
@@ -75,6 +76,21 @@ export async function POST(req: Request) {
         note: `Stock Waste Write-off: ${qty} units marked as ${reason}`,
         performedBy: "admin",
       },
+    });
+
+    const actor = resolveActor(req, "admin");
+    const vRec = await prisma.productVariant.findUnique({
+      where: { id: productVariantId },
+      include: { product: true },
+    });
+    await writeAudit({
+      action: "WRITE_OFF_WASTE",
+      entity: "VARIANT",
+      entityId: productVariantId,
+      sku: vRec?.sku,
+      productName: vRec?.product?.name,
+      details: `Write-off waste: ${qty} units marked as ${reason} for SKU "${vRec?.sku}"`,
+      performedBy: actor,
     });
 
     return NextResponse.json(waste, { status: 201 });

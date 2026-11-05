@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { generateUnitBarcodesForVariant } from "@/lib/barcode";
+import { writeAudit, resolveActor } from "@/lib/audit";
 
 export async function GET(req: Request) {
   try {
@@ -89,6 +90,21 @@ export async function POST(req: Request) {
       note: note || `Added ${qty} new unit barcodes`,
     });
 
+    const variant = await prisma.productVariant.findUnique({
+      where: { id: productVariantId },
+      include: { product: true },
+    });
+    const actor = resolveActor(req, "Admin");
+    await writeAudit({
+      action: "GENERATE_BARCODES",
+      entity: "BARCODE",
+      entityId: productVariantId,
+      sku: variant?.sku,
+      productName: variant?.product?.name,
+      details: `Generated ${qty} per-unit barcodes for SKU "${variant?.sku}" (${variant?.product?.name})`,
+      performedBy: actor,
+    });
+
     return NextResponse.json({
       message: `Generated ${result.count} new per-unit barcodes`,
       barcodes: result.barcodes,
@@ -140,22 +156,35 @@ export async function DELETE(req: Request) {
       }
 
       const targetIds = unitsToRemove.map((u) => u.id);
+      const targetBarcodes = unitsToRemove.map((u) => u.barcode);
+      const allTargetIdentifiers = Array.from(new Set([...targetIds, ...targetBarcodes]));
       const serialNumbers = unitsToRemove.map((u) => `#${u.serialNumber}`).reverse();
 
       // Unlink any OrderItems or Transactions to prevent relation constraint violations
       await prisma.orderItem.updateMany({
-        where: { unitBarcodeId: { in: targetIds } },
+        where: { unitBarcodeId: { in: allTargetIdentifiers } },
         data: { unitBarcodeId: null },
       });
       await prisma.inventoryTransaction.updateMany({
-        where: { unitBarcodeId: { in: targetIds } },
+        where: { unitBarcodeId: { in: allTargetIdentifiers } },
         data: { unitBarcodeId: null },
       });
 
-      // Delete the unit barcodes
-      await prisma.unitBarcode.deleteMany({
-        where: { id: { in: targetIds } },
-      });
+      // Delete the unit barcodes safely
+      try {
+        await prisma.unitBarcode.deleteMany({
+          where: { id: { in: targetIds } },
+        });
+      } catch (delErr) {
+        console.warn("Mode A deleteMany hit constraint, unlinking and retrying individually:", delErr);
+        await prisma.orderItem.updateMany({
+          where: { unitBarcodeId: { in: allTargetIdentifiers } },
+          data: { unitBarcodeId: null },
+        });
+        for (const uId of targetIds) {
+          await prisma.unitBarcode.deleteMany({ where: { id: uId } }).catch(() => {});
+        }
+      }
 
       // Recalculate available stock
       const availableCount = await prisma.unitBarcode.count({
@@ -194,6 +223,22 @@ export async function DELETE(req: Request) {
         },
       });
 
+      // Log audit
+      const actor = resolveActor(req, "Admin");
+      const vRec = await prisma.productVariant.findUnique({
+        where: { id: productVariantId },
+        include: { product: true },
+      });
+      await writeAudit({
+        action: "REDUCE_STOCK",
+        entity: "BARCODE",
+        entityId: productVariantId,
+        sku: vRec?.sku,
+        productName: vRec?.product?.name,
+        details: `Reduced stock: removed ${unitsToRemove.length} unit barcodes for SKU "${vRec?.sku}"`,
+        performedBy: actor,
+      });
+
       return NextResponse.json({
         success: true,
         message: `Removed ${unitsToRemove.length} unit barcodes. Serial numbers ${serialNumbers.join(", ")} released.`,
@@ -203,10 +248,15 @@ export async function DELETE(req: Request) {
       });
     }
 
-    // Mode B: Delete specific unit barcodes by ID
+    // Mode B: Delete specific unit barcodes by ID or barcode value
     if (idsToDelete.length > 0) {
       const units = await prisma.unitBarcode.findMany({
-        where: { id: { in: idsToDelete } },
+        where: {
+          OR: [
+            { id: { in: idsToDelete } },
+            { barcode: { in: idsToDelete } },
+          ],
+        },
         include: { productVariant: true },
       });
 
@@ -214,22 +264,36 @@ export async function DELETE(req: Request) {
         return NextResponse.json({ error: "No unit barcodes found to delete" }, { status: 404 });
       }
 
+      const targetIds = units.map((u) => u.id);
+      const targetBarcodes = units.map((u) => u.barcode);
+      const allTargetIdentifiers = Array.from(new Set([...targetIds, ...targetBarcodes, ...idsToDelete]));
       const variantIds = Array.from(new Set(units.map((u) => u.productVariantId)));
 
       // Unlink any OrderItems or Transactions to prevent relation constraint violations
       await prisma.orderItem.updateMany({
-        where: { unitBarcodeId: { in: idsToDelete } },
+        where: { unitBarcodeId: { in: allTargetIdentifiers } },
         data: { unitBarcodeId: null },
       });
       await prisma.inventoryTransaction.updateMany({
-        where: { unitBarcodeId: { in: idsToDelete } },
+        where: { unitBarcodeId: { in: allTargetIdentifiers } },
         data: { unitBarcodeId: null },
       });
 
-      // Delete the unit barcodes
-      await prisma.unitBarcode.deleteMany({
-        where: { id: { in: idsToDelete } },
-      });
+      // Delete the unit barcodes safely
+      try {
+        await prisma.unitBarcode.deleteMany({
+          where: { id: { in: targetIds } },
+        });
+      } catch (delErr) {
+        console.warn("Mode B deleteMany hit constraint, unlinking and retrying individually:", delErr);
+        await prisma.orderItem.updateMany({
+          where: { unitBarcodeId: { in: allTargetIdentifiers } },
+          data: { unitBarcodeId: null },
+        });
+        for (const uId of targetIds) {
+          await prisma.unitBarcode.deleteMany({ where: { id: uId } }).catch(() => {});
+        }
+      }
 
       // Recalculate stock for each affected variant
       for (const varId of variantIds) {
@@ -264,6 +328,17 @@ export async function DELETE(req: Request) {
           },
         });
       }
+
+      const actor = resolveActor(req, "Admin");
+      const firstUnit = units[0];
+      await writeAudit({
+        action: "DELETE_BARCODES",
+        entity: "BARCODE",
+        entityId: idsToDelete.join(", "),
+        sku: firstUnit?.productVariant?.sku,
+        details: `Deleted ${units.length} unit barcode(s) manually (${idsToDelete.length} IDs)`,
+        performedBy: actor,
+      });
 
       return NextResponse.json({
         success: true,
@@ -373,6 +448,15 @@ export async function PATCH(req: Request) {
         }
       }
     }
+
+    const actor = resolveActor(req, "Admin");
+    await writeAudit({
+      action: status === "AVAILABLE" ? "REOPEN_BARCODE" : "UPDATE_BARCODE_STATUS",
+      entity: "BARCODE",
+      entityId: targetIds.join(", "),
+      details: `Updated status to ${status} for ${targetIds.length} barcode(s): ${reason || "manual status change"}`,
+      performedBy: actor,
+    });
 
     return NextResponse.json({
       success: true,

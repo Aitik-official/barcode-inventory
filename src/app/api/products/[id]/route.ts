@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { writeAudit, resolveActor } from "@/lib/audit";
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -43,6 +44,17 @@ export async function PATCH(req: NextRequest, { params }: Params) {
         level2Category: true,
         variants: true,
       },
+    });
+
+    const actor = resolveActor(req, "Admin");
+    await writeAudit({
+      action: "UPDATE_PRODUCT",
+      entity: "PRODUCT",
+      entityId: id,
+      productName: updated.name,
+      sku: updated.variants?.[0]?.sku,
+      details: `Quick updated product fields: ${Object.keys(body).join(", ")}`,
+      performedBy: actor,
     });
 
     return NextResponse.json(updated);
@@ -140,6 +152,17 @@ export async function PUT(req: NextRequest, { params }: Params) {
       },
     });
 
+    const actor = resolveActor(req, "Admin");
+    await writeAudit({
+      action: "UPDATE_PRODUCT",
+      entity: "PRODUCT",
+      entityId: id,
+      productName: refreshed?.name,
+      sku: refreshed?.variants?.[0]?.sku,
+      details: `Full updated product "${refreshed?.name}" (SKU: ${refreshed?.variants?.[0]?.sku})`,
+      performedBy: actor,
+    });
+
     return NextResponse.json(refreshed);
   } catch (error: any) {
     console.error("PUT /api/products/[id] error:", error);
@@ -168,14 +191,16 @@ export async function DELETE(_req: NextRequest, { params }: Params) {
       // Find all unit barcodes for these variant IDs
       const unitBarcodes = await prisma.unitBarcode.findMany({
         where: { productVariantId: { in: variantIds } },
-        select: { id: true },
+        select: { id: true, barcode: true },
       });
       const unitBarcodeIds = unitBarcodes.map((u) => u.id);
+      const barcodeStrings = unitBarcodes.map((u) => u.barcode);
+      const allBarcodeIdentifiers = Array.from(new Set([...unitBarcodeIds, ...barcodeStrings]));
 
       // 1. Unlink OrderItems to avoid foreign key / relation constraint violations
-      if (unitBarcodeIds.length > 0) {
+      if (allBarcodeIdentifiers.length > 0) {
         await prisma.orderItem.updateMany({
-          where: { unitBarcodeId: { in: unitBarcodeIds } },
+          where: { unitBarcodeId: { in: allBarcodeIdentifiers } },
           data: { unitBarcodeId: null },
         });
       }
@@ -195,7 +220,7 @@ export async function DELETE(_req: NextRequest, { params }: Params) {
         where: {
           OR: [
             { productVariantId: { in: variantIds } },
-            ...(unitBarcodeIds.length > 0 ? [{ unitBarcodeId: { in: unitBarcodeIds } }] : []),
+            ...(allBarcodeIdentifiers.length > 0 ? [{ unitBarcodeId: { in: allBarcodeIdentifiers } }] : []),
           ],
         },
       });
@@ -213,10 +238,23 @@ export async function DELETE(_req: NextRequest, { params }: Params) {
         where: { productVariantId: { in: variantIds } },
       }).catch(() => {});
 
-      // 5. Delete unit barcodes
-      await prisma.unitBarcode.deleteMany({
-        where: { productVariantId: { in: variantIds } },
-      });
+      // 5. Delete unit barcodes safely
+      try {
+        await prisma.unitBarcode.deleteMany({
+          where: { productVariantId: { in: variantIds } },
+        });
+      } catch (delErr) {
+        console.warn("Product delete: unitBarcode deleteMany error, cleaning up individually...", delErr);
+        if (allBarcodeIdentifiers.length > 0) {
+          await prisma.orderItem.updateMany({
+            where: { unitBarcodeId: { in: allBarcodeIdentifiers } },
+            data: { unitBarcodeId: null },
+          });
+        }
+        for (const uId of unitBarcodeIds) {
+          await prisma.unitBarcode.deleteMany({ where: { id: uId } }).catch(() => {});
+        }
+      }
 
       // 6. Delete inventory records
       await prisma.inventory.deleteMany({
@@ -231,6 +269,16 @@ export async function DELETE(_req: NextRequest, { params }: Params) {
 
     // 8. Delete product
     await prisma.product.delete({ where: { id } });
+
+    const actor = resolveActor(_req, "Admin");
+    await writeAudit({
+      action: "DELETE_PRODUCT",
+      entity: "PRODUCT",
+      entityId: id,
+      productName: product.name,
+      details: `Permanently deleted product "${product.name}" and associated variant(s)`,
+      performedBy: actor,
+    });
 
     return NextResponse.json({ success: true, message: `Product '${product.name}' deleted successfully.` });
   } catch (error: any) {

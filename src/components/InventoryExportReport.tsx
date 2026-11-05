@@ -27,6 +27,9 @@ export interface InventoryExportRow {
   damage: number;
   closingStock: number;
   stockStatus: string;
+  lastActedBy?: string;
+  lastAction?: string;
+  lastActedAt?: string;
   offerPrice?: number;
   valuation?: number;
   category?: string;
@@ -148,6 +151,9 @@ export function InventoryExportReport({
         "Damage",
         "Closing stock",
         "Stock status",
+        "Last Acted By",
+        "Last Action",
+        "Last Acted At",
       ];
 
       const csvLines = [
@@ -163,6 +169,9 @@ export function InventoryExportReport({
             r.damage,
             r.closingStock,
             `"${r.stockStatus}"`,
+            `"${(r.lastActedBy || "Admin").replace(/"/g, '""')}"`,
+            `"${(r.lastAction || "UPDATE").replace(/"/g, '""')}"`,
+            `"${(r.lastActedAt || "").replace(/"/g, '""')}"`,
           ].join(",")
         ),
         // Total summary row at bottom
@@ -175,6 +184,9 @@ export function InventoryExportReport({
           currentSummary.totalReturns,
           currentSummary.totalDamage,
           currentSummary.totalClosingStock,
+          `""`,
+          `""`,
+          `""`,
           `""`,
         ].join(","),
       ];
@@ -468,6 +480,7 @@ export function InventoryExportReport({
                   <th className="p-3 text-right text-rose-900">Damage</th>
                   <th className="p-3 text-right text-emerald-900 bg-emerald-50/50">Closing stock</th>
                   <th className="p-3 text-center min-w-[110px]">Stock status</th>
+                  <th className="p-3 min-w-[150px]">Last Acted By</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 font-normal">
@@ -557,6 +570,27 @@ export function InventoryExportReport({
                           )}
                         </span>
                       </td>
+
+                      {/* 10. Last Acted By */}
+                      <td className="p-3 text-slate-700">
+                        <div className="flex flex-col gap-0.5">
+                          <div className="flex items-center gap-1.5">
+                            <span className="font-bold text-[#0b252c] text-[11px] truncate max-w-[130px]">
+                              {row.lastActedBy || "Admin"}
+                            </span>
+                            {row.lastAction && (
+                              <span className="text-[9.5px] px-1.5 py-0.2 rounded bg-slate-100 font-mono text-slate-600 uppercase border border-slate-200">
+                                {row.lastAction}
+                              </span>
+                            )}
+                          </div>
+                          {row.lastActedAt && (
+                            <span className="text-[10px] text-slate-400 font-mono">
+                              {row.lastActedAt}
+                            </span>
+                          )}
+                        </div>
+                      </td>
                     </tr>
                   );
                 })}
@@ -588,6 +622,7 @@ export function InventoryExportReport({
                   <td className="p-3 text-center text-slate-500 font-normal text-[11px]">
                     {rows.filter((r) => r.stockStatus === "In Stock").length} In Stock
                   </td>
+                  <td className="p-3 text-slate-400 font-mono text-[11px]">—</td>
                 </tr>
               </tfoot>
             </table>
@@ -649,3 +684,4 @@ export function InventoryExportReport({
     </div>
   );
 }
+

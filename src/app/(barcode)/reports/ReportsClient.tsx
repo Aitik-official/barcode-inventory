@@ -9,8 +9,10 @@ import {
   TrendingUp,
   Download,
   FileSpreadsheet,
+  Activity,
 } from "lucide-react";
 import { InventoryExportReport, InventoryExportRow, InventoryExportSummary } from "@/components/InventoryExportReport";
+import { UserActivityTracker } from "@/components/UserActivityTracker";
 
 interface ReportsClientProps {
   stats: {
@@ -32,6 +34,8 @@ export default function ReportsClient({
   initialRows = [],
   initialSummary,
 }: ReportsClientProps) {
+  const [activeTab, setActiveTab] = useState<"INVENTORY" | "AUDIT">("INVENTORY");
+
   // Calculate inventory valuation
   const totalStockValuation = products.reduce((sum, p) => {
     const qty = p.variants?.[0]?.inventory?.quantity || 0;
@@ -46,22 +50,33 @@ export default function ReportsClient({
         <div>
           <h1 className="text-xl font-bold text-[#0b252c] flex items-center gap-2">
             <BarChart3 className="w-5 h-5 text-[#056468]" />
-            <span>Business Reports & Inventory Movement Ledger</span>
+            <span>Business Reports, Inventory Ledger & User Audit</span>
           </h1>
           <p className="text-xs text-[#4a6870] font-normal mt-0.5">
-            Real-time stock reports tracking Opening Stock, Sales, Returns, Damages, Closing Stock, and Stock Valuation.
+            Real-time stock reports tracking Opening Stock, Sales, Returns, Damages, Closing Stock, and complete User Activity Trail.
           </p>
         </div>
 
         <div className="flex items-center gap-2">
-          <a
-            href="/api/reports/inventory-export?format=csv"
-            download
-            className="px-3.5 py-2 bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs rounded-lg transition-all flex items-center gap-1.5 shadow-xs cursor-pointer"
-          >
-            <Download className="w-3.5 h-3.5" />
-            <span>Direct CSV Download</span>
-          </a>
+          {activeTab === "INVENTORY" ? (
+            <a
+              href="/api/reports/inventory-export?format=csv"
+              download
+              className="px-3.5 py-2 bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs rounded-lg transition-all flex items-center gap-1.5 shadow-xs cursor-pointer"
+            >
+              <Download className="w-3.5 h-3.5" />
+              <span>Direct Inventory CSV</span>
+            </a>
+          ) : (
+            <a
+              href="/api/reports/audit-logs?format=csv"
+              download
+              className="px-3.5 py-2 bg-[#056468] hover:bg-[#0b252c] text-white font-bold text-xs rounded-lg transition-all flex items-center gap-1.5 shadow-xs cursor-pointer"
+            >
+              <Download className="w-3.5 h-3.5" />
+              <span>Direct Audit CSV</span>
+            </a>
+          )}
         </div>
       </div>
 
@@ -104,11 +119,44 @@ export default function ReportsClient({
         </div>
       </div>
 
-      {/* Embedded Complete Inventory Export Report Table */}
-      <InventoryExportReport
-        initialRows={initialRows}
-        initialSummary={initialSummary}
-      />
+      {/* Reports Sub-Tab Navigation Bar */}
+      <div className="flex items-center gap-2 border-b border-[#cce7ed] pb-2">
+        <button
+          type="button"
+          onClick={() => setActiveTab("INVENTORY")}
+          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-xs transition-all cursor-pointer ${
+            activeTab === "INVENTORY"
+              ? "bg-[#056468] text-white shadow-xs"
+              : "bg-white text-slate-600 hover:text-slate-900 hover:bg-slate-50 border border-slate-200"
+          }`}
+        >
+          <FileSpreadsheet className="w-4 h-4" />
+          <span>Inventory Movement & Stock Report</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setActiveTab("AUDIT")}
+          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-xs transition-all cursor-pointer ${
+            activeTab === "AUDIT"
+              ? "bg-[#056468] text-white shadow-xs"
+              : "bg-white text-slate-600 hover:text-slate-900 hover:bg-slate-50 border border-slate-200"
+          }`}
+        >
+          <Activity className="w-4 h-4" />
+          <span>User Activity Trail & Audit Tracker</span>
+        </button>
+      </div>
+
+      {/* Render Active Tab Content */}
+      {activeTab === "INVENTORY" ? (
+        <InventoryExportReport
+          initialRows={initialRows}
+          initialSummary={initialSummary}
+        />
+      ) : (
+        <UserActivityTracker />
+      )}
     </div>
   );
 }
