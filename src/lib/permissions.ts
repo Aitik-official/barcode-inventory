@@ -96,7 +96,11 @@ export function hashPassword(password: string): string {
  * Verify hashed password
  */
 export function verifyPassword(password: string, combined: string): boolean {
-  if (!combined || !combined.includes(":")) return false;
+  if (!combined) return false;
+  // Support legacy or seed plaintext password fallback
+  if (!combined.includes(":")) {
+    return password === combined;
+  }
   const [salt, originalHash] = combined.split(":");
   const testHash = crypto.pbkdf2Sync(password, salt, 10000, 64, "sha512").toString("hex");
   return crypto.timingSafeEqual(Buffer.from(originalHash, "hex"), Buffer.from(testHash, "hex"));

@@ -62,6 +62,8 @@ export default function UsersClient({ initialUsers, allPermissions }: Props) {
 
   // Loading & Feedback
   const [isSeeding, setIsSeeding] = useState(false);
+  const [isSavingUser, setIsSavingUser] = useState(false);
+  const [modalError, setModalError] = useState<string | null>(null);
   const [actionFeedback, setActionFeedback] = useState<{ type: "success" | "error" | "info"; message: string } | null>(null);
 
   // Modals
@@ -108,6 +110,7 @@ export default function UsersClient({ initialUsers, allPermissions }: Props) {
   // Open Create Modal
   const handleOpenCreate = (isSuper: boolean = false) => {
     const defaultRole: RoleType = isSuper ? "SUPER_ADMIN" : "STAFF";
+    setModalError(null);
     setEditingUser({
       name: "",
       email: "",
@@ -124,6 +127,7 @@ export default function UsersClient({ initialUsers, allPermissions }: Props) {
 
   // Open Edit Modal
   const handleOpenEdit = (user: UserItem) => {
+    setModalError(null);
     setEditingUser({
       ...user,
       password: "", // blank means don't change
@@ -135,6 +139,8 @@ export default function UsersClient({ initialUsers, allPermissions }: Props) {
   const handleSaveUser = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editingUser) return;
+    setIsSavingUser(true);
+    setModalError(null);
 
     try {
       const method = editingUser.id ? "PUT" : "POST";
@@ -149,15 +155,22 @@ export default function UsersClient({ initialUsers, allPermissions }: Props) {
         showFeedback("success", data.message || "User saved successfully!");
         setIsUserModalOpen(false);
         setEditingUser(null);
+        setModalError(null);
         // Refresh users
         const usersRes = await fetch("/api/users");
         const usersData = await usersRes.json();
         if (usersData.users) setUsers(usersData.users);
       } else {
-        showFeedback("error", data.error || "Failed to save user");
+        const errorMsg = data.error || "Failed to save user";
+        setModalError(errorMsg);
+        showFeedback("error", errorMsg);
       }
     } catch (err: any) {
-      showFeedback("error", err.message || "Network error");
+      const errorMsg = err.message || "Network error";
+      setModalError(errorMsg);
+      showFeedback("error", errorMsg);
+    } finally {
+      setIsSavingUser(false);
     }
   };
 
@@ -661,6 +674,23 @@ export default function UsersClient({ initialUsers, allPermissions }: Props) {
             </div>
 
             <form onSubmit={handleSaveUser} className="mt-4 space-y-4 text-xs">
+              {/* Modal Error Alert */}
+              {modalError && (
+                <div className="p-3.5 rounded-xl bg-rose-50 border border-rose-300 text-rose-900 text-xs font-semibold flex items-center justify-between shadow-xs animate-in fade-in">
+                  <div className="flex items-center gap-2">
+                    <AlertTriangle className="w-4 h-4 text-rose-600 shrink-0" />
+                    <span>{modalError}</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setModalError(null)}
+                    className="text-rose-400 hover:text-rose-700 p-0.5 cursor-pointer"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+              )}
+
               {/* Basic Fields */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
@@ -867,9 +897,15 @@ export default function UsersClient({ initialUsers, allPermissions }: Props) {
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2 rounded-xl bg-[#056468] hover:bg-[#045255] text-white font-bold shadow transition-all active:scale-95"
+                  disabled={isSavingUser}
+                  className="px-5 py-2 rounded-xl bg-[#056468] hover:bg-[#045255] text-white font-bold shadow transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5"
                 >
-                  {editingUser.id ? "Save Changes" : "Create User"}
+                  {isSavingUser && <RefreshCw className="w-3.5 h-3.5 animate-spin" />}
+                  <span>
+                    {isSavingUser
+                      ? (editingUser.id ? "Saving..." : "Creating...")
+                      : (editingUser.id ? "Save Changes" : (editingUser.isSuperAdmin ? "Create Super Admin" : "Create User"))}
+                  </span>
                 </button>
               </div>
             </form>
