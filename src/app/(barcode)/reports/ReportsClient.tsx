@@ -10,9 +10,11 @@ import {
   Download,
   FileSpreadsheet,
   Activity,
+  ShoppingBag,
 } from "lucide-react";
 import { InventoryExportReport, InventoryExportRow, InventoryExportSummary } from "@/components/InventoryExportReport";
 import { UserActivityTracker } from "@/components/UserActivityTracker";
+import { ChannelOrdersReport } from "@/components/ChannelOrdersReport";
 
 interface ReportsClientProps {
   stats: {
@@ -34,7 +36,7 @@ export default function ReportsClient({
   initialRows = [],
   initialSummary,
 }: ReportsClientProps) {
-  const [activeTab, setActiveTab] = useState<"INVENTORY" | "AUDIT">("INVENTORY");
+  const [activeTab, setActiveTab] = useState<"INVENTORY" | "ORDERS" | "AUDIT">("INVENTORY");
 
   // Calculate inventory valuation
   const totalStockValuation = products.reduce((sum, p) => {
@@ -50,10 +52,10 @@ export default function ReportsClient({
         <div>
           <h1 className="text-xl font-bold text-[#0b252c] flex items-center gap-2">
             <BarChart3 className="w-5 h-5 text-[#056468]" />
-            <span>Business Reports, Inventory Ledger & User Audit</span>
+            <span>Business Reports, Inventory Movement & Multi-Channel Ledger</span>
           </h1>
           <p className="text-xs text-[#4a6870] font-normal mt-0.5">
-            Real-time stock reports tracking Opening Stock, Sales, Returns, Damages, Closing Stock, and complete User Activity Trail.
+            Real-time stock reports, Amazon/Flipkart/Walk-in order reports with customizable parameters, and full User Activity audit trail.
           </p>
         </div>
 
@@ -66,6 +68,15 @@ export default function ReportsClient({
             >
               <Download className="w-3.5 h-3.5" />
               <span>Direct Inventory CSV</span>
+            </a>
+          ) : activeTab === "ORDERS" ? (
+            <a
+              href="/api/reports/orders-export?format=csv"
+              download
+              className="px-3.5 py-2 bg-[#056468] hover:bg-[#0b252c] text-white font-bold text-xs rounded-lg transition-all flex items-center gap-1.5 shadow-xs cursor-pointer"
+            >
+              <Download className="w-3.5 h-3.5" />
+              <span>Direct Orders CSV</span>
             </a>
           ) : (
             <a
@@ -120,11 +131,11 @@ export default function ReportsClient({
       </div>
 
       {/* Reports Sub-Tab Navigation Bar */}
-      <div className="flex items-center gap-2 border-b border-[#cce7ed] pb-2">
+      <div className="flex items-center gap-2 border-b border-[#cce7ed] pb-2 overflow-x-auto">
         <button
           type="button"
           onClick={() => setActiveTab("INVENTORY")}
-          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-xs transition-all cursor-pointer ${
+          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-xs transition-all cursor-pointer whitespace-nowrap ${
             activeTab === "INVENTORY"
               ? "bg-[#056468] text-white shadow-xs"
               : "bg-white text-slate-600 hover:text-slate-900 hover:bg-slate-50 border border-slate-200"
@@ -136,8 +147,21 @@ export default function ReportsClient({
 
         <button
           type="button"
+          onClick={() => setActiveTab("ORDERS")}
+          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-xs transition-all cursor-pointer whitespace-nowrap ${
+            activeTab === "ORDERS"
+              ? "bg-[#056468] text-white shadow-xs"
+              : "bg-white text-slate-600 hover:text-slate-900 hover:bg-slate-50 border border-slate-200"
+          }`}
+        >
+          <ShoppingBag className="w-4 h-4" />
+          <span>Orders & Channel Reports (Amazon, Flipkart, Walk-in)</span>
+        </button>
+
+        <button
+          type="button"
           onClick={() => setActiveTab("AUDIT")}
-          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-xs transition-all cursor-pointer ${
+          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-xs transition-all cursor-pointer whitespace-nowrap ${
             activeTab === "AUDIT"
               ? "bg-[#056468] text-white shadow-xs"
               : "bg-white text-slate-600 hover:text-slate-900 hover:bg-slate-50 border border-slate-200"
@@ -154,6 +178,8 @@ export default function ReportsClient({
           initialRows={initialRows}
           initialSummary={initialSummary}
         />
+      ) : activeTab === "ORDERS" ? (
+        <ChannelOrdersReport />
       ) : (
         <UserActivityTracker />
       )}

@@ -16140,6 +16140,8 @@ export namespace Prisma {
     shippingAddress: string | null
     totalAmount: number | null
     status: string | null
+    channel: string | null
+    outBy: string | null
     notes: string | null
     createdAt: Date | null
     updatedAt: Date | null
@@ -16157,6 +16159,8 @@ export namespace Prisma {
     shippingAddress: string | null
     totalAmount: number | null
     status: string | null
+    channel: string | null
+    outBy: string | null
     notes: string | null
     createdAt: Date | null
     updatedAt: Date | null
@@ -16174,6 +16178,8 @@ export namespace Prisma {
     shippingAddress: number
     totalAmount: number
     status: number
+    channel: number
+    outBy: number
     notes: number
     createdAt: number
     updatedAt: number
@@ -16201,6 +16207,8 @@ export namespace Prisma {
     shippingAddress?: true
     totalAmount?: true
     status?: true
+    channel?: true
+    outBy?: true
     notes?: true
     createdAt?: true
     updatedAt?: true
@@ -16218,6 +16226,8 @@ export namespace Prisma {
     shippingAddress?: true
     totalAmount?: true
     status?: true
+    channel?: true
+    outBy?: true
     notes?: true
     createdAt?: true
     updatedAt?: true
@@ -16235,6 +16245,8 @@ export namespace Prisma {
     shippingAddress?: true
     totalAmount?: true
     status?: true
+    channel?: true
+    outBy?: true
     notes?: true
     createdAt?: true
     updatedAt?: true
@@ -16339,6 +16351,8 @@ export namespace Prisma {
     shippingAddress: string | null
     totalAmount: number
     status: string
+    channel: string | null
+    outBy: string | null
     notes: string | null
     createdAt: Date
     updatedAt: Date
@@ -16375,6 +16389,8 @@ export namespace Prisma {
     shippingAddress?: boolean
     totalAmount?: boolean
     status?: boolean
+    channel?: boolean
+    outBy?: boolean
     notes?: boolean
     createdAt?: boolean
     updatedAt?: boolean
@@ -16398,12 +16414,14 @@ export namespace Prisma {
     shippingAddress?: boolean
     totalAmount?: boolean
     status?: boolean
+    channel?: boolean
+    outBy?: boolean
     notes?: boolean
     createdAt?: boolean
     updatedAt?: boolean
   }
 
-  export type OrderOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "orderNumber" | "customerId" | "customerName" | "customerEmail" | "customerPhone" | "company" | "gstin" | "shippingAddress" | "totalAmount" | "status" | "notes" | "createdAt" | "updatedAt", ExtArgs["result"]["order"]>
+  export type OrderOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "orderNumber" | "customerId" | "customerName" | "customerEmail" | "customerPhone" | "company" | "gstin" | "shippingAddress" | "totalAmount" | "status" | "channel" | "outBy" | "notes" | "createdAt" | "updatedAt", ExtArgs["result"]["order"]>
   export type OrderInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     customer?: boolean | Order$customerArgs<ExtArgs>
     items?: boolean | Order$itemsArgs<ExtArgs>
@@ -16430,6 +16448,8 @@ export namespace Prisma {
       shippingAddress: string | null
       totalAmount: number
       status: string
+      channel: string | null
+      outBy: string | null
       notes: string | null
       createdAt: Date
       updatedAt: Date
@@ -16839,6 +16859,8 @@ export namespace Prisma {
     readonly shippingAddress: FieldRef<"Order", 'String'>
     readonly totalAmount: FieldRef<"Order", 'Float'>
     readonly status: FieldRef<"Order", 'String'>
+    readonly channel: FieldRef<"Order", 'String'>
+    readonly outBy: FieldRef<"Order", 'String'>
     readonly notes: FieldRef<"Order", 'String'>
     readonly createdAt: FieldRef<"Order", 'DateTime'>
     readonly updatedAt: FieldRef<"Order", 'DateTime'>
@@ -27166,6 +27188,7 @@ export namespace Prisma {
     trackingNumber: string | null
     courier: string | null
     dispatchedAt: Date | null
+    outBy: string | null
     rawPayload: string | null
     createdAt: Date | null
     updatedAt: Date | null
@@ -27189,6 +27212,7 @@ export namespace Prisma {
     trackingNumber: string | null
     courier: string | null
     dispatchedAt: Date | null
+    outBy: string | null
     rawPayload: string | null
     createdAt: Date | null
     updatedAt: Date | null
@@ -27212,6 +27236,7 @@ export namespace Prisma {
     trackingNumber: number
     courier: number
     dispatchedAt: number
+    outBy: number
     rawPayload: number
     createdAt: number
     updatedAt: number
@@ -27245,6 +27270,7 @@ export namespace Prisma {
     trackingNumber?: true
     courier?: true
     dispatchedAt?: true
+    outBy?: true
     rawPayload?: true
     createdAt?: true
     updatedAt?: true
@@ -27268,6 +27294,7 @@ export namespace Prisma {
     trackingNumber?: true
     courier?: true
     dispatchedAt?: true
+    outBy?: true
     rawPayload?: true
     createdAt?: true
     updatedAt?: true
@@ -27291,6 +27318,7 @@ export namespace Prisma {
     trackingNumber?: true
     courier?: true
     dispatchedAt?: true
+    outBy?: true
     rawPayload?: true
     createdAt?: true
     updatedAt?: true
@@ -27401,6 +27429,7 @@ export namespace Prisma {
     trackingNumber: string | null
     courier: string | null
     dispatchedAt: Date | null
+    outBy: string | null
     rawPayload: string | null
     createdAt: Date
     updatedAt: Date
@@ -27443,6 +27472,7 @@ export namespace Prisma {
     trackingNumber?: boolean
     courier?: boolean
     dispatchedAt?: boolean
+    outBy?: boolean
     rawPayload?: boolean
     createdAt?: boolean
     updatedAt?: boolean
@@ -27471,12 +27501,13 @@ export namespace Prisma {
     trackingNumber?: boolean
     courier?: boolean
     dispatchedAt?: boolean
+    outBy?: boolean
     rawPayload?: boolean
     createdAt?: boolean
     updatedAt?: boolean
   }
 
-  export type MarketplaceOrderOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "credentialId" | "channel" | "channelOrderId" | "orderDate" | "orderStatus" | "fulfillmentChannel" | "buyerName" | "buyerCity" | "buyerState" | "buyerPincode" | "shippingAddress" | "totalAmount" | "currency" | "trackingNumber" | "courier" | "dispatchedAt" | "rawPayload" | "createdAt" | "updatedAt", ExtArgs["result"]["marketplaceOrder"]>
+  export type MarketplaceOrderOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "credentialId" | "channel" | "channelOrderId" | "orderDate" | "orderStatus" | "fulfillmentChannel" | "buyerName" | "buyerCity" | "buyerState" | "buyerPincode" | "shippingAddress" | "totalAmount" | "currency" | "trackingNumber" | "courier" | "dispatchedAt" | "outBy" | "rawPayload" | "createdAt" | "updatedAt", ExtArgs["result"]["marketplaceOrder"]>
   export type MarketplaceOrderInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     credential?: boolean | MarketplaceOrder$credentialArgs<ExtArgs>
     items?: boolean | MarketplaceOrder$itemsArgs<ExtArgs>
@@ -27507,6 +27538,7 @@ export namespace Prisma {
       trackingNumber: string | null
       courier: string | null
       dispatchedAt: Date | null
+      outBy: string | null
       rawPayload: string | null
       createdAt: Date
       updatedAt: Date
@@ -27921,6 +27953,7 @@ export namespace Prisma {
     readonly trackingNumber: FieldRef<"MarketplaceOrder", 'String'>
     readonly courier: FieldRef<"MarketplaceOrder", 'String'>
     readonly dispatchedAt: FieldRef<"MarketplaceOrder", 'DateTime'>
+    readonly outBy: FieldRef<"MarketplaceOrder", 'String'>
     readonly rawPayload: FieldRef<"MarketplaceOrder", 'String'>
     readonly createdAt: FieldRef<"MarketplaceOrder", 'DateTime'>
     readonly updatedAt: FieldRef<"MarketplaceOrder", 'DateTime'>
@@ -31912,6 +31945,8 @@ export namespace Prisma {
     shippingAddress: 'shippingAddress',
     totalAmount: 'totalAmount',
     status: 'status',
+    channel: 'channel',
+    outBy: 'outBy',
     notes: 'notes',
     createdAt: 'createdAt',
     updatedAt: 'updatedAt'
@@ -32093,6 +32128,7 @@ export namespace Prisma {
     trackingNumber: 'trackingNumber',
     courier: 'courier',
     dispatchedAt: 'dispatchedAt',
+    outBy: 'outBy',
     rawPayload: 'rawPayload',
     createdAt: 'createdAt',
     updatedAt: 'updatedAt'
@@ -33353,6 +33389,8 @@ export namespace Prisma {
     shippingAddress?: StringNullableFilter<"Order"> | string | null
     totalAmount?: FloatFilter<"Order"> | number
     status?: StringFilter<"Order"> | string
+    channel?: StringNullableFilter<"Order"> | string | null
+    outBy?: StringNullableFilter<"Order"> | string | null
     notes?: StringNullableFilter<"Order"> | string | null
     createdAt?: DateTimeFilter<"Order"> | Date | string
     updatedAt?: DateTimeFilter<"Order"> | Date | string
@@ -33373,6 +33411,8 @@ export namespace Prisma {
     shippingAddress?: SortOrder
     totalAmount?: SortOrder
     status?: SortOrder
+    channel?: SortOrder
+    outBy?: SortOrder
     notes?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
@@ -33396,6 +33436,8 @@ export namespace Prisma {
     shippingAddress?: StringNullableFilter<"Order"> | string | null
     totalAmount?: FloatFilter<"Order"> | number
     status?: StringFilter<"Order"> | string
+    channel?: StringNullableFilter<"Order"> | string | null
+    outBy?: StringNullableFilter<"Order"> | string | null
     notes?: StringNullableFilter<"Order"> | string | null
     createdAt?: DateTimeFilter<"Order"> | Date | string
     updatedAt?: DateTimeFilter<"Order"> | Date | string
@@ -33416,6 +33458,8 @@ export namespace Prisma {
     shippingAddress?: SortOrder
     totalAmount?: SortOrder
     status?: SortOrder
+    channel?: SortOrder
+    outBy?: SortOrder
     notes?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
@@ -33441,6 +33485,8 @@ export namespace Prisma {
     shippingAddress?: StringNullableWithAggregatesFilter<"Order"> | string | null
     totalAmount?: FloatWithAggregatesFilter<"Order"> | number
     status?: StringWithAggregatesFilter<"Order"> | string
+    channel?: StringNullableWithAggregatesFilter<"Order"> | string | null
+    outBy?: StringNullableWithAggregatesFilter<"Order"> | string | null
     notes?: StringNullableWithAggregatesFilter<"Order"> | string | null
     createdAt?: DateTimeWithAggregatesFilter<"Order"> | Date | string
     updatedAt?: DateTimeWithAggregatesFilter<"Order"> | Date | string
@@ -34269,6 +34315,7 @@ export namespace Prisma {
     trackingNumber?: StringNullableFilter<"MarketplaceOrder"> | string | null
     courier?: StringNullableFilter<"MarketplaceOrder"> | string | null
     dispatchedAt?: DateTimeNullableFilter<"MarketplaceOrder"> | Date | string | null
+    outBy?: StringNullableFilter<"MarketplaceOrder"> | string | null
     rawPayload?: StringNullableFilter<"MarketplaceOrder"> | string | null
     createdAt?: DateTimeFilter<"MarketplaceOrder"> | Date | string
     updatedAt?: DateTimeFilter<"MarketplaceOrder"> | Date | string
@@ -34294,6 +34341,7 @@ export namespace Prisma {
     trackingNumber?: SortOrder
     courier?: SortOrder
     dispatchedAt?: SortOrder
+    outBy?: SortOrder
     rawPayload?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
@@ -34322,6 +34370,7 @@ export namespace Prisma {
     trackingNumber?: StringNullableFilter<"MarketplaceOrder"> | string | null
     courier?: StringNullableFilter<"MarketplaceOrder"> | string | null
     dispatchedAt?: DateTimeNullableFilter<"MarketplaceOrder"> | Date | string | null
+    outBy?: StringNullableFilter<"MarketplaceOrder"> | string | null
     rawPayload?: StringNullableFilter<"MarketplaceOrder"> | string | null
     createdAt?: DateTimeFilter<"MarketplaceOrder"> | Date | string
     updatedAt?: DateTimeFilter<"MarketplaceOrder"> | Date | string
@@ -34347,6 +34396,7 @@ export namespace Prisma {
     trackingNumber?: SortOrder
     courier?: SortOrder
     dispatchedAt?: SortOrder
+    outBy?: SortOrder
     rawPayload?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
@@ -34378,6 +34428,7 @@ export namespace Prisma {
     trackingNumber?: StringNullableWithAggregatesFilter<"MarketplaceOrder"> | string | null
     courier?: StringNullableWithAggregatesFilter<"MarketplaceOrder"> | string | null
     dispatchedAt?: DateTimeNullableWithAggregatesFilter<"MarketplaceOrder"> | Date | string | null
+    outBy?: StringNullableWithAggregatesFilter<"MarketplaceOrder"> | string | null
     rawPayload?: StringNullableWithAggregatesFilter<"MarketplaceOrder"> | string | null
     createdAt?: DateTimeWithAggregatesFilter<"MarketplaceOrder"> | Date | string
     updatedAt?: DateTimeWithAggregatesFilter<"MarketplaceOrder"> | Date | string
@@ -35952,6 +36003,8 @@ export namespace Prisma {
     shippingAddress?: string | null
     totalAmount?: number
     status?: string
+    channel?: string | null
+    outBy?: string | null
     notes?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
@@ -35972,6 +36025,8 @@ export namespace Prisma {
     shippingAddress?: string | null
     totalAmount?: number
     status?: string
+    channel?: string | null
+    outBy?: string | null
     notes?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
@@ -35989,6 +36044,8 @@ export namespace Prisma {
     shippingAddress?: NullableStringFieldUpdateOperationsInput | string | null
     totalAmount?: FloatFieldUpdateOperationsInput | number
     status?: StringFieldUpdateOperationsInput | string
+    channel?: NullableStringFieldUpdateOperationsInput | string | null
+    outBy?: NullableStringFieldUpdateOperationsInput | string | null
     notes?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -36008,6 +36065,8 @@ export namespace Prisma {
     shippingAddress?: NullableStringFieldUpdateOperationsInput | string | null
     totalAmount?: FloatFieldUpdateOperationsInput | number
     status?: StringFieldUpdateOperationsInput | string
+    channel?: NullableStringFieldUpdateOperationsInput | string | null
+    outBy?: NullableStringFieldUpdateOperationsInput | string | null
     notes?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -36027,6 +36086,8 @@ export namespace Prisma {
     shippingAddress?: string | null
     totalAmount?: number
     status?: string
+    channel?: string | null
+    outBy?: string | null
     notes?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
@@ -36042,6 +36103,8 @@ export namespace Prisma {
     shippingAddress?: NullableStringFieldUpdateOperationsInput | string | null
     totalAmount?: FloatFieldUpdateOperationsInput | number
     status?: StringFieldUpdateOperationsInput | string
+    channel?: NullableStringFieldUpdateOperationsInput | string | null
+    outBy?: NullableStringFieldUpdateOperationsInput | string | null
     notes?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -36058,6 +36121,8 @@ export namespace Prisma {
     shippingAddress?: NullableStringFieldUpdateOperationsInput | string | null
     totalAmount?: FloatFieldUpdateOperationsInput | number
     status?: StringFieldUpdateOperationsInput | string
+    channel?: NullableStringFieldUpdateOperationsInput | string | null
+    outBy?: NullableStringFieldUpdateOperationsInput | string | null
     notes?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -36936,6 +37001,7 @@ export namespace Prisma {
     trackingNumber?: string | null
     courier?: string | null
     dispatchedAt?: Date | string | null
+    outBy?: string | null
     rawPayload?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
@@ -36961,6 +37027,7 @@ export namespace Prisma {
     trackingNumber?: string | null
     courier?: string | null
     dispatchedAt?: Date | string | null
+    outBy?: string | null
     rawPayload?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
@@ -36983,6 +37050,7 @@ export namespace Prisma {
     trackingNumber?: NullableStringFieldUpdateOperationsInput | string | null
     courier?: NullableStringFieldUpdateOperationsInput | string | null
     dispatchedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    outBy?: NullableStringFieldUpdateOperationsInput | string | null
     rawPayload?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -37007,6 +37075,7 @@ export namespace Prisma {
     trackingNumber?: NullableStringFieldUpdateOperationsInput | string | null
     courier?: NullableStringFieldUpdateOperationsInput | string | null
     dispatchedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    outBy?: NullableStringFieldUpdateOperationsInput | string | null
     rawPayload?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -37031,6 +37100,7 @@ export namespace Prisma {
     trackingNumber?: string | null
     courier?: string | null
     dispatchedAt?: Date | string | null
+    outBy?: string | null
     rawPayload?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
@@ -37052,6 +37122,7 @@ export namespace Prisma {
     trackingNumber?: NullableStringFieldUpdateOperationsInput | string | null
     courier?: NullableStringFieldUpdateOperationsInput | string | null
     dispatchedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    outBy?: NullableStringFieldUpdateOperationsInput | string | null
     rawPayload?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -37074,6 +37145,7 @@ export namespace Prisma {
     trackingNumber?: NullableStringFieldUpdateOperationsInput | string | null
     courier?: NullableStringFieldUpdateOperationsInput | string | null
     dispatchedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    outBy?: NullableStringFieldUpdateOperationsInput | string | null
     rawPayload?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -38508,6 +38580,8 @@ export namespace Prisma {
     shippingAddress?: SortOrder
     totalAmount?: SortOrder
     status?: SortOrder
+    channel?: SortOrder
+    outBy?: SortOrder
     notes?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
@@ -38529,6 +38603,8 @@ export namespace Prisma {
     shippingAddress?: SortOrder
     totalAmount?: SortOrder
     status?: SortOrder
+    channel?: SortOrder
+    outBy?: SortOrder
     notes?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
@@ -38546,6 +38622,8 @@ export namespace Prisma {
     shippingAddress?: SortOrder
     totalAmount?: SortOrder
     status?: SortOrder
+    channel?: SortOrder
+    outBy?: SortOrder
     notes?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
@@ -39090,6 +39168,7 @@ export namespace Prisma {
     trackingNumber?: SortOrder
     courier?: SortOrder
     dispatchedAt?: SortOrder
+    outBy?: SortOrder
     rawPayload?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
@@ -39117,6 +39196,7 @@ export namespace Prisma {
     trackingNumber?: SortOrder
     courier?: SortOrder
     dispatchedAt?: SortOrder
+    outBy?: SortOrder
     rawPayload?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
@@ -39140,6 +39220,7 @@ export namespace Prisma {
     trackingNumber?: SortOrder
     courier?: SortOrder
     dispatchedAt?: SortOrder
+    outBy?: SortOrder
     rawPayload?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
@@ -43002,6 +43083,8 @@ export namespace Prisma {
     shippingAddress?: string | null
     totalAmount?: number
     status?: string
+    channel?: string | null
+    outBy?: string | null
     notes?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
@@ -43020,6 +43103,8 @@ export namespace Prisma {
     shippingAddress?: string | null
     totalAmount?: number
     status?: string
+    channel?: string | null
+    outBy?: string | null
     notes?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
@@ -43205,6 +43290,8 @@ export namespace Prisma {
     shippingAddress?: StringNullableFilter<"Order"> | string | null
     totalAmount?: FloatFilter<"Order"> | number
     status?: StringFilter<"Order"> | string
+    channel?: StringNullableFilter<"Order"> | string | null
+    outBy?: StringNullableFilter<"Order"> | string | null
     notes?: StringNullableFilter<"Order"> | string | null
     createdAt?: DateTimeFilter<"Order"> | Date | string
     updatedAt?: DateTimeFilter<"Order"> | Date | string
@@ -43866,6 +43953,8 @@ export namespace Prisma {
     shippingAddress?: string | null
     totalAmount?: number
     status?: string
+    channel?: string | null
+    outBy?: string | null
     notes?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
@@ -43885,6 +43974,8 @@ export namespace Prisma {
     shippingAddress?: string | null
     totalAmount?: number
     status?: string
+    channel?: string | null
+    outBy?: string | null
     notes?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
@@ -44007,6 +44098,8 @@ export namespace Prisma {
     shippingAddress?: NullableStringFieldUpdateOperationsInput | string | null
     totalAmount?: FloatFieldUpdateOperationsInput | number
     status?: StringFieldUpdateOperationsInput | string
+    channel?: NullableStringFieldUpdateOperationsInput | string | null
+    outBy?: NullableStringFieldUpdateOperationsInput | string | null
     notes?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -44025,6 +44118,8 @@ export namespace Prisma {
     shippingAddress?: NullableStringFieldUpdateOperationsInput | string | null
     totalAmount?: FloatFieldUpdateOperationsInput | number
     status?: StringFieldUpdateOperationsInput | string
+    channel?: NullableStringFieldUpdateOperationsInput | string | null
+    outBy?: NullableStringFieldUpdateOperationsInput | string | null
     notes?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -44344,6 +44439,8 @@ export namespace Prisma {
     shippingAddress?: string | null
     totalAmount?: number
     status?: string
+    channel?: string | null
+    outBy?: string | null
     notes?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
@@ -44363,6 +44460,8 @@ export namespace Prisma {
     shippingAddress?: string | null
     totalAmount?: number
     status?: string
+    channel?: string | null
+    outBy?: string | null
     notes?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
@@ -44444,6 +44543,8 @@ export namespace Prisma {
     shippingAddress?: NullableStringFieldUpdateOperationsInput | string | null
     totalAmount?: FloatFieldUpdateOperationsInput | number
     status?: StringFieldUpdateOperationsInput | string
+    channel?: NullableStringFieldUpdateOperationsInput | string | null
+    outBy?: NullableStringFieldUpdateOperationsInput | string | null
     notes?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -44462,6 +44563,8 @@ export namespace Prisma {
     shippingAddress?: NullableStringFieldUpdateOperationsInput | string | null
     totalAmount?: FloatFieldUpdateOperationsInput | number
     status?: StringFieldUpdateOperationsInput | string
+    channel?: NullableStringFieldUpdateOperationsInput | string | null
+    outBy?: NullableStringFieldUpdateOperationsInput | string | null
     notes?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -44981,6 +45084,7 @@ export namespace Prisma {
     trackingNumber?: string | null
     courier?: string | null
     dispatchedAt?: Date | string | null
+    outBy?: string | null
     rawPayload?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
@@ -45004,6 +45108,7 @@ export namespace Prisma {
     trackingNumber?: string | null
     courier?: string | null
     dispatchedAt?: Date | string | null
+    outBy?: string | null
     rawPayload?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
@@ -45093,6 +45198,7 @@ export namespace Prisma {
     trackingNumber?: StringNullableFilter<"MarketplaceOrder"> | string | null
     courier?: StringNullableFilter<"MarketplaceOrder"> | string | null
     dispatchedAt?: DateTimeNullableFilter<"MarketplaceOrder"> | Date | string | null
+    outBy?: StringNullableFilter<"MarketplaceOrder"> | string | null
     rawPayload?: StringNullableFilter<"MarketplaceOrder"> | string | null
     createdAt?: DateTimeFilter<"MarketplaceOrder"> | Date | string
     updatedAt?: DateTimeFilter<"MarketplaceOrder"> | Date | string
@@ -45379,6 +45485,7 @@ export namespace Prisma {
     trackingNumber?: string | null
     courier?: string | null
     dispatchedAt?: Date | string | null
+    outBy?: string | null
     rawPayload?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
@@ -45403,6 +45510,7 @@ export namespace Prisma {
     trackingNumber?: string | null
     courier?: string | null
     dispatchedAt?: Date | string | null
+    outBy?: string | null
     rawPayload?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
@@ -45440,6 +45548,7 @@ export namespace Prisma {
     trackingNumber?: NullableStringFieldUpdateOperationsInput | string | null
     courier?: NullableStringFieldUpdateOperationsInput | string | null
     dispatchedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    outBy?: NullableStringFieldUpdateOperationsInput | string | null
     rawPayload?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -45463,6 +45572,7 @@ export namespace Prisma {
     trackingNumber?: NullableStringFieldUpdateOperationsInput | string | null
     courier?: NullableStringFieldUpdateOperationsInput | string | null
     dispatchedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    outBy?: NullableStringFieldUpdateOperationsInput | string | null
     rawPayload?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -46264,6 +46374,8 @@ export namespace Prisma {
     shippingAddress?: string | null
     totalAmount?: number
     status?: string
+    channel?: string | null
+    outBy?: string | null
     notes?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
@@ -46330,6 +46442,8 @@ export namespace Prisma {
     shippingAddress?: NullableStringFieldUpdateOperationsInput | string | null
     totalAmount?: FloatFieldUpdateOperationsInput | number
     status?: StringFieldUpdateOperationsInput | string
+    channel?: NullableStringFieldUpdateOperationsInput | string | null
+    outBy?: NullableStringFieldUpdateOperationsInput | string | null
     notes?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -46347,6 +46461,8 @@ export namespace Prisma {
     shippingAddress?: NullableStringFieldUpdateOperationsInput | string | null
     totalAmount?: FloatFieldUpdateOperationsInput | number
     status?: StringFieldUpdateOperationsInput | string
+    channel?: NullableStringFieldUpdateOperationsInput | string | null
+    outBy?: NullableStringFieldUpdateOperationsInput | string | null
     notes?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -46364,6 +46480,8 @@ export namespace Prisma {
     shippingAddress?: NullableStringFieldUpdateOperationsInput | string | null
     totalAmount?: FloatFieldUpdateOperationsInput | number
     status?: StringFieldUpdateOperationsInput | string
+    channel?: NullableStringFieldUpdateOperationsInput | string | null
+    outBy?: NullableStringFieldUpdateOperationsInput | string | null
     notes?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -46763,6 +46881,7 @@ export namespace Prisma {
     trackingNumber?: string | null
     courier?: string | null
     dispatchedAt?: Date | string | null
+    outBy?: string | null
     rawPayload?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
@@ -46832,6 +46951,7 @@ export namespace Prisma {
     trackingNumber?: NullableStringFieldUpdateOperationsInput | string | null
     courier?: NullableStringFieldUpdateOperationsInput | string | null
     dispatchedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    outBy?: NullableStringFieldUpdateOperationsInput | string | null
     rawPayload?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -46854,6 +46974,7 @@ export namespace Prisma {
     trackingNumber?: NullableStringFieldUpdateOperationsInput | string | null
     courier?: NullableStringFieldUpdateOperationsInput | string | null
     dispatchedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    outBy?: NullableStringFieldUpdateOperationsInput | string | null
     rawPayload?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -46876,6 +46997,7 @@ export namespace Prisma {
     trackingNumber?: NullableStringFieldUpdateOperationsInput | string | null
     courier?: NullableStringFieldUpdateOperationsInput | string | null
     dispatchedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    outBy?: NullableStringFieldUpdateOperationsInput | string | null
     rawPayload?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string

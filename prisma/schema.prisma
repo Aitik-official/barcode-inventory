@@ -231,6 +231,8 @@ model Order {
   shippingAddress String?
   totalAmount     Float       @default(0)
   status          String      @default("Order Placed") // Order Placed | Confirmed | Processing | Shipped | Delivered | Cancelled
+  channel         String?     // AMAZON | FLIPKART | MEESHO | POS | WEBSITE
+  outBy           String?     // Staff or Admin who dispatched / packed / completed the order
   notes           String?
   createdAt       DateTime    @default(now())
   updatedAt       DateTime    @updatedAt
@@ -407,6 +409,7 @@ model MarketplaceOrder {
   trackingNumber     String?
   courier            String?
   dispatchedAt       DateTime?
+  outBy              String?                // Staff or Admin who dispatched / packed the order
   rawPayload         String?
   createdAt          DateTime               @default(now())
   updatedAt          DateTime               @updatedAt

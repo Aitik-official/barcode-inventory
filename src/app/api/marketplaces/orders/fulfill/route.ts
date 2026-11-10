@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { resolveActor } from "@/lib/audit";
 import { pushAmazonInventoryStock } from "@/lib/amazonSpApi";
 import { pushFlipkartInventoryStock } from "@/lib/flipkartApi";
 
@@ -113,6 +114,7 @@ export async function POST(req: Request) {
     });
 
     const allScanned = updatedOrder?.items.every((i) => i.id === orderItemId ? true : !!i.scannedBarcode);
+    const actor = resolveActor(req, "Admin");
 
     if (allScanned) {
       await prisma.marketplaceOrder.update({
@@ -120,6 +122,7 @@ export async function POST(req: Request) {
         data: {
           orderStatus: "SHIPPED",
           dispatchedAt: new Date(),
+          outBy: actor,
           trackingNumber: trackingNumber || order.trackingNumber || `TRK${Date.now().toString().slice(-8)}`,
           courier: courier || order.courier || (order.channel === "AMAZON" ? "Amazon ATS" : "Ekart Logistics"),
         },

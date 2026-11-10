@@ -291,6 +291,8 @@ exports.Prisma.OrderScalarFieldEnum = {
   shippingAddress: 'shippingAddress',
   totalAmount: 'totalAmount',
   status: 'status',
+  channel: 'channel',
+  outBy: 'outBy',
   notes: 'notes',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
@@ -442,6 +444,7 @@ exports.Prisma.MarketplaceOrderScalarFieldEnum = {
   trackingNumber: 'trackingNumber',
   courier: 'courier',
   dispatchedAt: 'dispatchedAt',
+  outBy: 'outBy',
   rawPayload: 'rawPayload',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'

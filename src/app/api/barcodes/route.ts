@@ -161,14 +161,23 @@ export async function DELETE(req: Request) {
       const serialNumbers = unitsToRemove.map((u) => `#${u.serialNumber}`).reverse();
 
       // Unlink any OrderItems or Transactions to prevent relation constraint violations
-      await prisma.orderItem.updateMany({
-        where: { unitBarcodeId: { in: allTargetIdentifiers } },
-        data: { unitBarcodeId: null },
-      });
-      await prisma.inventoryTransaction.updateMany({
-        where: { unitBarcodeId: { in: allTargetIdentifiers } },
-        data: { unitBarcodeId: null },
-      });
+      try {
+        await prisma.orderItem.updateMany({
+          where: { unitBarcodeId: { in: allTargetIdentifiers } },
+          data: { unitBarcodeId: null },
+        });
+      } catch (e) {
+        console.warn("Could not bulk unlink order items:", e);
+      }
+
+      try {
+        await prisma.inventoryTransaction.updateMany({
+          where: { unitBarcodeId: { in: allTargetIdentifiers } },
+          data: { unitBarcodeId: null },
+        });
+      } catch (e) {
+        console.warn("Could not bulk unlink transactions:", e);
+      }
 
       // Delete the unit barcodes safely
       try {
@@ -180,9 +189,13 @@ export async function DELETE(req: Request) {
         await prisma.orderItem.updateMany({
           where: { unitBarcodeId: { in: allTargetIdentifiers } },
           data: { unitBarcodeId: null },
-        });
+        }).catch(() => {});
         for (const uId of targetIds) {
-          await prisma.unitBarcode.deleteMany({ where: { id: uId } }).catch(() => {});
+          try {
+            await prisma.unitBarcode.delete({ where: { id: uId } });
+          } catch {
+            await prisma.unitBarcode.deleteMany({ where: { id: uId } }).catch(() => {});
+          }
         }
       }
 
@@ -270,14 +283,23 @@ export async function DELETE(req: Request) {
       const variantIds = Array.from(new Set(units.map((u) => u.productVariantId)));
 
       // Unlink any OrderItems or Transactions to prevent relation constraint violations
-      await prisma.orderItem.updateMany({
-        where: { unitBarcodeId: { in: allTargetIdentifiers } },
-        data: { unitBarcodeId: null },
-      });
-      await prisma.inventoryTransaction.updateMany({
-        where: { unitBarcodeId: { in: allTargetIdentifiers } },
-        data: { unitBarcodeId: null },
-      });
+      try {
+        await prisma.orderItem.updateMany({
+          where: { unitBarcodeId: { in: allTargetIdentifiers } },
+          data: { unitBarcodeId: null },
+        });
+      } catch (e) {
+        console.warn("Could not bulk unlink order items:", e);
+      }
+
+      try {
+        await prisma.inventoryTransaction.updateMany({
+          where: { unitBarcodeId: { in: allTargetIdentifiers } },
+          data: { unitBarcodeId: null },
+        });
+      } catch (e) {
+        console.warn("Could not bulk unlink transactions:", e);
+      }
 
       // Delete the unit barcodes safely
       try {
@@ -289,9 +311,13 @@ export async function DELETE(req: Request) {
         await prisma.orderItem.updateMany({
           where: { unitBarcodeId: { in: allTargetIdentifiers } },
           data: { unitBarcodeId: null },
-        });
+        }).catch(() => {});
         for (const uId of targetIds) {
-          await prisma.unitBarcode.deleteMany({ where: { id: uId } }).catch(() => {});
+          try {
+            await prisma.unitBarcode.delete({ where: { id: uId } });
+          } catch {
+            await prisma.unitBarcode.deleteMany({ where: { id: uId } }).catch(() => {});
+          }
         }
       }
 

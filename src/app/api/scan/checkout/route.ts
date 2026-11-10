@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { resolveActor } from "@/lib/audit";
 
 export async function POST(req: Request) {
   try {
@@ -248,6 +249,8 @@ export async function POST(req: Request) {
       console.warn("Could not auto-link customer record:", custErr);
     }
 
+    const actor = resolveActor(req, "Admin");
+
     const order = await prisma.order.create({
       data: {
         orderNumber: finalOrderNumber,
@@ -258,6 +261,8 @@ export async function POST(req: Request) {
         shippingAddress: defaultAddress,
         totalAmount: totalSaleAmount,
         status: paymentStatus === "PAID" ? "Confirmed" : "Order Placed",
+        channel: channel || "POS",
+        outBy: actor,
         notes: orderNotes,
         items: {
           create: processedItems.map((item) => ({
@@ -316,6 +321,7 @@ export async function POST(req: Request) {
               shippingAddress: defaultAddress,
               totalAmount: totalSaleAmount,
               orderStatus: "SHIPPED",
+              outBy: actor,
               dispatchedAt: new Date(),
               courier: courier || (channel === "FLIPKART" ? "Ekart Logistics" : "Amazon ATS Express"),
               trackingNumber: trackingNumber || `TRK-${finalOrderNumber}`,

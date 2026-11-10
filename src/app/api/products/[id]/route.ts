@@ -249,10 +249,14 @@ export async function DELETE(_req: NextRequest, { params }: Params) {
           await prisma.orderItem.updateMany({
             where: { unitBarcodeId: { in: allBarcodeIdentifiers } },
             data: { unitBarcodeId: null },
-          });
+          }).catch(() => {});
         }
         for (const uId of unitBarcodeIds) {
-          await prisma.unitBarcode.deleteMany({ where: { id: uId } }).catch(() => {});
+          try {
+            await prisma.unitBarcode.delete({ where: { id: uId } });
+          } catch {
+            await prisma.unitBarcode.deleteMany({ where: { id: uId } }).catch(() => {});
+          }
         }
       }
 
