@@ -27,6 +27,7 @@ import {
   X,
   FileSpreadsheet,
   Settings2,
+  Truck,
 } from "lucide-react";
 import { OrderExportItemRow } from "@/app/api/reports/orders-export/route";
 
@@ -40,6 +41,7 @@ export interface ReportColumnConfig {
 export const AVAILABLE_REPORT_COLUMNS: ReportColumnConfig[] = [
   { key: "customerName", label: "Customer name", description: "Buyer or customer name", defaultEnabled: true },
   { key: "orderId", label: "Order id", description: "Order number or marketplace channel order ID", defaultEnabled: true },
+  { key: "deliveryId", label: "Delivery ID", description: "Courier Delivery ID / Challan / AWB", defaultEnabled: true },
   { key: "date", label: "Date", description: "Order placement / dispatch date", defaultEnabled: true },
   { key: "sku", label: "Sku", description: "Product item SKU code", defaultEnabled: true },
   { key: "amount", label: "Amount", description: "Item sale amount / total price", defaultEnabled: true },
@@ -55,11 +57,11 @@ const DEFAULT_ENABLED_KEYS = AVAILABLE_REPORT_COLUMNS.filter((c) => c.defaultEna
 
 const CHANNEL_OPTIONS = [
   { key: "ALL", label: "All Channels", color: "bg-slate-800 text-white border-slate-700" },
-  { key: "AMAZON", label: "Amazon", color: "bg-amber-600 text-white border-amber-600", badge: "bg-amber-100 text-amber-900 border-amber-300" },
-  { key: "FLIPKART", label: "Flipkart", color: "bg-blue-600 text-white border-blue-600", badge: "bg-blue-100 text-blue-900 border-blue-300" },
-  { key: "POS", label: "Walk-in (POS)", color: "bg-emerald-600 text-white border-emerald-600", badge: "bg-emerald-100 text-emerald-900 border-emerald-300" },
-  { key: "WEBSITE", label: "Website Store", color: "bg-indigo-600 text-white border-indigo-600", badge: "bg-indigo-100 text-indigo-900 border-indigo-300" },
-  { key: "MEESHO", label: "Meesho", color: "bg-fuchsia-600 text-white border-fuchsia-600", badge: "bg-fuchsia-100 text-fuchsia-900 border-fuchsia-300" },
+  { key: "WEBSITE", label: "Website Only", color: "bg-indigo-600 text-white border-indigo-600", badge: "bg-indigo-100 text-indigo-900 border-indigo-300" },
+  { key: "POS", label: "Walk-in Only", color: "bg-emerald-600 text-white border-emerald-600", badge: "bg-emerald-100 text-emerald-900 border-emerald-300" },
+  { key: "AMAZON", label: "Amazon Only", color: "bg-amber-600 text-white border-amber-600", badge: "bg-amber-100 text-amber-900 border-amber-300" },
+  { key: "FLIPKART", label: "Flipkart Only", color: "bg-blue-600 text-white border-blue-600", badge: "bg-blue-100 text-blue-900 border-blue-300" },
+  { key: "MEESHO", label: "Meesho Only", color: "bg-fuchsia-600 text-white border-fuchsia-600", badge: "bg-fuchsia-100 text-fuchsia-900 border-fuchsia-300" },
 ];
 
 export function ChannelOrdersReport() {
@@ -95,7 +97,8 @@ export function ChannelOrdersReport() {
 
   // Filters
   const [search, setSearch] = useState("");
-  const [datePreset, setDatePreset] = useState<"ALL" | "TODAY" | "7DAYS" | "30DAYS" | "THIS_MONTH" | "CUSTOM">("ALL");
+  const [datePreset, setDatePreset] = useState<"ALL" | "TODAY" | "YESTERDAY" | "7DAYS" | "30DAYS" | "THIS_MONTH" | "CUSTOM">("ALL");
+  const [singleDate, setSingleDate] = useState("");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [statusFilter, setStatusFilter] = useState("ALL");
@@ -184,26 +187,78 @@ export function ChannelOrdersReport() {
     if (preset === "ALL") {
       setStartDate("");
       setEndDate("");
+      setSingleDate("");
     } else if (preset === "TODAY") {
       const todayStr = now.toISOString().slice(0, 10);
       setStartDate(todayStr);
       setEndDate(todayStr);
+      setSingleDate(todayStr);
+    } else if (preset === "YESTERDAY") {
+      const yest = new Date();
+      yest.setDate(yest.getDate() - 1);
+      const yestStr = yest.toISOString().slice(0, 10);
+      setStartDate(yestStr);
+      setEndDate(yestStr);
+      setSingleDate(yestStr);
     } else if (preset === "7DAYS") {
       const past = new Date();
       past.setDate(past.getDate() - 7);
       setStartDate(past.toISOString().slice(0, 10));
       setEndDate(now.toISOString().slice(0, 10));
+      setSingleDate("");
     } else if (preset === "30DAYS") {
       const past = new Date();
       past.setDate(past.getDate() - 30);
       setStartDate(past.toISOString().slice(0, 10));
       setEndDate(now.toISOString().slice(0, 10));
+      setSingleDate("");
     } else if (preset === "THIS_MONTH") {
       const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
       setStartDate(firstDay.toISOString().slice(0, 10));
       setEndDate(now.toISOString().slice(0, 10));
+      setSingleDate("");
     }
     setCurrentPage(1);
+  };
+
+  const handleSingleDateChange = (val: string) => {
+    setSingleDate(val);
+    if (val) {
+      setStartDate(val);
+      setEndDate(val);
+      setDatePreset("CUSTOM");
+    } else {
+      setStartDate("");
+      setEndDate("");
+      setDatePreset("ALL");
+    }
+    setCurrentPage(1);
+  };
+
+  const handleDownloadPreset = (preset: "DAILY" | "WEEKLY" | "MONTHLY") => {
+    const now = new Date();
+    let s = "";
+    let e = now.toISOString().slice(0, 10);
+    let label = "daily";
+    if (preset === "DAILY") {
+      s = e;
+      label = "daily";
+    } else if (preset === "WEEKLY") {
+      const past = new Date();
+      past.setDate(past.getDate() - 7);
+      s = past.toISOString().slice(0, 10);
+      label = "weekly";
+    } else if (preset === "MONTHLY") {
+      const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
+      s = firstDay.toISOString().slice(0, 10);
+      label = "monthly";
+    }
+    const params = new URLSearchParams();
+    if (activeChannelsQuery !== "ALL") params.set("channels", activeChannelsQuery);
+    if (s) params.set("startDate", s);
+    if (e) params.set("endDate", e);
+    params.set("format", "csv");
+    window.open(`/api/reports/orders-export?${params.toString()}`, "_blank");
   };
 
   // Toggle multi-channel option
@@ -267,6 +322,7 @@ export function ChannelOrdersReport() {
               if (k === "srNo") return idx + 1;
               if (k === "customerName") return `"${r.customerName.replace(/"/g, '""')}"`;
               if (k === "orderId") return `"${r.orderNumber.replace(/"/g, '""')}"`;
+              if (k === "deliveryId") return `"${(r.deliveryId || "").replace(/"/g, '""')}"`;
               if (k === "date") return `"${r.date}"`;
               if (k === "sku") return `"${r.sku.replace(/"/g, '""')}"`;
               if (k === "amount") return r.amount;
@@ -351,7 +407,7 @@ export function ChannelOrdersReport() {
           </p>
         </div>
 
-        <div className="flex items-center gap-2 shrink-0">
+        <div className="flex items-center gap-2 shrink-0 flex-wrap">
           {/* Settings Button */}
           <button
             type="button"
@@ -360,7 +416,7 @@ export function ChannelOrdersReport() {
             title="Configure which parameters appear in report and export"
           >
             <Settings2 className="w-4 h-4 text-[#056468]" />
-            <span>Report Settings ({selectedColumnKeys.length} Columns)</span>
+            <span>Report Settings ({selectedColumnKeys.length} Cols)</span>
           </button>
 
           <button
@@ -373,14 +429,46 @@ export function ChannelOrdersReport() {
             <span>Print</span>
           </button>
 
+          {/* Quick Frequency Export Buttons */}
+          <button
+            type="button"
+            onClick={() => handleDownloadPreset("DAILY")}
+            className="px-3 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 font-bold text-xs rounded-xl shadow-2xs flex items-center gap-1.5 cursor-pointer transition-all"
+            title="Download Daily Report for Today"
+          >
+            <Download className="w-3.5 h-3.5 text-emerald-700" />
+            <span>Daily CSV</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => handleDownloadPreset("WEEKLY")}
+            className="px-3 py-2 bg-blue-50 hover:bg-blue-100 text-blue-800 border border-blue-300 font-bold text-xs rounded-xl shadow-2xs flex items-center gap-1.5 cursor-pointer transition-all"
+            title="Download Weekly Report for Last 7 Days"
+          >
+            <Download className="w-3.5 h-3.5 text-blue-700" />
+            <span>Weekly CSV</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => handleDownloadPreset("MONTHLY")}
+            className="px-3 py-2 bg-purple-50 hover:bg-purple-100 text-purple-800 border border-purple-300 font-bold text-xs rounded-xl shadow-2xs flex items-center gap-1.5 cursor-pointer transition-all"
+            title="Download Monthly Report for This Month"
+          >
+            <Download className="w-3.5 h-3.5 text-purple-700" />
+            <span>Monthly CSV</span>
+          </button>
+
           <button
             type="button"
             onClick={handleExportCSV}
             disabled={downloading || rows.length === 0}
             className="px-3.5 py-2 bg-[#056468] hover:bg-[#0b252c] text-white font-bold text-xs rounded-xl shadow-xs flex items-center gap-1.5 cursor-pointer transition-all disabled:opacity-50"
+            title="Export CSV matching current on-screen filters"
           >
             <Download className="w-3.5 h-3.5" />
-            <span>{downloading ? "Exporting..." : "Export CSV"}</span>
+            <span>{downloading ? "Exporting..." : "Export Filtered CSV"}</span>
           </button>
         </div>
       </div>
@@ -577,81 +665,133 @@ export function ChannelOrdersReport() {
         )}
       </div>
 
-      {/* 4. Filters & Search Toolbar */}
-      <div className="bg-white border border-[#cce7ed] rounded-xl p-4 shadow-xs flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
-        {/* Search */}
-        <div className="relative flex-1 min-w-[220px]">
-          <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-          <input
-            type="text"
-            value={search}
-            onChange={(e) => {
-              setSearch(e.target.value);
-              setCurrentPage(1);
-            }}
-            placeholder="Search by Customer name, Order ID, SKU, Barcode, or Out by..."
-            className="w-full pl-9 pr-3 py-2 rounded-lg border border-slate-300 text-xs focus:ring-1 focus:ring-[#056468] focus:border-[#056468] text-slate-800"
-          />
-        </div>
-
-        {/* Date Presets */}
-        <div className="flex items-center gap-1.5 overflow-x-auto">
-          {[
-            { key: "ALL", label: "All Time" },
-            { key: "TODAY", label: "Today" },
-            { key: "7DAYS", label: "7 Days" },
-            { key: "30DAYS", label: "30 Days" },
-            { key: "THIS_MONTH", label: "This Month" },
-            { key: "CUSTOM", label: "Custom Date" },
-          ].map((d) => (
-            <button
-              key={d.key}
-              type="button"
-              onClick={() => handleDatePresetChange(d.key as any)}
-              className={`px-2.5 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all cursor-pointer ${
-                datePreset === d.key
-                  ? "bg-[#056468] text-white shadow-2xs font-bold"
-                  : "bg-slate-100 hover:bg-slate-200 text-slate-700"
-              }`}
-            >
-              {d.label}
-            </button>
-          ))}
-        </div>
-
-        {/* Custom Date Inputs if CUSTOM selected */}
-        {datePreset === "CUSTOM" && (
-          <div className="flex items-center gap-1.5">
+      {/* 4. Filters & Search Toolbar with Simple Date Selector */}
+      <div className="bg-white border border-[#cce7ed] rounded-xl p-4 shadow-xs space-y-3">
+        {/* Row 1: Search & Date Presets */}
+        <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
+          {/* Search */}
+          <div className="relative flex-1 min-w-[220px]">
+            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
             <input
-              type="date"
-              value={startDate}
+              type="text"
+              value={search}
               onChange={(e) => {
-                setStartDate(e.target.value);
+                setSearch(e.target.value);
                 setCurrentPage(1);
               }}
-              className="px-2 py-1.5 border border-slate-300 rounded text-xs bg-white text-slate-700"
-            />
-            <span className="text-slate-400 text-xs">to</span>
-            <input
-              type="date"
-              value={endDate}
-              onChange={(e) => {
-                setEndDate(e.target.value);
-                setCurrentPage(1);
-              }}
-              className="px-2 py-1.5 border border-slate-300 rounded text-xs bg-white text-slate-700"
+              placeholder="Search by Customer name, Order ID, Delivery ID, SKU, Barcode, or Out by..."
+              className="w-full pl-9 pr-3 py-2 rounded-lg border border-slate-300 text-xs focus:ring-1 focus:ring-[#056468] focus:border-[#056468] text-slate-800"
             />
           </div>
-        )}
 
-        <button
-          type="button"
-          onClick={fetchReportData}
-          className="p-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 cursor-pointer shrink-0 transition-all"
-          title="Refresh Report Data"
-        >
-          <RotateCcw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
-        </button>
+          {/* Quick Frequency / Period Presets */}
+          <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5">
+            {[
+              { key: "ALL", label: "All Time" },
+              { key: "TODAY", label: "📅 Daily (Today)" },
+              { key: "YESTERDAY", label: "📅 Yesterday" },
+              { key: "7DAYS", label: "📅 Weekly (7 Days)" },
+              { key: "THIS_MONTH", label: "📅 Monthly (This Month)" },
+              { key: "30DAYS", label: "30 Days" },
+              { key: "CUSTOM", label: "Custom Date" },
+            ].map((d) => (
+              <button
+                key={d.key}
+                type="button"
+                onClick={() => handleDatePresetChange(d.key as any)}
+                className={`px-2.5 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all cursor-pointer ${
+                  datePreset === d.key
+                    ? "bg-[#056468] text-white shadow-2xs font-bold"
+                    : "bg-slate-100 hover:bg-slate-200 text-slate-700"
+                }`}
+              >
+                {d.label}
+              </button>
+            ))}
+
+            <button
+              type="button"
+              onClick={fetchReportData}
+              className="p-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 cursor-pointer shrink-0 transition-all ml-1"
+              title="Refresh Report Data"
+            >
+              <RotateCcw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
+            </button>
+          </div>
+        </div>
+
+        {/* Row 2: Simple Date Selector Controls */}
+        <div className="pt-2 border-t border-slate-100 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-slate-50/70 p-3 rounded-lg">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-xs font-bold text-slate-700 flex items-center gap-1">
+              <Calendar className="w-3.5 h-3.5 text-[#056468]" />
+              <span>Simple Date Selector:</span>
+            </span>
+
+            {/* Single Day Date Picker */}
+            <div className="flex items-center gap-1 bg-white px-2 py-1 rounded border border-slate-300">
+              <span className="text-[11px] text-slate-500 font-medium">Single Day:</span>
+              <input
+                type="date"
+                value={singleDate}
+                onChange={(e) => handleSingleDateChange(e.target.value)}
+                className="text-xs font-medium text-slate-800 bg-transparent focus:outline-none"
+                title="Select a specific day for daily report"
+              />
+            </div>
+
+            <span className="text-slate-400 text-xs">or Range:</span>
+
+            {/* Date Range Inputs */}
+            <div className="flex items-center gap-1 bg-white px-2 py-1 rounded border border-slate-300">
+              <span className="text-[11px] text-slate-500 font-medium">From:</span>
+              <input
+                type="date"
+                value={startDate}
+                onChange={(e) => {
+                  setStartDate(e.target.value);
+                  setDatePreset("CUSTOM");
+                  setCurrentPage(1);
+                }}
+                className="text-xs font-medium text-slate-800 bg-transparent focus:outline-none"
+              />
+              <span className="text-slate-400 text-xs px-0.5">to</span>
+              <span className="text-[11px] text-slate-500 font-medium">To:</span>
+              <input
+                type="date"
+                value={endDate}
+                onChange={(e) => {
+                  setEndDate(e.target.value);
+                  setDatePreset("CUSTOM");
+                  setCurrentPage(1);
+                }}
+                className="text-xs font-medium text-slate-800 bg-transparent focus:outline-none"
+              />
+            </div>
+
+            {/* Quick date chips */}
+            {(startDate || endDate) && (
+              <button
+                type="button"
+                onClick={() => handleDatePresetChange("ALL")}
+                className="px-2 py-1 rounded text-xs bg-rose-50 hover:bg-rose-100 text-rose-700 font-semibold border border-rose-200 cursor-pointer flex items-center gap-1"
+                title="Clear date filter"
+              >
+                <X className="w-3 h-3" />
+                <span>Clear Date</span>
+              </button>
+            )}
+          </div>
+
+          {/* Active Period Badge */}
+          <div className="text-[11px] font-semibold text-[#056468] bg-[#e3f2f5] px-2.5 py-1 rounded-md border border-[#cce7ed] shrink-0">
+            {startDate && endDate && startDate === endDate
+              ? `Daily: ${startDate}`
+              : startDate || endDate
+              ? `${startDate || "Beginning"} → ${endDate || "Today"}`
+              : "Showing All Historical Orders"}
+          </div>
+        </div>
       </div>
 
       {/* 5. Main Custom Table */}
@@ -720,6 +860,21 @@ export function ChannelOrdersReport() {
                               <span className="truncate max-w-[150px] block" title={row.orderNumber}>
                                 {row.orderNumber}
                               </span>
+                            </td>
+                          );
+                        }
+
+                        if (col.key === "deliveryId") {
+                          return (
+                            <td key={col.key} className="p-3">
+                              {row.deliveryId ? (
+                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded font-mono text-[11px] font-bold bg-teal-50 text-[#056468] border border-teal-200">
+                                  <Truck className="w-3 h-3 text-[#056468] shrink-0" />
+                                  <span>{row.deliveryId}</span>
+                                </span>
+                              ) : (
+                                <span className="text-slate-400 font-mono text-[11px]">—</span>
+                              )}
                             </td>
                           );
                         }

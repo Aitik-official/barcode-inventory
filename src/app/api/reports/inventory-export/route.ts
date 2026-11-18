@@ -10,6 +10,19 @@ export async function GET(req: Request) {
     const search = (searchParams.get("search") || "").trim().toLowerCase();
     const statusFilter = searchParams.get("status"); // "ALL" | "IN_STOCK" | "LOW_STOCK" | "OUT_OF_STOCK"
     const userFilter = searchParams.get("user"); // filter by specific user/actor
+    const startDateParam = searchParams.get("startDate");
+    const endDateParam = searchParams.get("endDate");
+
+    let txDateFilter: any = undefined;
+    if (startDateParam || endDateParam) {
+      txDateFilter = {};
+      if (startDateParam) txDateFilter.gte = new Date(startDateParam);
+      if (endDateParam) {
+        const end = new Date(endDateParam);
+        end.setHours(23, 59, 59, 999);
+        txDateFilter.lte = end;
+      }
+    }
 
     const products = await prisma.product.findMany({
       include: {
@@ -27,12 +40,15 @@ export async function GET(req: Request) {
               },
             },
             wasteRecords: {
+              where: txDateFilter ? { createdAt: txDateFilter } : undefined,
               select: {
                 quantity: true,
                 recordedBy: true,
+                createdAt: true,
               },
             },
             transactions: {
+              where: txDateFilter ? { createdAt: txDateFilter } : undefined,
               select: {
                 transactionType: true,
                 quantity: true,
@@ -40,7 +56,6 @@ export async function GET(req: Request) {
                 createdAt: true,
               },
               orderBy: { createdAt: "desc" },
-              take: 5,
             },
           },
         },

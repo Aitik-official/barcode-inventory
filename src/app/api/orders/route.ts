@@ -184,6 +184,15 @@ export async function GET(req: NextRequest) {
           { buyerCity: { contains: search, mode: "insensitive" } },
           { shippingAddress: { contains: search, mode: "insensitive" } },
         ];
+      } else if (searchType === "DELIVERY") {
+        orderWhere.OR = [
+          { deliveryId: { contains: search, mode: "insensitive" } },
+          { notes: { contains: search, mode: "insensitive" } },
+        ];
+        mpWhere.OR = [
+          { deliveryId: { contains: search, mode: "insensitive" } },
+          { trackingNumber: { contains: search, mode: "insensitive" } },
+        ];
       } else if (searchType === "BARCODE") {
         orderWhere.items = {
           some: {
@@ -199,6 +208,7 @@ export async function GET(req: NextRequest) {
         // ALL FIELDS
         orderWhere.OR = [
           { orderNumber: { contains: search, mode: "insensitive" } },
+          { deliveryId: { contains: search, mode: "insensitive" } },
           { customerName: { contains: search, mode: "insensitive" } },
           { customerEmail: { contains: search, mode: "insensitive" } },
           { customerPhone: { contains: search, mode: "insensitive" } },
@@ -219,6 +229,7 @@ export async function GET(req: NextRequest) {
 
         mpWhere.OR = [
           { channelOrderId: { contains: search, mode: "insensitive" } },
+          { deliveryId: { contains: search, mode: "insensitive" } },
           { buyerName: { contains: search, mode: "insensitive" } },
           { trackingNumber: { contains: search, mode: "insensitive" } },
           {
@@ -287,6 +298,7 @@ export async function PATCH(req: NextRequest) {
       orderId,
       orderNumber,
       status,
+      deliveryId,
       returnType,
       returnReason,
       customerName,
@@ -356,6 +368,7 @@ export async function PATCH(req: NextRequest) {
         where: { id: localOrder.id },
         data: {
           ...(status ? { status } : {}),
+          ...(deliveryId !== undefined ? { deliveryId } : {}),
           ...(customerName ? { customerName } : {}),
           ...(customerEmail ? { customerEmail } : {}),
           ...(customerPhone !== undefined ? { customerPhone } : {}),
@@ -436,6 +449,7 @@ export async function PATCH(req: NextRequest) {
         where: { id: mOrder.id },
         data: {
           ...(status ? { orderStatus: status } : {}),
+          ...(deliveryId !== undefined ? { deliveryId } : {}),
           ...(customerName ? { buyerName: customerName } : {}),
           ...(buyerCity ? { buyerCity } : {}),
           ...(buyerState ? { buyerState } : {}),

@@ -9,6 +9,7 @@ export async function POST(req: Request) {
       items,
       channel = "POS",
       channelOrderId,
+      deliveryId,
       customerName = "Walk-in Retail Customer",
       customerEmail,
       customerPhone,
@@ -219,7 +220,12 @@ export async function POST(req: Request) {
       }
     }
 
-    const orderNotes = `Channel: ${channel} | Payment Status: ${paymentStatus} | Mode: ${paymentMethod}${
+    const finalDeliveryId =
+      (deliveryId && deliveryId.trim()) ||
+      (trackingNumber && trackingNumber.trim()) ||
+      `DEL-${new Date().getFullYear()}-${finalOrderNumber.replace(/[^0-9]/g, "").slice(-4) || String(Math.floor(1000 + Math.random() * 9000))}`;
+
+    const orderNotes = `Channel: ${channel} | Delivery ID: ${finalDeliveryId} | Payment Status: ${paymentStatus} | Mode: ${paymentMethod}${
       courier ? ` | Courier: ${courier}` : ""
     }${trackingNumber ? ` | AWB: ${trackingNumber}` : ""}${notes ? ` | Notes: ${notes}` : ""}`;
 
@@ -263,6 +269,7 @@ export async function POST(req: Request) {
         status: paymentStatus === "PAID" ? "Confirmed" : "Order Placed",
         channel: channel || "POS",
         outBy: actor,
+        deliveryId: finalDeliveryId,
         notes: orderNotes,
         items: {
           create: processedItems.map((item) => ({
@@ -322,9 +329,10 @@ export async function POST(req: Request) {
               totalAmount: totalSaleAmount,
               orderStatus: "SHIPPED",
               outBy: actor,
+              deliveryId: finalDeliveryId,
               dispatchedAt: new Date(),
               courier: courier || (channel === "FLIPKART" ? "Ekart Logistics" : "Amazon ATS Express"),
-              trackingNumber: trackingNumber || `TRK-${finalOrderNumber}`,
+              trackingNumber: trackingNumber || finalDeliveryId,
               items: {
                 create: processedItems.map((p) => ({
                   channelSku: p.sku,
@@ -347,6 +355,7 @@ export async function POST(req: Request) {
       success: true,
       orderId: order.id,
       orderNumber: order.orderNumber,
+      deliveryId: finalDeliveryId,
       channel,
       customerName: order.customerName,
       paymentStatus,

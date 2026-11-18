@@ -21,6 +21,7 @@ export interface OrderExportItemRow {
   unitPrice: number;
   amount: number;
   unitBarcode?: string | null;
+  deliveryId?: string | null;
   status: string;
   outBy: string;
   courier?: string | null;
@@ -193,6 +194,11 @@ export async function GET(req: Request) {
         year: "numeric",
       });
 
+      const resolvedDeliveryId =
+        ord.deliveryId ||
+        (ord.notes ? ord.notes.match(/Delivery ID:\s*([^\s|]+)/i)?.[1] : null) ||
+        null;
+
       const items = ord.items && ord.items.length > 0 ? ord.items : [];
       if (items.length === 0) {
         // Order without itemized records
@@ -214,6 +220,7 @@ export async function GET(req: Request) {
           unitPrice: ord.totalAmount,
           amount: ord.totalAmount,
           unitBarcode: null,
+          deliveryId: resolvedDeliveryId,
           status: ord.status,
           outBy: outByResolved,
           shippingAddress: ord.shippingAddress,
@@ -238,6 +245,7 @@ export async function GET(req: Request) {
             unitPrice: itm.unitPrice || (itm.totalPrice / (itm.quantity || 1)),
             amount: itm.totalPrice || (itm.unitPrice * (itm.quantity || 1)),
             unitBarcode: itm.unitBarcode?.barcode || null,
+            deliveryId: resolvedDeliveryId,
             status: ord.status,
             outBy: outByResolved,
             shippingAddress: ord.shippingAddress,
@@ -315,6 +323,7 @@ export async function GET(req: Request) {
             unitPrice: mi.itemPrice || 0,
             amount: itemAmt > 0 ? itemAmt : mp.totalAmount,
             unitBarcode: mi.scannedBarcode || null,
+            deliveryId: (mp as any).deliveryId || mp.trackingNumber || null,
             status: mp.orderStatus,
             outBy: outByResolved,
             courier: mp.courier,
@@ -325,7 +334,7 @@ export async function GET(req: Request) {
       }
     }
 
-    // Apply Client Search Filter (matches Customer, Order ID, SKU, Barcode, OutBy, Courier)
+    // Apply Client Search Filter (matches Customer, Order ID, SKU, Barcode, OutBy, Courier, Delivery ID)
     const filteredRows = search
       ? rows.filter(
           (r) =>
@@ -335,6 +344,7 @@ export async function GET(req: Request) {
             r.productName.toLowerCase().includes(search) ||
             r.outBy.toLowerCase().includes(search) ||
             (r.unitBarcode && r.unitBarcode.toLowerCase().includes(search)) ||
+            (r.deliveryId && r.deliveryId.toLowerCase().includes(search)) ||
             (r.company && r.company.toLowerCase().includes(search))
         )
       : rows;
@@ -382,6 +392,7 @@ export async function GET(req: Request) {
         productName: { label: "Product name", getValue: (r) => `"${r.productName.replace(/"/g, '""')}"` },
         quantity: { label: "Quantity", getValue: (r) => r.quantity },
         unitBarcode: { label: "Barcode", getValue: (r) => `"${(r.unitBarcode || "").replace(/"/g, '""')}"` },
+        deliveryId: { label: "Delivery ID", getValue: (r) => `"${(r.deliveryId || "").replace(/"/g, '""')}"` },
         status: { label: "Status", getValue: (r) => `"${r.status}"` },
       };
 

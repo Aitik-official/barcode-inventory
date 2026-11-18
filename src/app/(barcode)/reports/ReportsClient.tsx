@@ -59,25 +59,56 @@ export default function ReportsClient({
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           {activeTab === "INVENTORY" ? (
-            <a
-              href="/api/reports/inventory-export?format=csv"
-              download
-              className="px-3.5 py-2 bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs rounded-lg transition-all flex items-center gap-1.5 shadow-xs cursor-pointer"
-            >
-              <Download className="w-3.5 h-3.5" />
-              <span>Direct Inventory CSV</span>
-            </a>
+            <>
+              <a
+                href={`/api/reports/inventory-export?startDate=${new Date().toISOString().slice(0, 10)}&endDate=${new Date().toISOString().slice(0, 10)}&format=csv`}
+                download
+                className="px-3 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 font-bold text-xs rounded-lg transition-all flex items-center gap-1.5 shadow-2xs cursor-pointer"
+                title="Download today's inventory movement"
+              >
+                <Download className="w-3.5 h-3.5 text-emerald-700" />
+                <span>Daily CSV</span>
+              </a>
+              <a
+                href="/api/reports/inventory-export?format=csv"
+                download
+                className="px-3.5 py-2 bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs rounded-lg transition-all flex items-center gap-1.5 shadow-xs cursor-pointer"
+              >
+                <Download className="w-3.5 h-3.5" />
+                <span>Full Inventory CSV</span>
+              </a>
+            </>
           ) : activeTab === "ORDERS" ? (
-            <a
-              href="/api/reports/orders-export?format=csv"
-              download
-              className="px-3.5 py-2 bg-[#056468] hover:bg-[#0b252c] text-white font-bold text-xs rounded-lg transition-all flex items-center gap-1.5 shadow-xs cursor-pointer"
-            >
-              <Download className="w-3.5 h-3.5" />
-              <span>Direct Orders CSV</span>
-            </a>
+            <>
+              <a
+                href={`/api/reports/orders-export?startDate=${new Date().toISOString().slice(0, 10)}&endDate=${new Date().toISOString().slice(0, 10)}&format=csv`}
+                download
+                className="px-3 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 font-bold text-xs rounded-lg transition-all flex items-center gap-1.5 shadow-2xs cursor-pointer"
+                title="Download today's orders report"
+              >
+                <Download className="w-3.5 h-3.5 text-emerald-700" />
+                <span>Daily Orders CSV</span>
+              </a>
+              <a
+                href={`/api/reports/orders-export?startDate=${new Date(Date.now() - 7 * 86400000).toISOString().slice(0, 10)}&endDate=${new Date().toISOString().slice(0, 10)}&format=csv`}
+                download
+                className="px-3 py-2 bg-blue-50 hover:bg-blue-100 text-blue-800 border border-blue-300 font-bold text-xs rounded-lg transition-all flex items-center gap-1.5 shadow-2xs cursor-pointer"
+                title="Download weekly orders report (last 7 days)"
+              >
+                <Download className="w-3.5 h-3.5 text-blue-700" />
+                <span>Weekly CSV</span>
+              </a>
+              <a
+                href="/api/reports/orders-export?format=csv"
+                download
+                className="px-3.5 py-2 bg-[#056468] hover:bg-[#0b252c] text-white font-bold text-xs rounded-lg transition-all flex items-center gap-1.5 shadow-xs cursor-pointer"
+              >
+                <Download className="w-3.5 h-3.5" />
+                <span>Direct Orders CSV</span>
+              </a>
+            </>
           ) : (
             <a
               href="/api/reports/audit-logs?format=csv"

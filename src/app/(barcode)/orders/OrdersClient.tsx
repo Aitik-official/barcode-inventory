@@ -18,6 +18,7 @@ import {
   Square,
   Search,
   Truck,
+  Calendar,
   ExternalLink,
   PackageCheck,
   CheckCircle2,
@@ -69,6 +70,7 @@ interface UnifiedOrder {
   totalAmount: number;
   status: string;
   createdAt: string | Date;
+  deliveryId?: string;
   trackingNumber?: string;
   courier?: string;
   customerId?: string | null;
@@ -258,10 +260,16 @@ export default function OrdersClient({
   const [editStatus, setEditStatus] = useState<string>("");
   const [editCourier, setEditCourier] = useState<string>("");
   const [editTrackingNumber, setEditTrackingNumber] = useState<string>("");
+  const [editDeliveryId, setEditDeliveryId] = useState<string>("");
   const [editNotes, setEditNotes] = useState<string>("");
   const [editCustomerPhone, setEditCustomerPhone] = useState<string>("");
   const [editCustomerEmail, setEditCustomerEmail] = useState<string>("");
   const [editShippingAddress, setEditShippingAddress] = useState<string>("");
+
+  // Time-based Order Filter Presets
+  const [dateFilter, setDateFilter] = useState<"ALL" | "TODAY" | "7DAYS" | "30DAYS" | "CUSTOM">("ALL");
+  const [customStartDate, setCustomStartDate] = useState("");
+  const [customEndDate, setCustomEndDate] = useState("");
 
   // Create Quotation Modal
   const [quoModalOpen, setQuoModalOpen] = useState(false);
@@ -423,6 +431,10 @@ export default function OrdersClient({
         if (courMatch) extractedCourier = courMatch[1];
       }
 
+      const extractedDeliveryId =
+        (ord as any).deliveryId ||
+        (ord.notes ? ord.notes.match(/Delivery ID:\s*([^\s|]+)/i)?.[1] : undefined);
+
       list.push({
         id: ord.id,
         orderNumber: ord.orderNumber,
@@ -436,6 +448,7 @@ export default function OrdersClient({
         totalAmount: ord.totalAmount || 0,
         status: ord.status || "CONFIRMED",
         createdAt: ord.createdAt,
+        deliveryId: extractedDeliveryId,
         trackingNumber: extractedTracking || undefined,
         courier: extractedCourier || (isPos ? "Store Counter" : undefined),
         customerId: ord.customerId,
@@ -468,6 +481,7 @@ export default function OrdersClient({
         totalAmount: mord.totalAmount || 0,
         status: mord.orderStatus || "UNSHIPPED",
         createdAt: mord.orderDate || mord.createdAt,
+        deliveryId: (mord as any).deliveryId || mord.trackingNumber || undefined,
         trackingNumber: mord.trackingNumber || undefined,
         courier: mord.courier || (isAmazon ? "Amazon ATS Express" : "Ekart Logistics"),
         notes: `Marketplace Order [${mord.channel}] — Fulfillment: ${mord.fulfillmentChannel || "MERCHANT"}`,
@@ -526,6 +540,7 @@ export default function OrdersClient({
           totalAmount: ord.totalAmount || inv.grandTotal || 0,
           status: ord.status || "CONFIRMED",
           createdAt: ord.createdAt || inv.createdAt,
+          deliveryId: (ord as any).deliveryId,
           customerId: ord.customerId,
           notes: ord.notes || "",
           isMarketplace: false,
@@ -600,10 +615,36 @@ export default function OrdersClient({
       if (statusFilter !== "ALL" && ord.status.toUpperCase() !== statusFilter.toUpperCase()) {
         return false;
       }
-      // Universal Instant Search (Matches Product SKU, Title, Order #, Customer, Phone, Email, Barcode, Tracking)
+      // Time-based Order Date Filter
+      if (dateFilter !== "ALL") {
+        const ordDate = new Date(ord.createdAt);
+        const now = new Date();
+        if (dateFilter === "TODAY") {
+          const todayStr = now.toISOString().slice(0, 10);
+          const ordStr = ordDate.toISOString().slice(0, 10);
+          if (ordStr !== todayStr) return false;
+        } else if (dateFilter === "7DAYS") {
+          const past7 = new Date();
+          past7.setDate(past7.getDate() - 7);
+          if (ordDate < past7) return false;
+        } else if (dateFilter === "30DAYS") {
+          const past30 = new Date();
+          past30.setDate(past30.getDate() - 30);
+          if (ordDate < past30) return false;
+        } else if (dateFilter === "CUSTOM") {
+          if (customStartDate && ordDate < new Date(customStartDate)) return false;
+          if (customEndDate) {
+            const end = new Date(customEndDate);
+            end.setHours(23, 59, 59, 999);
+            if (ordDate > end) return false;
+          }
+        }
+      }
+      // Universal Instant Search (Matches Product SKU, Title, Order #, Delivery ID, Customer, Phone, Email, Barcode, Tracking)
       if (searchQuery.trim()) {
         const q = searchQuery.toLowerCase().trim();
         const matchesNum = ord.orderNumber.toLowerCase().includes(q);
+        const matchesDelivery = (ord.deliveryId || "").toLowerCase().includes(q);
         const matchesCust =
           ord.customerName.toLowerCase().includes(q) ||
           (ord.customerPhone || "").toLowerCase().includes(q) ||
@@ -617,13 +658,13 @@ export default function OrdersClient({
             i.title.toLowerCase().includes(q) ||
             (i.unitBarcode || "").toLowerCase().includes(q)
         );
-        if (!matchesNum && !matchesCust && !matchesTracking && !matchesSku) {
+        if (!matchesNum && !matchesCust && !matchesTracking && !matchesSku && !matchesDelivery) {
           return false;
         }
       }
       return true;
     });
-  }, [unifiedOrders, channelBatchFilter, statusFilter, searchQuery]);
+  }, [unifiedOrders, channelBatchFilter, statusFilter, searchQuery, dateFilter, customStartDate, customEndDate]);
 
   // Pagination States
   const [ordersPage, setOrdersPage] = useState(1);
@@ -706,6 +747,7 @@ export default function OrdersClient({
     setEditStatus(ord.status);
     setEditCourier(ord.courier || "");
     setEditTrackingNumber(ord.trackingNumber || "");
+    setEditDeliveryId(ord.deliveryId || "");
     setEditNotes(ord.notes || "");
     setEditCustomerPhone(ord.customerPhone || "");
     setEditCustomerEmail(ord.customerEmail || "");
@@ -856,6 +898,7 @@ export default function OrdersClient({
           status: editStatus,
           courier: editCourier,
           trackingNumber: editTrackingNumber,
+          deliveryId: editDeliveryId,
           notes: editNotes,
           customerPhone: editCustomerPhone,
           customerEmail: editCustomerEmail,
@@ -881,6 +924,7 @@ export default function OrdersClient({
                   orderStatus: editStatus,
                   courier: editCourier,
                   trackingNumber: editTrackingNumber,
+                  deliveryId: editDeliveryId,
                   shippingAddress: editShippingAddress,
                 }
               : m
@@ -893,6 +937,7 @@ export default function OrdersClient({
               ? {
                   ...o,
                   status: editStatus,
+                  deliveryId: editDeliveryId,
                   customerPhone: editCustomerPhone,
                   customerEmail: editCustomerEmail,
                   shippingAddress: editShippingAddress,
@@ -912,6 +957,7 @@ export default function OrdersClient({
               status: editStatus,
               courier: editCourier,
               trackingNumber: editTrackingNumber,
+              deliveryId: editDeliveryId,
               customerPhone: editCustomerPhone,
               customerEmail: editCustomerEmail,
               shippingAddress: editShippingAddress,
@@ -1394,7 +1440,7 @@ export default function OrdersClient({
                       setSearchQuery(e.target.value);
                       setOrdersPage(1);
                     }}
-                    placeholder="Search SKU, Order #, Buyer..."
+                    placeholder="Search SKU, Order #, Delivery ID, Buyer..."
                     className="w-full bg-slate-50 border border-slate-200 rounded-lg pl-8 pr-7 py-1.5 text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#056468]"
                   />
                   {searchQuery && (
@@ -1429,6 +1475,69 @@ export default function OrdersClient({
                   <option value="DELIVERED">Delivered</option>
                   <option value="CANCELLED">Cancelled</option>
                 </select>
+              </div>
+            </div>
+
+            {/* Row 2: Time-based Order Filter Presets (Today, Week, Month, All Time, Custom Range) */}
+            <div className="pt-2 border-t border-slate-100 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2.5">
+              <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5">
+                <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mr-1 shrink-0 flex items-center gap-1">
+                  <Calendar className="w-3 h-3 text-[#056468]" />
+                  <span>Time:</span>
+                </span>
+                {[
+                  { key: "ALL", label: "All Time" },
+                  { key: "TODAY", label: "📅 Today" },
+                  { key: "7DAYS", label: "📅 This Week (7D)" },
+                  { key: "30DAYS", label: "📅 This Month (30D)" },
+                  { key: "CUSTOM", label: "Custom Range" },
+                ].map((d) => (
+                  <button
+                    key={d.key}
+                    type="button"
+                    onClick={() => {
+                      setDateFilter(d.key as any);
+                      setOrdersPage(1);
+                    }}
+                    className={`px-2.5 py-1 rounded-lg text-xs font-semibold whitespace-nowrap transition-all cursor-pointer ${
+                      dateFilter === d.key
+                        ? "bg-[#056468] text-white shadow-2xs font-bold"
+                        : "bg-slate-100 hover:bg-slate-200 text-slate-600"
+                    }`}
+                  >
+                    {d.label}
+                  </button>
+                ))}
+
+                {/* Custom date range picker if CUSTOM selected */}
+                {dateFilter === "CUSTOM" && (
+                  <div className="flex items-center gap-1 bg-white px-2 py-0.5 rounded border border-slate-300 ml-1">
+                    <input
+                      type="date"
+                      value={customStartDate}
+                      onChange={(e) => {
+                        setCustomStartDate(e.target.value);
+                        setOrdersPage(1);
+                      }}
+                      className="text-xs text-slate-800 bg-transparent focus:outline-none"
+                    />
+                    <span className="text-slate-400 text-xs">to</span>
+                    <input
+                      type="date"
+                      value={customEndDate}
+                      onChange={(e) => {
+                        setCustomEndDate(e.target.value);
+                        setOrdersPage(1);
+                      }}
+                      className="text-xs text-slate-800 bg-transparent focus:outline-none"
+                    />
+                  </div>
+                )}
+              </div>
+
+              {/* Showing count */}
+              <div className="text-[11px] text-slate-500 font-medium">
+                Showing <strong className="text-slate-800 font-bold">{filteredOrders.length}</strong> orders
               </div>
             </div>
 
@@ -1601,6 +1710,14 @@ export default function OrdersClient({
                               <Clock className="w-3 h-3 text-slate-400" />
                               {new Date(ord.createdAt).toLocaleDateString()}
                             </span>
+                            {ord.deliveryId && (
+                              <div className="mt-0.5">
+                                <span className="inline-flex items-center gap-1 text-[9.5px] font-mono font-bold text-teal-800 bg-teal-50 border border-teal-200 px-1.5 py-0.5 rounded truncate max-w-[135px]" title={`Delivery ID: ${ord.deliveryId}`}>
+                                  <Truck className="w-2.5 h-2.5 text-teal-600 shrink-0" />
+                                  <span className="truncate">{ord.deliveryId}</span>
+                                </span>
+                              </div>
+                            )}
                             {existingInv && (
                               <button
                                 type="button"
@@ -3057,6 +3174,27 @@ export default function OrdersClient({
                       {selectedDetailOrder.company && (
                         <span className="text-slate-400">({selectedDetailOrder.company})</span>
                       )}
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-500 uppercase">Delivery ID / Tracking ID</label>
+                    <div className="flex items-center gap-1.5 mt-0.5">
+                      <input
+                        type="text"
+                        value={editDeliveryId}
+                        onChange={(e) => setEditDeliveryId(e.target.value)}
+                        placeholder="e.g. DEL-2026-894123"
+                        className="flex-1 bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1 text-xs font-mono font-bold text-[#056468] focus:outline-none focus:border-[#056468]"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setEditDeliveryId(`DEL-${new Date().getFullYear()}-${Math.floor(100000 + Math.random() * 900000)}`)}
+                        className="text-[10px] px-2 py-1 rounded bg-[#056468]/10 text-[#056468] font-bold hover:bg-[#056468]/20 transition-all cursor-pointer whitespace-nowrap"
+                        title="Auto-generate delivery ID"
+                      >
+                        ⚡ Auto
+                      </button>
                     </div>
                   </div>
 

@@ -15,6 +15,7 @@ import {
   XCircle,
   X,
   FileText,
+  Calendar,
 } from "lucide-react";
 
 export interface InventoryExportRow {
@@ -64,16 +65,23 @@ export function InventoryExportReport({
   const [loading, setLoading] = useState<boolean>(!initialRows || initialRows.length === 0);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<"ALL" | "IN_STOCK" | "LOW_STOCK" | "OUT_OF_STOCK">("ALL");
+  const [datePreset, setDatePreset] = useState<"ALL" | "TODAY" | "YESTERDAY" | "7DAYS" | "THIS_MONTH" | "30DAYS" | "CUSTOM">("ALL");
+  const [singleDate, setSingleDate] = useState("");
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
   const [downloading, setDownloading] = useState(false);
 
   // Pagination
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(25);
 
-  const fetchReportData = async () => {
+  const fetchReportData = async (s = startDate, e = endDate) => {
     setLoading(true);
     try {
-      const res = await fetch("/api/reports/inventory-export");
+      const params = new URLSearchParams();
+      if (s) params.set("startDate", s);
+      if (e) params.set("endDate", e);
+      const res = await fetch(`/api/reports/inventory-export?${params.toString()}`);
       const data = await res.json();
       if (res.ok && data.success) {
         setRows(data.rows || []);
@@ -84,6 +92,88 @@ export function InventoryExportReport({
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleDatePresetChange = (preset: typeof datePreset) => {
+    setDatePreset(preset);
+    const now = new Date();
+    let s = "";
+    let e = "";
+    if (preset === "ALL") {
+      s = "";
+      e = "";
+      setSingleDate("");
+    } else if (preset === "TODAY") {
+      const todayStr = now.toISOString().slice(0, 10);
+      s = todayStr;
+      e = todayStr;
+      setSingleDate(todayStr);
+    } else if (preset === "YESTERDAY") {
+      const yest = new Date();
+      yest.setDate(yest.getDate() - 1);
+      const yestStr = yest.toISOString().slice(0, 10);
+      s = yestStr;
+      e = yestStr;
+      setSingleDate(yestStr);
+    } else if (preset === "7DAYS") {
+      const past = new Date();
+      past.setDate(past.getDate() - 7);
+      s = past.toISOString().slice(0, 10);
+      e = now.toISOString().slice(0, 10);
+      setSingleDate("");
+    } else if (preset === "THIS_MONTH") {
+      const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
+      s = firstDay.toISOString().slice(0, 10);
+      e = now.toISOString().slice(0, 10);
+      setSingleDate("");
+    } else if (preset === "30DAYS") {
+      const past = new Date();
+      past.setDate(past.getDate() - 30);
+      s = past.toISOString().slice(0, 10);
+      e = now.toISOString().slice(0, 10);
+      setSingleDate("");
+    }
+    setStartDate(s);
+    setEndDate(e);
+    setCurrentPage(1);
+    fetchReportData(s, e);
+  };
+
+  const handleSingleDateChange = (val: string) => {
+    setSingleDate(val);
+    if (val) {
+      setStartDate(val);
+      setEndDate(val);
+      setDatePreset("CUSTOM");
+      fetchReportData(val, val);
+    } else {
+      setStartDate("");
+      setEndDate("");
+      setDatePreset("ALL");
+      fetchReportData("", "");
+    }
+    setCurrentPage(1);
+  };
+
+  const handleDownloadPreset = (preset: "DAILY" | "WEEKLY" | "MONTHLY") => {
+    const now = new Date();
+    let s = "";
+    let e = now.toISOString().slice(0, 10);
+    if (preset === "DAILY") {
+      s = e;
+    } else if (preset === "WEEKLY") {
+      const past = new Date();
+      past.setDate(past.getDate() - 7);
+      s = past.toISOString().slice(0, 10);
+    } else if (preset === "MONTHLY") {
+      const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
+      s = firstDay.toISOString().slice(0, 10);
+    }
+    const params = new URLSearchParams();
+    if (s) params.set("startDate", s);
+    if (e) params.set("endDate", e);
+    params.set("format", "csv");
+    window.open(`/api/reports/inventory-export?${params.toString()}`, "_blank");
   };
 
   useEffect(() => {
@@ -235,10 +325,10 @@ export function InventoryExportReport({
         </div>
 
         {/* Action Buttons */}
-        <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
+        <div className="flex items-center gap-2 flex-wrap">
           <button
             type="button"
-            onClick={fetchReportData}
+            onClick={() => fetchReportData(startDate, endDate)}
             disabled={loading}
             className="px-3 py-2 bg-white hover:bg-slate-50 text-slate-700 font-semibold text-xs rounded-lg border border-slate-200 transition-all flex items-center gap-1.5 cursor-pointer shadow-2xs"
             title="Refresh inventory counts"
@@ -249,13 +339,43 @@ export function InventoryExportReport({
 
           <button
             type="button"
+            onClick={() => handleDownloadPreset("DAILY")}
+            className="px-3 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 font-bold text-xs rounded-lg shadow-2xs flex items-center gap-1.5 cursor-pointer transition-all"
+            title="Download Daily Inventory Movement Report (Today)"
+          >
+            <Download className="w-3.5 h-3.5 text-emerald-700" />
+            <span>Daily CSV</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => handleDownloadPreset("WEEKLY")}
+            className="px-3 py-2 bg-blue-50 hover:bg-blue-100 text-blue-800 border border-blue-300 font-bold text-xs rounded-lg shadow-2xs flex items-center gap-1.5 cursor-pointer transition-all"
+            title="Download Weekly Inventory Movement Report (7 Days)"
+          >
+            <Download className="w-3.5 h-3.5 text-blue-700" />
+            <span>Weekly CSV</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => handleDownloadPreset("MONTHLY")}
+            className="px-3 py-2 bg-purple-50 hover:bg-purple-100 text-purple-800 border border-purple-300 font-bold text-xs rounded-lg shadow-2xs flex items-center gap-1.5 cursor-pointer transition-all"
+            title="Download Monthly Inventory Movement Report (This Month)"
+          >
+            <Download className="w-3.5 h-3.5 text-purple-700" />
+            <span>Monthly CSV</span>
+          </button>
+
+          <button
+            type="button"
             onClick={() => handleExportCSV("csv")}
             disabled={downloading || filteredRows.length === 0}
             className="px-3.5 py-2 bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs rounded-lg transition-all flex items-center gap-1.5 cursor-pointer shadow-xs disabled:opacity-50"
             title="Export filtered table as CSV file"
           >
             <Download className="w-3.5 h-3.5" />
-            <span>{downloading ? "Exporting..." : "Export CSV"}</span>
+            <span>{downloading ? "Exporting..." : "Export Current CSV"}</span>
           </button>
 
           <button
@@ -266,7 +386,7 @@ export function InventoryExportReport({
             title="Export for Microsoft Excel"
           >
             <FileSpreadsheet className="w-3.5 h-3.5" />
-            <span>Excel Export</span>
+            <span>Excel</span>
           </button>
 
           <button
@@ -276,7 +396,7 @@ export function InventoryExportReport({
             title="Print or Save as PDF"
           >
             <Printer className="w-3.5 h-3.5" />
-            <span>Print / PDF</span>
+            <span>Print</span>
           </button>
         </div>
       </div>
@@ -355,6 +475,103 @@ export function InventoryExportReport({
           <div className="text-[10px] text-slate-500">
             {rows.filter((r) => r.stockStatus === "Low Stock").length} low stock
           </div>
+        </div>
+      </div>
+
+      {/* Date Presets & Simple Date Selector */}
+      <div className="bg-white border border-[#cce7ed] rounded-xl p-3 shadow-2xs space-y-2">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
+          <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5">
+            {[
+              { key: "ALL", label: "All Time" },
+              { key: "TODAY", label: "📅 Daily (Today)" },
+              { key: "YESTERDAY", label: "📅 Yesterday" },
+              { key: "7DAYS", label: "📅 Weekly (7 Days)" },
+              { key: "THIS_MONTH", label: "📅 Monthly (This Month)" },
+              { key: "30DAYS", label: "30 Days" },
+              { key: "CUSTOM", label: "Custom Date" },
+            ].map((d) => (
+              <button
+                key={d.key}
+                type="button"
+                onClick={() => handleDatePresetChange(d.key as any)}
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all cursor-pointer ${
+                  datePreset === d.key
+                    ? "bg-[#056468] text-white shadow-2xs font-bold"
+                    : "bg-slate-100 hover:bg-slate-200 text-slate-700"
+                }`}
+              >
+                {d.label}
+              </button>
+            ))}
+          </div>
+
+          <div className="text-[11px] font-semibold text-[#056468] bg-[#e3f2f5] px-2.5 py-1 rounded-md border border-[#cce7ed] shrink-0">
+            {startDate && endDate && startDate === endDate
+              ? `Daily: ${startDate}`
+              : startDate || endDate
+              ? `${startDate || "Beginning"} → ${endDate || "Today"}`
+              : "All-Time Movement"}
+          </div>
+        </div>
+
+        {/* Inline Date Controls */}
+        <div className="pt-2 border-t border-slate-100 flex flex-wrap items-center gap-2 bg-slate-50/70 p-2.5 rounded-lg">
+          <span className="text-xs font-bold text-slate-700 flex items-center gap-1">
+            <Calendar className="w-3.5 h-3.5 text-[#056468]" />
+            <span>Date Selector:</span>
+          </span>
+
+          <div className="flex items-center gap-1 bg-white px-2 py-1 rounded border border-slate-300">
+            <span className="text-[11px] text-slate-500 font-medium">Single Day:</span>
+            <input
+              type="date"
+              value={singleDate}
+              onChange={(e) => handleSingleDateChange(e.target.value)}
+              className="text-xs font-medium text-slate-800 bg-transparent focus:outline-none"
+            />
+          </div>
+
+          <span className="text-slate-400 text-xs">or Range:</span>
+
+          <div className="flex items-center gap-1 bg-white px-2 py-1 rounded border border-slate-300">
+            <span className="text-[11px] text-slate-500 font-medium">From:</span>
+            <input
+              type="date"
+              value={startDate}
+              onChange={(e) => {
+                setStartDate(e.target.value);
+                setDatePreset("CUSTOM");
+                setCurrentPage(1);
+                fetchReportData(e.target.value, endDate);
+              }}
+              className="text-xs font-medium text-slate-800 bg-transparent focus:outline-none"
+            />
+            <span className="text-slate-400 text-xs px-0.5">to</span>
+            <span className="text-[11px] text-slate-500 font-medium">To:</span>
+            <input
+              type="date"
+              value={endDate}
+              onChange={(e) => {
+                setEndDate(e.target.value);
+                setDatePreset("CUSTOM");
+                setCurrentPage(1);
+                fetchReportData(startDate, e.target.value);
+              }}
+              className="text-xs font-medium text-slate-800 bg-transparent focus:outline-none"
+            />
+          </div>
+
+          {(startDate || endDate) && (
+            <button
+              type="button"
+              onClick={() => handleDatePresetChange("ALL")}
+              className="px-2 py-1 rounded text-xs bg-rose-50 hover:bg-rose-100 text-rose-700 font-semibold border border-rose-200 cursor-pointer flex items-center gap-1"
+            >
+              <X className="w-3 h-3" />
+              <span>Clear Date</span>
+            </button>
+          )}
         </div>
       </div>
 
