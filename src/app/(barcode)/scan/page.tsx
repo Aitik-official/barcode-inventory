@@ -24,6 +24,8 @@ import {
   Tag,
   Hash,
   ShieldCheck,
+  Edit3,
+  RotateCcw,
 } from "lucide-react";
 import {
   PrintShippingInvoiceDialog,
@@ -32,6 +34,7 @@ import {
 
 export default function ScanPosPage() {
   const [scanInput, setScanInput] = useState("");
+  const [scanPriceOverride, setScanPriceOverride] = useState("");
   const [loading, setLoading] = useState(false);
   const [lastLookup, setLastLookup] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
@@ -139,7 +142,16 @@ export default function ScanPosPage() {
         throw new Error(data.error || "Item not found");
       }
 
-      setLastLookup(data);
+      const overrideVal =
+        scanPriceOverride.trim() !== "" ? parseFloat(scanPriceOverride.trim()) : null;
+      const effectivePrice =
+        overrideVal !== null && !isNaN(overrideVal) ? Math.max(0, overrideVal) : (data.price || 0);
+
+      setLastLookup({
+        ...data,
+        price: effectivePrice,
+        originalPrice: data.price || 0,
+      });
 
       // Check if already in cart
       if (data.unitBarcode) {
@@ -163,7 +175,8 @@ export default function ScanPosPage() {
               serialNumber: data.serialNumber,
               sku: data.sku,
               productName: data.productName,
-              price: data.price,
+              price: effectivePrice,
+              originalPrice: data.price || 0,
               unitStatus: data.unitStatus,
             },
           ]);
@@ -171,6 +184,7 @@ export default function ScanPosPage() {
       }
 
       setScanInput("");
+      setScanPriceOverride("");
     } catch (err: any) {
       setError(err.message);
       setScanPromptNotice(null);
@@ -187,7 +201,65 @@ export default function ScanPosPage() {
     }
   };
 
-  const cartTotal = cart.reduce((sum, item) => sum + (item.price || 0), 0);
+  const handleUpdateItemPrice = (index: number, newPriceStr: string) => {
+    const val = newPriceStr === "" ? 0 : parseFloat(newPriceStr);
+    const num = isNaN(val) ? 0 : Math.max(0, val);
+    setCart((prev) =>
+      prev.map((item, i) => (i === index ? { ...item, price: num } : item))
+    );
+    if (lastLookup && cart[index] && cart[index].unitBarcode === lastLookup.unitBarcode) {
+      setLastLookup((prev: any) => (prev ? { ...prev, price: num } : null));
+    }
+  };
+
+  const handleResetItemPrice = (index: number) => {
+    setCart((prev) =>
+      prev.map((item, i) =>
+        i === index ? { ...item, price: item.originalPrice ?? item.price } : item
+      )
+    );
+    if (lastLookup && cart[index] && cart[index].unitBarcode === lastLookup.unitBarcode) {
+      setLastLookup((prev: any) =>
+        prev ? { ...prev, price: prev.originalPrice ?? prev.price } : null
+      );
+    }
+  };
+
+  const handleUpdateLastLookupPrice = (newPriceStr: string) => {
+    const val = newPriceStr === "" ? 0 : parseFloat(newPriceStr);
+    const num = isNaN(val) ? 0 : Math.max(0, val);
+    setLastLookup((prev: any) => (prev ? { ...prev, price: num } : null));
+    if (lastLookup?.unitBarcode) {
+      setCart((prev) =>
+        prev.map((item) =>
+          item.unitBarcode === lastLookup.unitBarcode ? { ...item, price: num } : item
+        )
+      );
+    }
+  };
+
+  const handleResetLastLookupPrice = () => {
+    if (!lastLookup) return;
+    const base = lastLookup.originalPrice ?? lastLookup.price ?? 0;
+    setLastLookup((prev: any) => (prev ? { ...prev, price: base } : null));
+    if (lastLookup.unitBarcode) {
+      setCart((prev) =>
+        prev.map((item) =>
+          item.unitBarcode === lastLookup.unitBarcode ? { ...item, price: base } : item
+        )
+      );
+    }
+  };
+
+  const cartTotal = cart.reduce((sum, item) => sum + (Number(item.price) || 0), 0);
+  const cartOriginalTotal = cart.reduce(
+    (sum, item) => sum + (Number(item.originalPrice ?? item.price) || 0),
+    0
+  );
+  const hasAlteredPrices = cart.some(
+    (item) => typeof item.originalPrice === "number" && Math.abs(item.price - item.originalPrice) > 0.001
+  );
+  const netPriceDiff = cartTotal - cartOriginalTotal;
 
   const handleCompleteSale = async () => {
     if (cart.length === 0) return;
@@ -290,7 +362,7 @@ export default function ScanPosPage() {
               </span>
             </div>
 
-            <div className="flex gap-2">
+            <div className="flex flex-col sm:flex-row gap-2">
               <input
                 ref={inputRef}
                 type="text"
@@ -299,19 +371,53 @@ export default function ScanPosPage() {
                 placeholder="Scan or type unit barcode (e.g. 299420114239)..."
                 className="flex-1 bg-slate-50 border-2 border-[#056468]/60 rounded-xl px-4 py-3 text-lg font-mono font-bold text-[#0b252c] placeholder-slate-400 focus:outline-none focus:border-[#056468]"
               />
+
+              {/* Optional Custom Rate / Pre-scan Price Override */}
+              <div
+                className="flex items-center bg-slate-50 border-2 border-slate-300 rounded-xl px-3 py-2 focus-within:border-[#056468] transition-colors"
+                title="Optional: Enter custom price (lesser or extra) before scanning"
+              >
+                <span className="text-xs font-bold text-slate-500 mr-1.5 flex items-center gap-1">
+                  <Tag className="w-3.5 h-3.5 text-[#056468]" />
+                  ₹
+                </span>
+                <input
+                  type="number"
+                  min="0"
+                  step="any"
+                  value={scanPriceOverride}
+                  onChange={(e) => setScanPriceOverride(e.target.value)}
+                  placeholder="Custom Rate"
+                  className="w-24 bg-transparent text-sm font-bold font-mono text-[#056468] placeholder-slate-400 focus:outline-none"
+                />
+                {scanPriceOverride && (
+                  <button
+                    type="button"
+                    onClick={() => setScanPriceOverride("")}
+                    className="text-slate-400 hover:text-slate-600 text-xs ml-1"
+                    title="Clear price override"
+                  >
+                    ✕
+                  </button>
+                )}
+              </div>
+
               <button
                 type="submit"
                 disabled={loading}
-                className="px-6 py-3 bg-[#056468] hover:bg-[#044e51] text-white font-bold text-sm rounded-xl shadow-sm flex items-center gap-2 transition-all active:scale-95 cursor-pointer"
+                className="px-6 py-3 bg-[#056468] hover:bg-[#044e51] text-white font-bold text-sm rounded-xl shadow-sm flex items-center justify-center gap-2 transition-all active:scale-95 cursor-pointer whitespace-nowrap"
               >
                 <ScanBarcode className="w-4 h-4" />
                 {loading ? "Scanning..." : "Scan Item"}
               </button>
             </div>
 
-            <p className="text-[11px] text-slate-500">
-              Point your USB / Wireless scanner at the physical label sticker to scan and verify.
-            </p>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between text-[11px] text-slate-500 gap-1">
+              <span>Point your USB / Wireless scanner at physical label sticker.</span>
+              <span className="text-[#056468] font-medium">
+                💡 Tip: You can enter a custom price before scanning or alter it directly in the cart below.
+              </span>
+            </div>
           </form>
 
           {/* Smart Tooltip for Already Scanned Items */}
@@ -398,6 +504,11 @@ export default function ScanPosPage() {
                     <p className="text-xs text-emerald-800 mt-0.5">
                       Total: <strong>₹{(checkoutSuccess.totalAmount || 0).toFixed(2)}</strong> • Status: <strong className="uppercase bg-emerald-200/80 px-1.5 py-0.5 rounded text-emerald-950">{checkoutSuccess.paymentStatus} ({checkoutSuccess.paymentMethod})</strong>
                     </p>
+                    {checkoutSuccess.processedItems?.some((p: any) => p.isAltered) && (
+                      <div className="inline-flex items-center gap-1 mt-1 text-[11px] font-bold text-amber-900 bg-amber-100 border border-amber-300 px-2 py-0.5 rounded-md">
+                        <span>🏷️ Custom altered price saved to line items & invoice</span>
+                      </div>
+                    )}
                     {checkoutSuccess.deliveryId && (
                       <div className="flex items-center gap-1.5 mt-1 text-xs">
                         <span className="font-semibold text-emerald-900 flex items-center gap-1">
@@ -455,7 +566,61 @@ export default function ScanPosPage() {
                   <div className="font-semibold text-[#056468] text-sm">
                     Unit #{lastLookup.serialNumber || 1}
                   </div>
-                  <div className="text-xs font-bold text-emerald-700">₹{(lastLookup.price || 0).toFixed(2)}</div>
+                  <div className="text-xs font-bold text-emerald-700">₹{(Number(lastLookup.price) || 0).toFixed(2)}</div>
+                </div>
+              </div>
+
+              {/* Price Alteration Controls for this Unit */}
+              <div className="bg-gradient-to-r from-amber-50/70 to-emerald-50/40 p-3.5 rounded-xl border border-amber-200/80 space-y-2">
+                <div className="flex items-center justify-between flex-wrap gap-2">
+                  <span className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                    <Edit3 className="w-3.5 h-3.5 text-[#056468]" />
+                    <span>Alter Unit Price (Discount or Markup):</span>
+                  </span>
+                  {lastLookup.originalPrice !== undefined && Math.abs(lastLookup.price - lastLookup.originalPrice) > 0.001 && (
+                    <button
+                      type="button"
+                      onClick={handleResetLastLookupPrice}
+                      className="text-[11px] text-slate-600 hover:text-slate-900 font-semibold flex items-center gap-1 hover:underline cursor-pointer"
+                    >
+                      <RotateCcw className="w-3 h-3 text-slate-500" />
+                      <span>Reset to Catalog (₹{lastLookup.originalPrice.toFixed(2)})</span>
+                    </button>
+                  )}
+                </div>
+
+                <div className="flex flex-wrap items-center gap-3">
+                  <div className="flex items-center bg-white border-2 border-[#056468]/60 rounded-xl px-3 py-1.5 shadow-2xs focus-within:border-[#056468]">
+                    <span className="text-xs font-bold text-[#056468] mr-1.5">₹</span>
+                    <input
+                      type="number"
+                      min="0"
+                      step="any"
+                      value={lastLookup.price ?? ""}
+                      onChange={(e) => handleUpdateLastLookupPrice(e.target.value)}
+                      placeholder="Enter price"
+                      className="w-28 text-sm font-bold font-mono text-[#056468] focus:outline-none"
+                    />
+                  </div>
+
+                  {lastLookup.originalPrice !== undefined && Math.abs(lastLookup.price - lastLookup.originalPrice) > 0.001 && (
+                    <div className="flex items-center gap-2 text-xs font-bold">
+                      {lastLookup.price < lastLookup.originalPrice ? (
+                        <span className="text-amber-900 bg-amber-100 border border-amber-300 px-2.5 py-1 rounded-full flex items-center gap-1">
+                          <span>🏷️ Lesser:</span>
+                          <span>-₹{(lastLookup.originalPrice - lastLookup.price).toFixed(2)} Discount</span>
+                        </span>
+                      ) : (
+                        <span className="text-blue-900 bg-blue-100 border border-blue-300 px-2.5 py-1 rounded-full flex items-center gap-1">
+                          <span>📈 Extra:</span>
+                          <span>+₹{(lastLookup.price - lastLookup.originalPrice).toFixed(2)} Markup</span>
+                        </span>
+                      )}
+                      <span className="text-slate-400 text-[11px] line-through">
+                        Catalog Base: ₹{lastLookup.originalPrice.toFixed(2)}
+                      </span>
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -645,41 +810,115 @@ export default function ScanPosPage() {
 
               {/* Cart Items List */}
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
-                  Scanned Items in Cart ({cart.length})
-                </label>
-                <div className="space-y-1.5 max-h-[160px] overflow-y-auto pr-1">
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block text-xs font-semibold text-slate-700">
+                    Scanned Items in Cart ({cart.length})
+                  </label>
+                  {hasAlteredPrices && (
+                    <span className="text-[10px] text-amber-700 font-bold bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200">
+                      Custom Prices Active
+                    </span>
+                  )}
+                </div>
+                <div className="space-y-2 max-h-[190px] overflow-y-auto pr-1">
                   {cart.length === 0 ? (
                     <div className="text-center py-6 text-slate-400 text-xs bg-slate-50 rounded-xl border border-dashed border-slate-200">
                       Scan barcodes to add items to this dispatch.
                     </div>
                   ) : (
-                    cart.map((item, idx) => (
-                      <div
-                        key={idx}
-                        className="bg-[#f2f9fa] border border-[#cce7ed] rounded-xl p-2.5 flex items-center justify-between text-xs space-x-2"
-                      >
-                        <div className="flex-1 min-w-0">
-                          <div className="font-bold text-[#0b252c] truncate">{item.productName}</div>
-                          <div className="text-[11px] text-slate-500 font-mono">
-                            {item.unitBarcode} <span className="text-[#056468]">(Unit #{item.serialNumber})</span>
+                    cart.map((item, idx) => {
+                      const basePrice = item.originalPrice ?? item.price;
+                      const isAltered =
+                        typeof item.originalPrice === "number" &&
+                        Math.abs(item.price - item.originalPrice) > 0.001;
+                      const diff = item.price - basePrice;
+
+                      return (
+                        <div
+                          key={idx}
+                          className={`border rounded-xl p-2.5 text-xs transition-colors space-y-1.5 ${
+                            isAltered
+                              ? diff < 0
+                                ? "bg-amber-50/50 border-amber-200"
+                                : "bg-blue-50/50 border-blue-200"
+                              : "bg-[#f2f9fa] border-[#cce7ed]"
+                          }`}
+                        >
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="flex-1 min-w-0">
+                              <div className="font-bold text-[#0b252c] truncate flex items-center gap-1.5">
+                                <span>{item.productName}</span>
+                                {isAltered && (
+                                  <span
+                                    className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${
+                                      diff < 0
+                                        ? "bg-amber-200 text-amber-900"
+                                        : "bg-blue-200 text-blue-900"
+                                    }`}
+                                  >
+                                    {diff < 0
+                                      ? `-₹${Math.abs(diff).toFixed(0)} Lesser`
+                                      : `+₹${diff.toFixed(0)} Extra`}
+                                  </span>
+                                )}
+                              </div>
+                              <div className="text-[11px] text-slate-500 font-mono mt-0.5">
+                                {item.unitBarcode}{" "}
+                                <span className="text-[#056468]">(Unit #{item.serialNumber})</span>
+                                {isAltered && (
+                                  <span className="text-slate-400 line-through ml-2">
+                                    Catalog: ₹{basePrice.toFixed(2)}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+
+                            <button
+                              type="button"
+                              onClick={() => removeFromCart(idx)}
+                              className="p-1 text-slate-400 hover:text-rose-600 rounded transition-colors"
+                              title="Remove item"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+
+                          {/* Editable Unit Price Bar */}
+                          <div className="flex items-center justify-between pt-1 border-t border-slate-200/60">
+                            <span className="text-[10px] font-bold text-slate-500 uppercase flex items-center gap-1">
+                              <Tag className="w-3 h-3 text-[#056468]" />
+                              <span>Rate (Editable):</span>
+                            </span>
+
+                            <div className="flex items-center gap-1.5">
+                              <div className="flex items-center bg-white border border-slate-300 rounded-lg px-2 py-0.5 shadow-2xs focus-within:border-[#056468] focus-within:ring-1 focus-within:ring-[#056468]">
+                                <span className="text-xs font-bold text-[#056468] mr-1">₹</span>
+                                <input
+                                  type="number"
+                                  min="0"
+                                  step="any"
+                                  value={item.price ?? ""}
+                                  onChange={(e) => handleUpdateItemPrice(idx, e.target.value)}
+                                  className="w-20 text-xs font-bold font-mono text-[#056468] focus:outline-none"
+                                  title="Change price for this unit (lesser or extra)"
+                                />
+                              </div>
+
+                              {isAltered && (
+                                <button
+                                  type="button"
+                                  onClick={() => handleResetItemPrice(idx)}
+                                  className="p-1 text-slate-500 hover:text-slate-800 text-[11px] font-bold flex items-center gap-0.5 hover:bg-slate-100 rounded"
+                                  title={`Reset to catalog price (₹${basePrice.toFixed(2)})`}
+                                >
+                                  <RotateCcw className="w-3 h-3" />
+                                </button>
+                              )}
+                            </div>
                           </div>
                         </div>
-
-                        <div className="text-right flex items-center gap-2">
-                          <span className="font-bold text-emerald-700 font-mono">
-                            ₹{(item.price || 0).toFixed(2)}
-                          </span>
-                          <button
-                            onClick={() => removeFromCart(idx)}
-                            className="p-1 text-rose-500 hover:text-rose-700 rounded"
-                            title="Remove"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
-                        </div>
-                      </div>
-                    ))
+                      );
+                    })
                   )}
                 </div>
               </div>
@@ -756,6 +995,15 @@ export default function ScanPosPage() {
 
             {/* Total & Complete Sale Button */}
             <div className="border-t border-slate-100 pt-3 space-y-3">
+              {hasAlteredPrices && (
+                <div className="flex items-center justify-between text-xs px-2.5 py-1.5 bg-amber-50/80 rounded-lg border border-amber-200 text-amber-950 font-medium">
+                  <span>Catalog Base: ₹{cartOriginalTotal.toFixed(2)}</span>
+                  <span className={`font-bold ${netPriceDiff < 0 ? "text-amber-800" : "text-blue-800"}`}>
+                    Net Adjustment: {netPriceDiff < 0 ? `-₹${Math.abs(netPriceDiff).toFixed(2)}` : `+₹${netPriceDiff.toFixed(2)}`}
+                  </span>
+                </div>
+              )}
+
               <div className="flex items-center justify-between text-sm">
                 <div>
                   <span className="font-semibold text-slate-700 block">Total Amount:</span>

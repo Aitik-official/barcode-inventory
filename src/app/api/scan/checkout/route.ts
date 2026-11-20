@@ -72,6 +72,24 @@ export async function POST(req: Request) {
             data: { quantity: availableCount },
           });
 
+          const defaultPrice =
+            typeof unit.productVariant.sellingPrice === "number"
+              ? unit.productVariant.sellingPrice
+              : unit.productVariant.product?.offerPrice || 0;
+
+          // Support custom altered price (lesser / extra / discount / markup)
+          const itemPrice =
+            typeof price === "number" && !isNaN(price)
+              ? price
+              : price !== undefined && price !== null && !isNaN(Number(price))
+              ? Number(price)
+              : defaultPrice;
+
+          const isAltered = Math.abs(itemPrice - defaultPrice) > 0.001;
+          const alterationNote = isAltered
+            ? ` [Price Altered: ₹${itemPrice.toFixed(2)} vs Catalog ₹${defaultPrice.toFixed(2)}]`
+            : "";
+
           // Transaction log
           await prisma.inventoryTransaction.create({
             data: {
@@ -81,12 +99,11 @@ export async function POST(req: Request) {
               quantity: -1,
               previousStock: prevStock,
               newStock: availableCount,
-              note: `Dispatch Scan [${channel}] — Unit ${unit.barcode} (Serial #${unit.serialNumber}) [${paymentStatus}: ${paymentMethod}]`,
+              note: `Dispatch Scan [${channel}] — Unit ${unit.barcode} (Serial #${unit.serialNumber}) [${paymentStatus}: ${paymentMethod}]${alterationNote}`,
               performedBy: "scanner",
             },
           });
 
-          const itemPrice = price || unit.productVariant.sellingPrice;
           totalSaleAmount += itemPrice;
           processedItems.push({
             name: unit.productVariant.product?.name || unit.productVariant.sku,
@@ -96,6 +113,8 @@ export async function POST(req: Request) {
             serialNumber: unit.serialNumber,
             sku: unit.productVariant.sku,
             price: itemPrice,
+            originalPrice: defaultPrice,
+            isAltered,
           });
         }
       } else if (sku) {
@@ -141,6 +160,23 @@ export async function POST(req: Request) {
             data: { quantity: availableCount },
           });
 
+          const defaultPrice =
+            typeof variant.sellingPrice === "number"
+              ? variant.sellingPrice
+              : variant.product?.offerPrice || 0;
+
+          const itemPrice =
+            typeof price === "number" && !isNaN(price)
+              ? price
+              : price !== undefined && price !== null && !isNaN(Number(price))
+              ? Number(price)
+              : defaultPrice;
+
+          const isAltered = Math.abs(itemPrice - defaultPrice) > 0.001;
+          const alterationNote = isAltered
+            ? ` [Price Altered: ₹${itemPrice.toFixed(2)} vs Catalog ₹${defaultPrice.toFixed(2)}]`
+            : "";
+
           await prisma.inventoryTransaction.create({
             data: {
               productVariantId: variant.id,
@@ -149,12 +185,11 @@ export async function POST(req: Request) {
               quantity: -1,
               previousStock: prevStock,
               newStock: availableCount,
-              note: `Dispatch Scan [${channel}] — Auto-allocated Unit ${unit.barcode} for SKU ${sku}`,
+              note: `Dispatch Scan [${channel}] — Auto-allocated Unit ${unit.barcode} for SKU ${sku}${alterationNote}`,
               performedBy: "scanner",
             },
           });
 
-          const itemPrice = price || variant.sellingPrice;
           totalSaleAmount += itemPrice;
           processedItems.push({
             name: variant.product?.name || variant.sku,
@@ -164,6 +199,8 @@ export async function POST(req: Request) {
             serialNumber: unit.serialNumber,
             sku: variant.sku,
             price: itemPrice,
+            originalPrice: defaultPrice,
+            isAltered,
           });
         }
       }
@@ -225,9 +262,10 @@ export async function POST(req: Request) {
       (trackingNumber && trackingNumber.trim()) ||
       `DEL-${new Date().getFullYear()}-${finalOrderNumber.replace(/[^0-9]/g, "").slice(-4) || String(Math.floor(1000 + Math.random() * 9000))}`;
 
+    const hasAnyAltered = processedItems.some((p) => p.isAltered);
     const orderNotes = `Channel: ${channel} | Delivery ID: ${finalDeliveryId} | Payment Status: ${paymentStatus} | Mode: ${paymentMethod}${
-      courier ? ` | Courier: ${courier}` : ""
-    }${trackingNumber ? ` | AWB: ${trackingNumber}` : ""}${notes ? ` | Notes: ${notes}` : ""}`;
+      hasAnyAltered ? " | Custom Price Overrides Applied" : ""
+    }${courier ? ` | Courier: ${courier}` : ""}${trackingNumber ? ` | AWB: ${trackingNumber}` : ""}${notes ? ` | Notes: ${notes}` : ""}`;
 
     const defaultAddress =
       shippingAddress ||
@@ -338,7 +376,8 @@ export async function POST(req: Request) {
                   channelSku: p.sku,
                   title: p.name,
                   quantity: 1,
-                  price: p.price,
+                  itemPrice: p.price,
+                  taxPrice: 0,
                   scannedBarcode: p.unitBarcode,
                   localVariantId: p.productVariantId,
                 })),
