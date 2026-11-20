@@ -310,6 +310,7 @@ export async function PATCH(req: NextRequest) {
       buyerPincode,
       trackingNumber,
       courier,
+      trackingData,
       notes,
       saveCustomer,
       company,
@@ -369,6 +370,7 @@ export async function PATCH(req: NextRequest) {
         data: {
           ...(status ? { status } : {}),
           ...(deliveryId !== undefined ? { deliveryId } : {}),
+          ...(trackingData !== undefined ? { trackingData } : {}),
           ...(customerName ? { customerName } : {}),
           ...(customerEmail ? { customerEmail } : {}),
           ...(customerPhone !== undefined ? { customerPhone } : {}),
@@ -450,6 +452,7 @@ export async function PATCH(req: NextRequest) {
         data: {
           ...(status ? { orderStatus: status } : {}),
           ...(deliveryId !== undefined ? { deliveryId } : {}),
+          ...(trackingData !== undefined ? { trackingData } : {}),
           ...(customerName ? { buyerName: customerName } : {}),
           ...(buyerCity ? { buyerCity } : {}),
           ...(buyerState ? { buyerState } : {}),

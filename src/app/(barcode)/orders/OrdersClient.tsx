@@ -53,6 +53,7 @@ import { Pagination } from "@/components/Pagination";
 import { CompanySettingsData, DEFAULT_COMPANY_SETTINGS } from "@/lib/companySettingsTypes";
 import { getSessionCache, setSessionCache } from "@/lib/sessionCache";
 import { runProgressiveParallelBatches } from "@/lib/progressiveBatchFetch";
+import { TrackingCheckpoint, TrackingResult } from "@/lib/trackingEngine";
 
 interface UnifiedOrder {
   id: string;
@@ -76,6 +77,7 @@ interface UnifiedOrder {
   customerId?: string | null;
   notes?: string;
   isMarketplace?: boolean;
+  trackingData?: string | null;
   items: Array<{
     title: string;
     sku: string;
@@ -266,6 +268,16 @@ export default function OrdersClient({
   const [editCustomerEmail, setEditCustomerEmail] = useState<string>("");
   const [editShippingAddress, setEditShippingAddress] = useState<string>("");
 
+  // Live Tracking state for Selected Order
+  const [activeTracking, setActiveTracking] = useState<TrackingResult | null>(null);
+  const [trackingLoading, setTrackingLoading] = useState(false);
+  const [showAddCheckpoint, setShowAddCheckpoint] = useState(false);
+  const [newCpTitle, setNewCpTitle] = useState("");
+  const [newCpLocation, setNewCpLocation] = useState("");
+  const [newCpStatus, setNewCpStatus] = useState<string>("IN_TRANSIT");
+  const [newCpDetails, setNewCpDetails] = useState("");
+  const [isAddingCheckpoint, setIsAddingCheckpoint] = useState(false);
+
   // Time-based Order Filter Presets
   const [dateFilter, setDateFilter] = useState<"ALL" | "TODAY" | "7DAYS" | "30DAYS" | "CUSTOM">("ALL");
   const [customStartDate, setCustomStartDate] = useState("");
@@ -454,6 +466,7 @@ export default function OrdersClient({
         customerId: ord.customerId,
         notes: ord.notes || "",
         isMarketplace: false,
+        trackingData: (ord as any).trackingData || null,
         items: orderItems,
         rawOrder: ord,
       });
@@ -486,6 +499,7 @@ export default function OrdersClient({
         courier: mord.courier || (isAmazon ? "Amazon ATS Express" : "Ekart Logistics"),
         notes: `Marketplace Order [${mord.channel}] — Fulfillment: ${mord.fulfillmentChannel || "MERCHANT"}`,
         isMarketplace: true,
+        trackingData: (mord as any).trackingData || null,
         items: (mord.items || []).map((i: any) => ({
           title: i.title || "Marketplace Product",
           sku: i.channelSku || "SKU",
@@ -741,6 +755,102 @@ export default function OrdersClient({
     return map;
   }, [invoices]);
 
+  const loadOrderTracking = async (ord: UnifiedOrder, forceSync = false) => {
+    setTrackingLoading(true);
+    try {
+      if (forceSync) {
+        const res = await fetch("/api/orders/tracking", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            orderId: ord.id,
+            orderNumber: ord.orderNumber,
+            action: "SYNC",
+            courier: editCourier || ord.courier,
+            trackingNumber: editTrackingNumber || ord.trackingNumber,
+            deliveryId: editDeliveryId || ord.deliveryId,
+            status: editStatus || ord.status,
+          }),
+        });
+        const data = await res.json();
+        if (data.success && data.tracking) {
+          setActiveTracking(data.tracking);
+          if (data.tracking.trackingNumber) setEditTrackingNumber(data.tracking.trackingNumber);
+          if (data.tracking.carrier) setEditCourier(data.tracking.carrier);
+          if (data.tracking.deliveryId) setEditDeliveryId(data.tracking.deliveryId);
+          setDetailModalFeedback({
+            type: "success",
+            text: `✅ Synced live tracking updates from ${data.tracking.carrier}! Found ${data.tracking.checkpoints?.length || 0} checkpoints.`,
+          });
+        }
+      } else {
+        const res = await fetch(
+          `/api/orders/tracking?orderId=${encodeURIComponent(ord.id)}&orderNumber=${encodeURIComponent(ord.orderNumber)}`
+        );
+        const data = await res.json();
+        if (data.success && data.tracking) {
+          setActiveTracking(data.tracking);
+          if (data.tracking.trackingNumber && !editTrackingNumber) setEditTrackingNumber(data.tracking.trackingNumber);
+          if (data.tracking.carrier && !editCourier) setEditCourier(data.tracking.carrier);
+          if (data.tracking.deliveryId && !editDeliveryId) setEditDeliveryId(data.tracking.deliveryId);
+        }
+      }
+    } catch (err: any) {
+      console.warn("Could not load tracking:", err);
+    } finally {
+      setTrackingLoading(false);
+    }
+  };
+
+  const handleAddCustomCheckpoint = async () => {
+    if (!selectedDetailOrder || !newCpTitle.trim()) return;
+    setIsAddingCheckpoint(true);
+
+    try {
+      const res = await fetch("/api/orders/tracking", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          orderId: selectedDetailOrder.id,
+          orderNumber: selectedDetailOrder.orderNumber,
+          action: "ADD_CHECKPOINT",
+          courier: editCourier,
+          trackingNumber: editTrackingNumber,
+          deliveryId: editDeliveryId,
+          customCheckpoint: {
+            title: newCpTitle.trim(),
+            location: newCpLocation.trim() || `${selectedDetailOrder.buyerCity || "Local Hub"} Facility`,
+            status: newCpStatus,
+            details: newCpDetails.trim() || undefined,
+            timestamp: new Date().toISOString(),
+          },
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to add checkpoint");
+
+      if (data.tracking) {
+        setActiveTracking(data.tracking);
+      }
+      setShowAddCheckpoint(false);
+      setNewCpTitle("");
+      setNewCpLocation("");
+      setNewCpDetails("");
+      setDetailModalFeedback({
+        type: "success",
+        text: "✅ New carrier checkpoint added and saved successfully!",
+      });
+    } catch (err: any) {
+      setDetailModalFeedback({
+        type: "error",
+        text: `Error adding checkpoint: ${err.message}`,
+      });
+    } finally {
+      setIsAddingCheckpoint(false);
+    }
+  };
+
   // Open Order Details Modal
   const handleOpenOrderDetail = (ord: UnifiedOrder) => {
     setSelectedDetailOrder(ord);
@@ -753,6 +863,10 @@ export default function OrdersClient({
     setEditCustomerEmail(ord.customerEmail || "");
     setEditShippingAddress(ord.shippingAddress || "");
     setDetailModalFeedback(null);
+    setShowAddCheckpoint(false);
+    setActiveTracking(null);
+
+    loadOrderTracking(ord, false);
   };
 
   // Fast direct status update (from row or modal)
@@ -3280,21 +3394,74 @@ export default function OrdersClient({
               </div>
 
               {/* Courier Tracking & Dispatch Details */}
-              <div className="p-4 rounded-2xl bg-white border border-slate-200 shadow-2xs space-y-3">
-                <div className="text-slate-900 font-bold text-xs flex items-center gap-1.5 border-b border-slate-100 pb-2">
-                  <Truck className="w-4 h-4 text-[#056468]" />
-                  <span>Logistics, Courier & Tracking Details</span>
+              <div className="p-4 sm:p-5 rounded-2xl bg-white border border-slate-200 shadow-2xs space-y-4">
+                <div className="text-slate-900 font-bold text-xs flex items-center justify-between border-b border-slate-100 pb-2.5">
+                  <span className="flex items-center gap-1.5">
+                    <Truck className="w-4 h-4 text-[#056468]" />
+                    <span>Logistics, Courier & Live Carrier Tracking</span>
+                  </span>
+
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      disabled={trackingLoading}
+                      onClick={() => selectedDetailOrder && loadOrderTracking(selectedDetailOrder, true)}
+                      className="px-2.5 py-1 bg-[#056468]/10 hover:bg-[#056468]/20 text-[#056468] rounded-lg text-[11px] font-bold flex items-center gap-1 transition-all cursor-pointer"
+                      title="Sync live order updates directly from Amazon SP-API / Flipkart API"
+                    >
+                      <RefreshCw className={`w-3 h-3 ${trackingLoading ? "animate-spin text-[#056468]" : ""}`} />
+                      <span>{trackingLoading ? "Syncing..." : "Sync Live Tracking (API)"}</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setShowAddCheckpoint((prev) => !prev)}
+                      className="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-[11px] font-semibold flex items-center gap-1 transition-all cursor-pointer"
+                    >
+                      <Plus className="w-3 h-3" />
+                      <span>{showAddCheckpoint ? "Cancel" : "Add Checkpoint"}</span>
+                    </button>
+                  </div>
                 </div>
 
+                {/* Courier, AWB & Run ID inputs */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
                   <div>
-                    <label className="block text-[10px] font-bold text-slate-500 uppercase">Courier Partner</label>
+                    <div className="flex items-center justify-between mb-0.5">
+                      <label className="text-[10px] font-bold text-slate-500 uppercase">Courier Partner</label>
+                      <div className="flex items-center gap-1 text-[9px] text-slate-400">
+                        <span>Presets:</span>
+                        <button
+                          type="button"
+                          onClick={() => setEditCourier("Amazon ATS Logistics (Easy Ship)")}
+                          className="hover:text-[#056468] hover:underline cursor-pointer"
+                        >
+                          Amazon
+                        </button>
+                        <span>•</span>
+                        <button
+                          type="button"
+                          onClick={() => setEditCourier("Flipkart Ekart Logistics")}
+                          className="hover:text-[#056468] hover:underline cursor-pointer"
+                        >
+                          Ekart
+                        </button>
+                        <span>•</span>
+                        <button
+                          type="button"
+                          onClick={() => setEditCourier("Blue Dart Express")}
+                          className="hover:text-[#056468] hover:underline cursor-pointer"
+                        >
+                          BlueDart
+                        </button>
+                      </div>
+                    </div>
                     <input
                       type="text"
                       value={editCourier}
                       onChange={(e) => setEditCourier(e.target.value)}
                       placeholder="e.g. Amazon ATS, Ekart, Blue Dart, Delhivery"
-                      className="w-full bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1 text-xs text-slate-800 mt-0.5 focus:outline-none focus:border-[#056468]"
+                      className="w-full bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1 text-xs text-slate-800 focus:outline-none focus:border-[#056468]"
                     />
                   </div>
 
@@ -3305,7 +3472,7 @@ export default function OrdersClient({
                         type="text"
                         value={editTrackingNumber}
                         onChange={(e) => setEditTrackingNumber(e.target.value)}
-                        placeholder="e.g. AWB-982301928"
+                        placeholder="e.g. AWB-982301928 / ATS-IN-..."
                         className="w-full bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1 text-xs text-slate-800 font-mono focus:outline-none focus:border-[#056468]"
                       />
                       {editTrackingNumber && (
@@ -3315,7 +3482,7 @@ export default function OrdersClient({
                             navigator.clipboard.writeText(editTrackingNumber);
                             alert("Tracking number copied to clipboard!");
                           }}
-                          className="px-2 py-1 bg-slate-100 hover:bg-slate-200 rounded text-[11px] font-semibold text-slate-700 shrink-0"
+                          className="px-2 py-1 bg-slate-100 hover:bg-slate-200 rounded text-[11px] font-semibold text-slate-700 shrink-0 cursor-pointer"
                           title="Copy tracking number"
                         >
                           <Copy className="w-3.5 h-3.5" />
@@ -3325,14 +3492,241 @@ export default function OrdersClient({
                   </div>
 
                   <div className="md:col-span-2">
-                    <label className="block text-[10px] font-bold text-slate-500 uppercase">Order Notes / Internal Remarks</label>
+                    <label className="block text-[10px] font-bold text-slate-500 uppercase">Order Notes / Instructions</label>
                     <input
                       type="text"
                       value={editNotes}
                       onChange={(e) => setEditNotes(e.target.value)}
-                      placeholder="Special instructions, delivery comments, payment references..."
+                      placeholder="Special instructions, delivery comments, carrier remarks..."
                       className="w-full bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1 text-xs text-slate-800 mt-0.5 focus:outline-none focus:border-[#056468]"
                     />
+                  </div>
+                </div>
+
+                {/* Live Carrier Tracking Checkpoints Panel */}
+                <div className="bg-[#f0f8fa]/60 border border-[#cce7ed] rounded-2xl p-4 space-y-3.5">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-[#cce7ed] pb-2.5">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="font-bold text-[#0b252c] text-xs flex items-center gap-1.5">
+                        <Truck className="w-3.5 h-3.5 text-[#056468]" />
+                        <span>{activeTracking?.carrier || editCourier || "Carrier Logistics"}</span>
+                      </span>
+
+                      {activeTracking?.currentStatusCode === "DELIVERED" ? (
+                        <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-emerald-100 text-emerald-900 border border-emerald-300">
+                          🟢 Delivered
+                        </span>
+                      ) : activeTracking?.currentStatusCode === "OUT_FOR_DELIVERY" ? (
+                        <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-blue-100 text-blue-900 border border-blue-300">
+                          🔵 Out for Delivery
+                        </span>
+                      ) : activeTracking?.currentStatusCode === "IN_TRANSIT" ? (
+                        <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-amber-100 text-amber-900 border border-amber-300">
+                          🟡 In Transit (Hub)
+                        </span>
+                      ) : activeTracking?.currentStatusCode === "PICKED_UP" ? (
+                        <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-purple-100 text-purple-900 border border-purple-300">
+                          🟣 Picked Up
+                        </span>
+                      ) : (
+                        <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-slate-100 text-slate-800 border border-slate-300">
+                          ⚪ Manifest Created
+                        </span>
+                      )}
+                    </div>
+
+                    <div className="text-[11px] text-slate-500 flex items-center gap-2">
+                      {activeTracking?.lastLocation && (
+                        <span className="flex items-center gap-1">
+                          <MapPin className="w-3 h-3 text-[#056468]" />
+                          <strong className="text-slate-800">{activeTracking.lastLocation}</strong>
+                        </span>
+                      )}
+                      {activeTracking?.estimatedDelivery && (
+                        <span>• Est. Arrival: <strong>{activeTracking.estimatedDelivery}</strong></span>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* 5-Stage Visual Progress Bar */}
+                  {(() => {
+                    const stage =
+                      activeTracking?.currentStatusCode === "DELIVERED"
+                        ? 5
+                        : activeTracking?.currentStatusCode === "OUT_FOR_DELIVERY"
+                        ? 4
+                        : activeTracking?.currentStatusCode === "IN_TRANSIT"
+                        ? 3
+                        : activeTracking?.currentStatusCode === "PICKED_UP"
+                        ? 2
+                        : 1;
+
+                    return (
+                      <div className="space-y-1.5 py-1">
+                        <div className="grid grid-cols-5 text-[10px] font-bold text-center">
+                          <span className={stage >= 1 ? "text-[#056468]" : "text-slate-400"}>1. Manifest</span>
+                          <span className={stage >= 2 ? "text-[#056468]" : "text-slate-400"}>2. Picked Up</span>
+                          <span className={stage >= 3 ? "text-[#056468]" : "text-slate-400"}>3. In Transit</span>
+                          <span className={stage >= 4 ? "text-[#056468]" : "text-slate-400"}>4. Out for Delivery</span>
+                          <span className={stage >= 5 ? "text-emerald-700" : "text-slate-400"}>5. Delivered</span>
+                        </div>
+                        <div className="w-full bg-slate-200 h-2 rounded-full overflow-hidden flex">
+                          <div
+                            className={`h-full transition-all duration-500 rounded-full ${
+                              stage === 5 ? "bg-emerald-500 w-full" : stage >= 4 ? "bg-blue-500 w-4/5" : stage >= 3 ? "bg-amber-500 w-3/5" : stage >= 2 ? "bg-purple-500 w-2/5" : "bg-[#056468] w-1/5"
+                            }`}
+                          />
+                        </div>
+                      </div>
+                    );
+                  })()}
+
+                  {/* Add Custom Checkpoint Inline Form */}
+                  {showAddCheckpoint && (
+                    <div className="p-3.5 bg-white border border-[#cce7ed] rounded-xl shadow-xs space-y-2.5 animate-in fade-in">
+                      <div className="text-xs font-bold text-[#0b252c] flex items-center justify-between">
+                        <span>Add Live Carrier Checkpoint / Location Update</span>
+                        <button
+                          type="button"
+                          onClick={() => setShowAddCheckpoint(false)}
+                          className="text-slate-400 hover:text-slate-600 text-xs"
+                        >
+                          ✕
+                        </button>
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                        <input
+                          type="text"
+                          value={newCpTitle}
+                          onChange={(e) => setNewCpTitle(e.target.value)}
+                          placeholder="Activity Title (e.g. Arrived at Pune Hub)"
+                          className="bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1 text-xs text-slate-800 focus:outline-none focus:border-[#056468]"
+                        />
+
+                        <input
+                          type="text"
+                          value={newCpLocation}
+                          onChange={(e) => setNewCpLocation(e.target.value)}
+                          placeholder="Location / Hub (e.g. Pune Central)"
+                          className="bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1 text-xs text-slate-800 focus:outline-none focus:border-[#056468]"
+                        />
+
+                        <select
+                          value={newCpStatus}
+                          onChange={(e) => setNewCpStatus(e.target.value)}
+                          className="bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1 text-xs text-slate-800 focus:outline-none focus:border-[#056468]"
+                        >
+                          <option value="IN_TRANSIT">In Transit (Hub)</option>
+                          <option value="OUT_FOR_DELIVERY">Out for Delivery</option>
+                          <option value="DELIVERED">Delivered</option>
+                          <option value="PICKED_UP">Picked Up</option>
+                          <option value="ATTEMPTED">Delivery Attempted</option>
+                        </select>
+                      </div>
+
+                      <div className="flex gap-2">
+                        <input
+                          type="text"
+                          value={newCpDetails}
+                          onChange={(e) => setNewCpDetails(e.target.value)}
+                          placeholder="Remarks / Courier notes (e.g. Dispatched for destination delivery)..."
+                          className="flex-1 bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1 text-xs text-slate-800 focus:outline-none focus:border-[#056468]"
+                        />
+                        <button
+                          type="button"
+                          disabled={isAddingCheckpoint || !newCpTitle.trim()}
+                          onClick={handleAddCustomCheckpoint}
+                          className="px-3.5 py-1 bg-[#056468] hover:bg-[#044e51] text-white text-xs font-bold rounded-lg shadow-2xs transition-all disabled:opacity-50 cursor-pointer"
+                        >
+                          {isAddingCheckpoint ? "Saving..." : "Save Checkpoint"}
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Vertical Checkpoints Timeline */}
+                  <div className="space-y-2 pt-1">
+                    <span className="text-[11px] font-bold text-slate-600 block">
+                      Shipment Checkpoints Timeline (
+                      {activeTracking?.checkpoints?.length || 0} Events)
+                    </span>
+
+                    {trackingLoading ? (
+                      <div className="py-6 text-center text-xs text-slate-500 flex items-center justify-center gap-2">
+                        <RefreshCw className="w-4 h-4 animate-spin text-[#056468]" />
+                        <span>Querying carrier tracking network & Amazon/Flipkart updates...</span>
+                      </div>
+                    ) : !activeTracking?.checkpoints || activeTracking.checkpoints.length === 0 ? (
+                      <div className="py-4 text-center text-xs text-slate-400 bg-white rounded-xl border border-dashed border-slate-200">
+                        No tracking checkpoints recorded yet. Click &quot;Sync Live Tracking (API)&quot; above to fetch from carrier.
+                      </div>
+                    ) : (
+                      <div className="relative pl-5 border-l-2 border-[#056468]/30 space-y-3.5 ml-2.5">
+                        {activeTracking.checkpoints
+                          .slice()
+                          .reverse()
+                          .map((cp, idx) => {
+                            const isLatest = idx === 0;
+                            return (
+                              <div key={cp.id || idx} className="relative group">
+                                {/* Dot on timeline */}
+                                <div
+                                  className={`absolute -left-[27px] top-0.5 w-4 h-4 rounded-full border-2 bg-white flex items-center justify-center ${
+                                    isLatest
+                                      ? "border-[#056468] ring-4 ring-[#056468]/20"
+                                      : "border-slate-300"
+                                  }`}
+                                >
+                                  <div
+                                    className={`w-2 h-2 rounded-full ${
+                                      isLatest ? "bg-[#056468] animate-pulse" : "bg-slate-400"
+                                    }`}
+                                  />
+                                </div>
+
+                                <div className="bg-white border border-slate-200/80 rounded-xl p-2.5 shadow-2xs space-y-1">
+                                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
+                                    <div className="flex items-center gap-1.5 flex-wrap">
+                                      <span className="font-bold text-slate-900 text-xs">
+                                        {cp.title}
+                                      </span>
+                                      {isLatest && (
+                                        <span className="px-1.5 py-0.2 rounded text-[9px] font-extrabold bg-emerald-100 text-emerald-900 border border-emerald-300">
+                                          Current Status
+                                        </span>
+                                      )}
+                                      {cp.isCustom && (
+                                        <span className="px-1.5 py-0.2 rounded text-[9px] font-semibold bg-purple-100 text-purple-800 border border-purple-200">
+                                          Staff Note
+                                        </span>
+                                      )}
+                                    </div>
+
+                                    <span className="text-[10px] text-slate-400 font-medium">
+                                      {new Date(cp.timestamp).toLocaleString("en-IN", {
+                                        dateStyle: "medium",
+                                        timeStyle: "short",
+                                      })}
+                                    </span>
+                                  </div>
+
+                                  <div className="text-[11px] text-[#056468] font-semibold flex items-center gap-1">
+                                    <MapPin className="w-3 h-3 text-[#056468] shrink-0" />
+                                    <span>{cp.location}</span>
+                                  </div>
+
+                                  {cp.details && (
+                                    <p className="text-[11px] text-slate-600 leading-relaxed pt-0.5">
+                                      {cp.details}
+                                    </p>
+                                  )}
+                                </div>
+                              </div>
+                            );
+                          })}
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
