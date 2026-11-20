@@ -4,15 +4,16 @@ import { resolveActor, writeAudit } from "@/lib/audit";
 
 /**
  * POST /api/fba/transfer
- * Bulk scan and transfer physical units to Amazon FBA / Flipkart FBF / 3PL Warehouse.
+ * Bulk scan and transfer physical units to Amazon, Flipkart, or custom division FBA warehouse.
  * Marks unit barcodes as FBA_STOCK, deducts from local retail inventory, and records transfer batch.
  */
 export async function POST(req: Request) {
   try {
     const body = await req.json();
     const {
-      channel = "AMAZON_FBA",
-      destinationFc = "Amazon FC BOM5 (Bhiwandi)",
+      channel: rawChannel,
+      division: rawDivision,
+      destinationFc: rawFc,
       shipmentNumber: rawShipment,
       trackingId,
       courier,
@@ -20,11 +21,14 @@ export async function POST(req: Request) {
       barcodes = [],
     } = body;
 
+    const division = (rawDivision || rawChannel || "Amazon").trim();
+    const destinationFc = (rawFc || `${division} Fulfillment Center`).trim();
+
     const actor = resolveActor(req, "Warehouse Admin");
 
     if (!Array.isArray(barcodes) || barcodes.length === 0) {
       return NextResponse.json(
-        { error: "Please scan or provide at least one unit barcode for FBA transfer." },
+        { error: "Please scan or enter at least one unit barcode to transfer." },
         { status: 400 }
       );
     }
@@ -45,25 +49,21 @@ export async function POST(req: Request) {
       );
     }
 
-    // Auto-generate shipment number if not provided
-    const shipmentNumber =
+    // Auto-generate unique shipment number if not provided
+    let shipmentNumber =
       rawShipment && rawShipment.trim() !== ""
         ? rawShipment.trim()
-        : `FBA-${new Date().toISOString().slice(0, 10).replace(/-/g, "")}-${Math.floor(
-            1000 + Math.random() * 9000
-          )}`;
+        : `FBA-${division.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 8)}-${new Date()
+            .toISOString()
+            .slice(0, 10)
+            .replace(/-/g, "")}-${Math.floor(1000 + Math.random() * 9000)}`;
 
-    // Verify shipmentNumber uniqueness
+    // Verify shipmentNumber uniqueness, adjust if duplicate
     const existingShipment = await prisma.fbaTransfer.findUnique({
       where: { shipmentNumber },
     });
     if (existingShipment) {
-      return NextResponse.json(
-        {
-          error: `Shipment number ${shipmentNumber} already exists. Please provide a unique shipment ID.`,
-        },
-        { status: 400 }
-      );
+      shipmentNumber = `${shipmentNumber}-${Math.floor(100 + Math.random() * 900)}`;
     }
 
     // Look up all requested unit barcodes
@@ -85,7 +85,7 @@ export async function POST(req: Request) {
     if (missingBarcodes.length > 0) {
       return NextResponse.json(
         {
-          error: `The following barcode(s) were not found in the system: ${missingBarcodes
+          error: `Barcode(s) not found in system: ${missingBarcodes
             .slice(0, 5)
             .join(", ")}${missingBarcodes.length > 5 ? ` (+${missingBarcodes.length - 5} more)` : ""}`,
         },
@@ -116,17 +116,17 @@ export async function POST(req: Request) {
     const transfer = await prisma.fbaTransfer.create({
       data: {
         shipmentNumber,
-        channel,
+        channel: division,
         destinationFc,
         trackingId: trackingId || null,
-        courier: courier || (channel === "AMAZON_FBA" ? "Amazon ATS" : channel === "FLIPKART_FBF" ? "Ekart Logistics" : "Surface Transport"),
+        courier: courier || `${division} Logistics`,
         status: "IN_FBA_WAREHOUSE",
         totalUnits: unitRecords.length,
         soldUnits: 0,
         damagedUnits: 0,
         returnedUnits: 0,
         transferredBy: actor,
-        notes: notes || `Bulk transfer of ${unitRecords.length} units to ${destinationFc}`,
+        notes: notes || `Bulk inward of ${unitRecords.length} units to ${division}`,
       },
     });
 
@@ -191,7 +191,7 @@ export async function POST(req: Request) {
           newStock: availableCount,
           referenceType: "FBA_TRANSFER",
           referenceId: transfer.shipmentNumber,
-          note: `Transferred ${units.length} units to ${destinationFc || channel} (${transfer.shipmentNumber}) - Kept at FBA`,
+          note: `Transferred ${units.length} units to ${division} (${transfer.shipmentNumber}) - Kept Idle at FBA`,
           performedBy: actor,
         },
       });
@@ -202,13 +202,13 @@ export async function POST(req: Request) {
       action: "FBA_STOCK_TRANSFER",
       entity: "INVENTORY",
       entityId: transfer.id,
-      details: `Transferred ${unitRecords.length} unit barcodes to ${channel} at ${destinationFc} (Shipment: ${shipmentNumber})`,
+      details: `Transferred ${unitRecords.length} unit barcodes to ${division} (Shipment: ${shipmentNumber})`,
       performedBy: actor,
     });
 
     return NextResponse.json({
       success: true,
-      message: `Successfully transferred ${unitRecords.length} unit(s) to ${destinationFc}. They are now tracked as units kept at FBA.`,
+      message: `Successfully added ${unitRecords.length} unit(s) under division "${division}".`,
       transfer: {
         id: transfer.id,
         shipmentNumber: transfer.shipmentNumber,
@@ -230,17 +230,19 @@ export async function POST(req: Request) {
 
 /**
  * GET /api/fba/transfer
- * Returns list of FBA inbounded shipments with status and unit counts.
+ * Returns list of FBA transfers and distinct divisions.
  */
 export async function GET(req: Request) {
   try {
     const { searchParams } = new URL(req.url);
-    const channel = searchParams.get("channel");
+    const channel = searchParams.get("channel") || searchParams.get("division");
     const status = searchParams.get("status");
     const search = searchParams.get("search")?.trim();
 
     const where: any = {};
-    if (channel && channel !== "ALL") where.channel = channel;
+    if (channel && channel !== "ALL") {
+      where.channel = { equals: channel, mode: "insensitive" };
+    }
     if (status && status !== "ALL") where.status = status;
     if (search) {
       where.OR = [
@@ -269,6 +271,16 @@ export async function GET(req: Request) {
       },
     });
 
+    // Collect all distinct divisions
+    const allTransfers = await prisma.fbaTransfer.findMany({
+      select: { channel: true },
+    });
+    const divisionSet = new Set<string>(["Amazon", "Flipkart"]);
+    for (const t of allTransfers) {
+      if (t.channel) divisionSet.add(t.channel);
+    }
+    const availableDivisions = Array.from(divisionSet);
+
     // Calculate aggregated metrics
     const totalTransfers = transfers.length;
     let totalUnitsTransferred = 0;
@@ -292,6 +304,7 @@ export async function GET(req: Request) {
 
     return NextResponse.json({
       transfers,
+      availableDivisions,
       metrics: {
         totalTransfers,
         totalUnitsTransferred,

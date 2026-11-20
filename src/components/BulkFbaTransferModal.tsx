@@ -5,13 +5,10 @@ import {
   X,
   PackagePlus,
   ScanBarcode,
-  Truck,
-  Building2,
-  AlertCircle,
+  Plus,
   CheckCircle2,
+  AlertCircle,
   Trash2,
-  Layers,
-  ArrowRight,
   ClipboardList,
   Sparkles,
 } from "lucide-react";
@@ -31,27 +28,17 @@ interface BulkFbaTransferModalProps {
   onOpenTally?: () => void;
 }
 
-const FC_PRESETS = [
-  "Amazon FC BOM5 (Bhiwandi, MH)",
-  "Amazon FC DEL4 (Gurugram, HR)",
-  "Amazon FC BLR1 (Bengaluru, KA)",
-  "Flipkart FC BLR1 (Malur, KA)",
-  "Flipkart FC DEL1 (Farukhnagar, HR)",
-  "Flipkart FC BOM1 (Bhiwandi, MH)",
-  "Delhivery 3PL Fulfillment Center",
-];
+const DEFAULT_DIVISIONS = ["Amazon", "Flipkart", "Meesho", "Blinkit"];
 
 export function BulkFbaTransferModal({
   isOpen,
   onClose,
   onOpenTally,
 }: BulkFbaTransferModalProps) {
-  const [channel, setChannel] = useState<"AMAZON_FBA" | "FLIPKART_FBF" | "MEESHO_3PL" | "OTHER_3PL">("AMAZON_FBA");
-  const [destinationFc, setDestinationFc] = useState("Amazon FC BOM5 (Bhiwandi, MH)");
-  const [shipmentNumber, setShipmentNumber] = useState("");
-  const [trackingId, setTrackingId] = useState("");
-  const [courier, setCourier] = useState("Amazon ATS");
-  const [notes, setNotes] = useState("");
+  const [divisions, setDivisions] = useState<string[]>(DEFAULT_DIVISIONS);
+  const [activeDivision, setActiveDivision] = useState<string>("Amazon");
+  const [showAddDivision, setShowAddDivision] = useState(false);
+  const [newDivisionInput, setNewDivisionInput] = useState("");
 
   const [scanInput, setScanInput] = useState("");
   const [pasteInput, setPasteInput] = useState("");
@@ -65,35 +52,60 @@ export function BulkFbaTransferModal({
 
   const scanInputRef = useRef<HTMLInputElement>(null);
 
-  // Generate default shipment number when opened
+  // Load custom divisions from localStorage or API
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const stored = localStorage.getItem("fba_custom_divisions");
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            setDivisions(Array.from(new Set([...DEFAULT_DIVISIONS, ...parsed])));
+          }
+        }
+      } catch (e) {
+        console.error("Error reading divisions from storage", e);
+      }
+    }
+  }, []);
+
+  // Fetch available divisions from backend transfers too
   useEffect(() => {
     if (isOpen) {
       setError(null);
       setSuccessInfo(null);
-      const prefix = channel === "AMAZON_FBA" ? "FBA-AMZ" : channel === "FLIPKART_FBF" ? "FBF-FLP" : "FBA-3PL";
-      const d = new Date().toISOString().slice(0, 10).replace(/-/g, "");
-      const rand = Math.floor(1000 + Math.random() * 9000);
-      setShipmentNumber(`${prefix}-${d}-${rand}`);
-      setTimeout(() => {
-        scanInputRef.current?.focus();
-      }, 100);
+      setTimeout(() => scanInputRef.current?.focus(), 150);
+
+      fetch("/api/fba/transfer")
+        .then((r) => r.json())
+        .then((data) => {
+          if (Array.isArray(data.availableDivisions) && data.availableDivisions.length > 0) {
+            setDivisions((prev) =>
+              Array.from(new Set([...prev, ...data.availableDivisions]))
+            );
+          }
+        })
+        .catch(() => {});
     }
-  }, [isOpen, channel]);
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
-  const handleChannelSelect = (newChannel: "AMAZON_FBA" | "FLIPKART_FBF" | "MEESHO_3PL" | "OTHER_3PL") => {
-    setChannel(newChannel);
-    if (newChannel === "AMAZON_FBA") {
-      setDestinationFc("Amazon FC BOM5 (Bhiwandi, MH)");
-      setCourier("Amazon ATS");
-    } else if (newChannel === "FLIPKART_FBF") {
-      setDestinationFc("Flipkart FC BLR1 (Malur, KA)");
-      setCourier("Ekart Logistics");
-    } else {
-      setDestinationFc("3PL Fulfillment Center");
-      setCourier("Surface Logistics");
+  const handleAddNewDivision = (e: React.FormEvent) => {
+    e.preventDefault();
+    const clean = newDivisionInput.trim();
+    if (!clean) return;
+
+    if (!divisions.includes(clean)) {
+      const updated = [...divisions, clean];
+      setDivisions(updated);
+      try {
+        localStorage.setItem("fba_custom_divisions", JSON.stringify(updated));
+      } catch {}
     }
+    setActiveDivision(clean);
+    setNewDivisionInput("");
+    setShowAddDivision(false);
   };
 
   const handleSingleScan = async (e: React.FormEvent) => {
@@ -103,7 +115,7 @@ export function BulkFbaTransferModal({
 
     // Check duplicate in current batch
     if (scannedItems.some((item) => item.barcode === barcode)) {
-      setError(`Barcode ${barcode} is already added in this transfer batch.`);
+      setError(`Barcode ${barcode} already added in current batch.`);
       setScanInput("");
       return;
     }
@@ -120,9 +132,7 @@ export function BulkFbaTransferModal({
       }
 
       if (data.type !== "UNIT_BARCODE") {
-        throw new Error(
-          `Please scan physical unit item barcode. Found SKU ${data.sku} instead.`
-        );
+        throw new Error(`Found SKU "${data.sku}". Please scan physical unit barcode.`);
       }
 
       if (data.unitStatus !== "AVAILABLE") {
@@ -171,9 +181,7 @@ export function BulkFbaTransferModal({
     const errors: string[] = [];
 
     for (const barcode of barcodes) {
-      if (scannedItems.some((item) => item.barcode === barcode)) {
-        continue; // skip duplicate in batch
-      }
+      if (scannedItems.some((item) => item.barcode === barcode)) continue;
 
       try {
         const res = await fetch(`/api/barcodes/lookup?q=${encodeURIComponent(barcode)}`);
@@ -203,7 +211,7 @@ export function BulkFbaTransferModal({
 
     if (errors.length > 0) {
       setError(
-        `Added ${added.length} units. ${errors.length} barcode(s) skipped (not found or not available): ${errors.slice(0, 3).join(", ")}${errors.length > 3 ? "..." : ""}`
+        `Added ${added.length} units. ${errors.length} skipped (not found or not available): ${errors.slice(0, 3).join(", ")}`
       );
     }
 
@@ -216,7 +224,7 @@ export function BulkFbaTransferModal({
 
   const handleConfirmTransfer = async () => {
     if (scannedItems.length === 0) {
-      setError("Please scan at least one unit barcode before transferring.");
+      setError("Please scan at least one unit barcode before saving.");
       return;
     }
 
@@ -228,21 +236,14 @@ export function BulkFbaTransferModal({
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          channel,
-          destinationFc,
-          shipmentNumber,
-          trackingId,
-          courier,
-          notes,
+          division: activeDivision,
+          channel: activeDivision,
           barcodes: scannedItems.map((item) => item.barcode),
         }),
       });
 
       const data = await res.json();
-
-      if (!res.ok) {
-        throw new Error(data.error || "Failed to transfer to FBA.");
-      }
+      if (!res.ok) throw new Error(data.error || "Failed to transfer to FBA.");
 
       setSuccessInfo(data);
       setScannedItems([]);
@@ -254,11 +255,10 @@ export function BulkFbaTransferModal({
   };
 
   const totalValue = scannedItems.reduce((acc, curr) => acc + (curr.price || 0), 0);
-  const distinctSkus = Array.from(new Set(scannedItems.map((i) => i.sku))).length;
 
   return (
     <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
-      <div className="bg-white border border-[#cce7ed] rounded-2xl shadow-2xl w-full max-w-4xl overflow-hidden animate-in fade-in zoom-in-95 duration-150 flex flex-col max-h-[92vh]">
+      <div className="bg-white border border-[#cce7ed] rounded-2xl shadow-2xl w-full max-w-3xl overflow-hidden animate-in fade-in zoom-in-95 duration-150 flex flex-col max-h-[92vh]">
         {/* Header */}
         <div className="bg-[#0b252c] px-6 py-4 text-white flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -266,14 +266,11 @@ export function BulkFbaTransferModal({
               <PackagePlus className="w-5 h-5 text-amber-400" />
             </div>
             <div>
-              <h3 className="text-lg font-bold flex items-center gap-2">
-                <span>Bulk Scan & Transfer to FBA / Marketplace Warehouse</span>
-                <span className="text-[10px] font-mono uppercase px-2 py-0.5 rounded-full bg-amber-400/20 text-amber-300 border border-amber-400/30">
-                  Units Kept at FBA
-                </span>
+              <h3 className="text-lg font-bold">
+                Bulk Scan Units into FBA Stock
               </h3>
               <p className="text-xs text-slate-300">
-                Scan multiple unit barcodes in bulk. They are moved into FBA inventory as units kept there for monthly sales tally.
+                Select division (Amazon, Flipkart, or custom), scan physical barcodes, and keep them in FBA.
               </p>
             </div>
           </div>
@@ -286,7 +283,7 @@ export function BulkFbaTransferModal({
         </div>
 
         {/* Content Body */}
-        <div className="p-6 space-y-6 overflow-y-auto flex-1">
+        <div className="p-6 space-y-5 overflow-y-auto flex-1">
           {successInfo ? (
             <div className="py-8 text-center space-y-4">
               <div className="w-16 h-16 rounded-full bg-emerald-100 text-emerald-600 mx-auto flex items-center justify-center">
@@ -294,26 +291,11 @@ export function BulkFbaTransferModal({
               </div>
               <div>
                 <h4 className="text-xl font-bold text-[#0b252c]">
-                  Stock Successfully Transferred to FBA!
+                  Units Successfully Added to {activeDivision} FBA!
                 </h4>
                 <p className="text-sm text-slate-600 mt-1">
                   {successInfo.message}
                 </p>
-              </div>
-
-              <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 max-w-md mx-auto text-left text-xs space-y-1.5 font-mono">
-                <div className="flex justify-between">
-                  <span className="text-slate-500">Shipment Code:</span>
-                  <span className="font-bold text-[#0b252c]">{successInfo.transfer?.shipmentNumber}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-slate-500">Destination:</span>
-                  <span className="font-bold text-[#056468]">{successInfo.transfer?.destinationFc}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-slate-500">Total Units Kept at FBA:</span>
-                  <span className="font-bold text-emerald-700">{successInfo.transfer?.totalUnits} Units</span>
-                </div>
               </div>
 
               <div className="flex items-center justify-center gap-3 pt-4">
@@ -323,9 +305,9 @@ export function BulkFbaTransferModal({
                     setSuccessInfo(null);
                     setScannedItems([]);
                   }}
-                  className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl transition-colors"
+                  className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl transition-colors cursor-pointer"
                 >
-                  Transfer Another Batch
+                  Scan More Units
                 </button>
                 {onOpenTally && (
                   <button
@@ -334,158 +316,109 @@ export function BulkFbaTransferModal({
                       onClose();
                       onOpenTally();
                     }}
-                    className="px-5 py-2.5 bg-[#056468] hover:bg-[#044e51] text-white text-xs font-bold rounded-xl shadow-md flex items-center gap-2 transition-all"
+                    className="px-5 py-2.5 bg-[#056468] hover:bg-[#044e51] text-white text-xs font-bold rounded-xl shadow-md flex items-center gap-2 transition-all cursor-pointer"
                   >
                     <ClipboardList className="w-4 h-4" />
-                    <span>Open FBA Monthly Tally System</span>
+                    <span>Open Units & Mark Status</span>
                   </button>
                 )}
               </div>
             </div>
           ) : (
             <>
-              {/* Channel & Destination Config */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 rounded-xl bg-slate-50 border border-slate-200">
-                {/* Channel */}
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">
-                    Marketplace / FBA Channel
+              {/* 1. Division Selection */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
+                    <span>1. Select Division / Marketplace</span>
                   </label>
-                  <div className="grid grid-cols-2 gap-1.5">
-                    <button
-                      type="button"
-                      onClick={() => handleChannelSelect("AMAZON_FBA")}
-                      className={`px-3 py-2 text-xs font-bold rounded-lg border transition-all ${
-                        channel === "AMAZON_FBA"
-                          ? "bg-amber-50 border-amber-500 text-amber-900 shadow-xs"
-                          : "bg-white border-slate-300 text-slate-600 hover:bg-slate-50"
-                      }`}
-                    >
-                      Amazon FBA
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => handleChannelSelect("FLIPKART_FBF")}
-                      className={`px-3 py-2 text-xs font-bold rounded-lg border transition-all ${
-                        channel === "FLIPKART_FBF"
-                          ? "bg-blue-50 border-blue-500 text-blue-900 shadow-xs"
-                          : "bg-white border-slate-300 text-slate-600 hover:bg-slate-50"
-                      }`}
-                    >
-                      Flipkart FBF
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => handleChannelSelect("MEESHO_3PL")}
-                      className={`px-3 py-2 text-xs font-bold rounded-lg border transition-all ${
-                        channel === "MEESHO_3PL"
-                          ? "bg-purple-50 border-purple-500 text-purple-900 shadow-xs"
-                          : "bg-white border-slate-300 text-slate-600 hover:bg-slate-50"
-                      }`}
-                    >
-                      Meesho 3PL
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => handleChannelSelect("OTHER_3PL")}
-                      className={`px-3 py-2 text-xs font-bold rounded-lg border transition-all ${
-                        channel === "OTHER_3PL"
-                          ? "bg-slate-200 border-slate-500 text-slate-900 shadow-xs"
-                          : "bg-white border-slate-300 text-slate-600 hover:bg-slate-50"
-                      }`}
-                    >
-                      Other FC
-                    </button>
-                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setShowAddDivision(!showAddDivision)}
+                    className="text-xs text-[#056468] hover:underline font-bold flex items-center gap-1 cursor-pointer"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    <span>+ Add More Division</span>
+                  </button>
                 </div>
 
-                {/* Destination FC */}
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1 flex items-center gap-1.5">
-                    <Building2 className="w-3.5 h-3.5 text-[#056468]" />
-                    Destination Fulfillment Center
-                  </label>
-                  <input
-                    type="text"
-                    value={destinationFc}
-                    onChange={(e) => setDestinationFc(e.target.value)}
-                    placeholder="e.g. Amazon FC BOM5 (Bhiwandi)"
-                    className="w-full text-xs font-medium px-3 py-2 border border-slate-300 rounded-lg bg-white focus:outline-none focus:border-[#056468]"
-                  />
-                  <div className="flex flex-wrap gap-1 mt-1.5">
-                    {FC_PRESETS.slice(0, 3).map((preset) => (
+                {/* Division Chips */}
+                <div className="flex flex-wrap gap-2">
+                  {divisions.map((div) => {
+                    const isSelected = activeDivision.toLowerCase() === div.toLowerCase();
+                    return (
                       <button
-                        key={preset}
+                        key={div}
                         type="button"
-                        onClick={() => setDestinationFc(preset)}
-                        className="text-[10px] px-1.5 py-0.5 rounded bg-slate-200 hover:bg-slate-300 text-slate-700 transition-colors"
+                        onClick={() => setActiveDivision(div)}
+                        className={`px-4 py-2 rounded-xl text-xs font-bold border transition-all cursor-pointer ${
+                          isSelected
+                            ? "bg-amber-500 text-white border-amber-600 shadow-sm scale-102"
+                            : "bg-slate-50 hover:bg-slate-100 text-slate-700 border-slate-300"
+                        }`}
                       >
-                        {preset.split(" ")[2] || preset.split(" ")[1]}
+                        {div}
                       </button>
-                    ))}
-                  </div>
+                    );
+                  })}
                 </div>
 
-                {/* Shipment Ref & Inbound Courier */}
-                <div className="space-y-2">
-                  <div>
-                    <label className="block text-xs font-bold text-slate-700 mb-1 flex items-center gap-1.5">
-                      <Truck className="w-3.5 h-3.5 text-[#056468]" />
-                      Shipment / Inbound Ref ID
-                    </label>
+                {/* Inline Add Division Form */}
+                {showAddDivision && (
+                  <form
+                    onSubmit={handleAddNewDivision}
+                    className="flex gap-2 pt-1 animate-in fade-in"
+                  >
                     <input
                       type="text"
-                      value={shipmentNumber}
-                      onChange={(e) => setShipmentNumber(e.target.value)}
-                      placeholder="e.g. FBA-AMZ-202611-102"
-                      className="w-full text-xs font-mono font-bold px-3 py-2 border border-slate-300 rounded-lg bg-white focus:outline-none focus:border-[#056468]"
+                      value={newDivisionInput}
+                      onChange={(e) => setNewDivisionInput(e.target.value)}
+                      placeholder="Enter new division name (e.g. Myntra, Zepto, Amazon BOM5)..."
+                      className="flex-1 text-xs px-3 py-2 border-2 border-[#056468] rounded-xl focus:outline-none"
+                      autoFocus
                     />
-                  </div>
-                  <div className="flex gap-2">
-                    <input
-                      type="text"
-                      value={trackingId}
-                      onChange={(e) => setTrackingId(e.target.value)}
-                      placeholder="Inbound AWB (Optional)"
-                      className="w-1/2 text-[11px] px-2.5 py-1.5 border border-slate-300 rounded-lg bg-white"
-                    />
-                    <input
-                      type="text"
-                      value={courier}
-                      onChange={(e) => setCourier(e.target.value)}
-                      placeholder="Courier / Transport"
-                      className="w-1/2 text-[11px] px-2.5 py-1.5 border border-slate-300 rounded-lg bg-white"
-                    />
-                  </div>
-                </div>
+                    <button
+                      type="submit"
+                      className="px-4 py-2 bg-[#056468] hover:bg-[#044e51] text-white text-xs font-bold rounded-xl shadow-xs cursor-pointer"
+                    >
+                      Save Division
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setShowAddDivision(false)}
+                      className="px-3 py-2 text-xs text-slate-500 hover:text-slate-700"
+                    >
+                      Cancel
+                    </button>
+                  </form>
+                )}
               </div>
 
-              {/* Barcode Scanner Section */}
-              <div className="space-y-3">
+              {/* 2. Barcode Scanning */}
+              <div className="space-y-2 pt-2 border-t border-slate-200">
                 <div className="flex items-center justify-between">
                   <label className="text-xs font-bold text-[#056468] uppercase tracking-wider flex items-center gap-1.5">
                     <ScanBarcode className="w-4 h-4" />
-                    <span>Scan Unit Barcodes (Continuous Hardware Scanner)</span>
+                    <span>2. Scan Barcodes into {activeDivision}</span>
                   </label>
                   <button
                     type="button"
                     onClick={() => setShowPasteBox(!showPasteBox)}
-                    className="text-xs text-[#056468] hover:underline font-semibold flex items-center gap-1"
+                    className="text-xs text-[#056468] hover:underline font-semibold flex items-center gap-1 cursor-pointer"
                   >
-                    <ClipboardList className="w-3.5 h-3.5" />
-                    <span>{showPasteBox ? "Hide Paste Box" : "📋 Paste Bulk Barcodes"}</span>
+                    <span>{showPasteBox ? "Hide Paste Box" : "📋 Paste Multiple"}</span>
                   </button>
                 </div>
 
                 {showPasteBox ? (
-                  <div className="p-3 bg-amber-50/70 border border-amber-200 rounded-xl space-y-2">
+                  <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl space-y-2">
                     <p className="text-xs text-amber-900 font-medium">
-                      Paste multiple unit barcodes separated by commas, spaces, or newlines (e.g. copied from Excel/Manifest):
+                      Paste barcodes separated by commas or newlines:
                     </p>
                     <textarea
                       value={pasteInput}
                       onChange={(e) => setPasteInput(e.target.value)}
-                      placeholder="299420114239&#10;299420114240&#10;299420114241"
+                      placeholder="299420114239&#10;299420114240"
                       rows={3}
                       className="w-full text-xs font-mono p-2 border border-amber-300 rounded-lg bg-white focus:outline-none"
                     />
@@ -493,7 +426,7 @@ export function BulkFbaTransferModal({
                       <button
                         type="button"
                         onClick={() => setShowPasteBox(false)}
-                        className="px-3 py-1.5 text-xs text-slate-600 hover:text-slate-800"
+                        className="px-3 py-1.5 text-xs text-slate-600"
                       >
                         Cancel
                       </button>
@@ -501,9 +434,9 @@ export function BulkFbaTransferModal({
                         type="button"
                         onClick={handleBulkPasteAdd}
                         disabled={lookupLoading}
-                        className="px-4 py-1.5 bg-[#056468] hover:bg-[#044e51] text-white text-xs font-bold rounded-lg shadow-xs flex items-center gap-1.5"
+                        className="px-4 py-1.5 bg-[#056468] text-white text-xs font-bold rounded-lg cursor-pointer"
                       >
-                        {lookupLoading ? "Validating..." : "Add All Scanned to Batch"}
+                        {lookupLoading ? "Validating..." : "Add All Scanned"}
                       </button>
                     </div>
                   </div>
@@ -514,16 +447,16 @@ export function BulkFbaTransferModal({
                       type="text"
                       value={scanInput}
                       onChange={(e) => setScanInput(e.target.value)}
-                      placeholder="Point scanner & scan unit barcode sticker (e.g. 299420114239)..."
-                      className="flex-1 bg-slate-50 border-2 border-[#056468] rounded-xl px-4 py-2.5 text-base font-mono font-bold text-[#0b252c] placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#056468]/30"
+                      placeholder={`Scan unit barcode for ${activeDivision} (point USB scanner)...`}
+                      className="flex-1 bg-slate-50 border-2 border-[#056468] rounded-xl px-4 py-2.5 text-base font-mono font-bold text-[#0b252c] placeholder-slate-400 focus:outline-none"
                     />
                     <button
                       type="submit"
                       disabled={lookupLoading}
-                      className="px-5 py-2.5 bg-[#056468] hover:bg-[#044e51] text-white font-bold text-xs rounded-xl shadow-sm flex items-center gap-1.5"
+                      className="px-5 py-2.5 bg-[#056468] hover:bg-[#044e51] text-white font-bold text-xs rounded-xl shadow-xs flex items-center gap-1.5 cursor-pointer"
                     >
                       <ScanBarcode className="w-4 h-4" />
-                      {lookupLoading ? "Checking..." : "Add Unit"}
+                      {lookupLoading ? "Adding..." : "Add Unit"}
                     </button>
                   </form>
                 )}
@@ -541,72 +474,60 @@ export function BulkFbaTransferModal({
                 )}
               </div>
 
-              {/* Scanned Items Summary KPI */}
-              <div className="grid grid-cols-3 gap-3">
-                <div className="p-3 bg-teal-50 border border-teal-200 rounded-xl text-center">
-                  <div className="text-[11px] font-bold text-teal-800 uppercase">Units Scanned</div>
-                  <div className="text-2xl font-black text-teal-900 mt-0.5">{scannedItems.length}</div>
-                </div>
-                <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl text-center">
-                  <div className="text-[11px] font-bold text-slate-600 uppercase">Distinct SKUs</div>
-                  <div className="text-2xl font-black text-slate-800 mt-0.5">{distinctSkus}</div>
-                </div>
-                <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-center">
-                  <div className="text-[11px] font-bold text-amber-800 uppercase">Total Inventory Value</div>
-                  <div className="text-2xl font-black text-amber-900 mt-0.5">₹{totalValue.toLocaleString("en-IN")}</div>
-                </div>
-              </div>
-
               {/* Scanned Units List */}
               <div className="border border-slate-200 rounded-xl overflow-hidden">
                 <div className="bg-slate-100 px-4 py-2 border-b border-slate-200 flex items-center justify-between text-xs font-bold text-slate-700">
-                  <span>Scanned Units Manifest ({scannedItems.length})</span>
+                  <div className="flex items-center gap-2">
+                    <span>Units to Add ({scannedItems.length})</span>
+                    {scannedItems.length > 0 && (
+                      <span className="px-2 py-0.5 rounded-full bg-amber-100 text-amber-900 text-[10px] font-bold">
+                        ₹{totalValue.toLocaleString("en-IN")}
+                      </span>
+                    )}
+                  </div>
                   {scannedItems.length > 0 && (
                     <button
                       type="button"
                       onClick={() => setScannedItems([])}
-                      className="text-rose-600 hover:text-rose-800 font-semibold flex items-center gap-1"
+                      className="text-rose-600 hover:text-rose-800 font-semibold flex items-center gap-1 cursor-pointer"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
-                      Clear All
+                      Clear
                     </button>
                   )}
                 </div>
 
-                <div className="max-h-56 overflow-y-auto divide-y divide-slate-100">
+                <div className="max-h-52 overflow-y-auto divide-y divide-slate-100">
                   {scannedItems.length === 0 ? (
                     <div className="py-8 text-center text-xs text-slate-400">
-                      No units scanned yet. Scan barcodes with hardware scanner or paste a list above.
+                      Scan physical barcodes using your scanner or paste a list above.
                     </div>
                   ) : (
                     scannedItems.map((item, idx) => (
                       <div
                         key={`${item.barcode}-${idx}`}
-                        className="px-4 py-2.5 flex items-center justify-between hover:bg-slate-50 text-xs"
+                        className="px-4 py-2 flex items-center justify-between hover:bg-slate-50 text-xs"
                       >
                         <div className="flex items-center gap-3">
-                          <span className="w-6 text-slate-400 font-mono text-[11px]">#{idx + 1}</span>
+                          <span className="w-5 text-slate-400 font-mono text-[11px]">#{idx + 1}</span>
                           <div>
                             <div className="font-bold text-[#0b252c]">{item.productName}</div>
                             <div className="text-[11px] text-slate-500 font-mono flex items-center gap-2">
                               <span>SKU: <strong className="text-slate-700">{item.sku}</strong></span>
                               <span>•</span>
                               <span>Barcode: <strong className="text-[#056468]">{item.barcode}</strong></span>
-                              <span>•</span>
-                              <span>Unit #{item.serialNumber}</span>
                             </div>
                           </div>
                         </div>
 
-                        <div className="flex items-center gap-4">
+                        <div className="flex items-center gap-3">
                           <span className="font-bold font-mono text-slate-700">
                             ₹{item.price.toFixed(2)}
                           </span>
                           <button
                             type="button"
                             onClick={() => handleRemoveItem(idx)}
-                            className="text-slate-400 hover:text-rose-600 p-1"
-                            title="Remove from batch"
+                            className="text-slate-400 hover:text-rose-600 p-1 cursor-pointer"
                           >
                             <Trash2 className="w-4 h-4" />
                           </button>
@@ -624,7 +545,7 @@ export function BulkFbaTransferModal({
         {!successInfo && (
           <div className="bg-slate-50 px-6 py-4 border-t border-slate-200 flex items-center justify-between">
             <div className="text-xs text-slate-500">
-              {scannedItems.length} unit(s) ready for inward transfer to FBA.
+              Adding under division: <strong className="text-[#0b252c] font-bold">{activeDivision}</strong>
             </div>
             <div className="flex items-center gap-3">
               <button
@@ -643,8 +564,8 @@ export function BulkFbaTransferModal({
                 <PackagePlus className="w-4 h-4" />
                 <span>
                   {transferLoading
-                    ? "Transferring Units..."
-                    : `Confirm & Transfer ${scannedItems.length} Units to FBA`}
+                    ? "Adding..."
+                    : `Inward ${scannedItems.length} Units to ${activeDivision} FBA`}
                 </span>
               </button>
             </div>

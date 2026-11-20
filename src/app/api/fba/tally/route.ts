@@ -4,21 +4,23 @@ import { resolveActor, writeAudit } from "@/lib/audit";
 
 /**
  * GET /api/fba/tally
- * Retrieves FBA inventory units for monthly tally and reconciliation.
+ * Retrieves FBA inventory units for 1-click status management and monthly tally.
  */
 export async function GET(req: Request) {
   try {
     const { searchParams } = new URL(req.url);
-    const month = searchParams.get("month"); // e.g. "2026-11" or "ALL"
-    const channel = searchParams.get("channel"); // "AMAZON_FBA" | "FLIPKART_FBF" | "ALL"
-    const status = searchParams.get("status"); // "KEPT_AT_FBA" | "ORDERED_DELIVERED" | "ALL"
+    const month = searchParams.get("month");
+    const channel = searchParams.get("channel") || searchParams.get("division");
+    const status = searchParams.get("status");
     const search = searchParams.get("search")?.trim();
     const shipmentId = searchParams.get("shipmentId");
 
     const where: any = {};
 
     if (channel && channel !== "ALL") {
-      where.fbaTransfer = { channel };
+      where.fbaTransfer = {
+        channel: { equals: channel, mode: "insensitive" },
+      };
     }
 
     if (shipmentId && shipmentId !== "ALL") {
@@ -26,11 +28,18 @@ export async function GET(req: Request) {
     }
 
     if (status && status !== "ALL") {
-      where.status = status;
+      if (status === "KEPT_IDLE" || status === "KEPT_AT_FBA") {
+        where.status = "KEPT_AT_FBA";
+      } else if (status === "ORDERED_DELIVERED" || status === "DELIVERED") {
+        where.status = "ORDERED_DELIVERED";
+      } else if (status === "RETURNED" || status === "RETURNED_TO_WAREHOUSE") {
+        where.status = "RETURNED_TO_WAREHOUSE";
+      } else {
+        where.status = status;
+      }
     }
 
     if (month && month !== "ALL") {
-      // If filtering by a specific tally month, match tallyMonth or (if still kept) created in that month
       where.OR = [
         { tallyMonth: month },
         {
@@ -56,6 +65,7 @@ export async function GET(req: Request) {
             { sku: { contains: search, mode: "insensitive" } },
             { productName: { contains: search, mode: "insensitive" } },
             { fbaTransfer: { shipmentNumber: { contains: search, mode: "insensitive" } } },
+            { fbaTransfer: { channel: { contains: search, mode: "insensitive" } } },
             { fbaTransfer: { destinationFc: { contains: search, mode: "insensitive" } } },
           ],
         },
@@ -143,11 +153,22 @@ export async function GET(req: Request) {
       if (item.status === "DAMAGED") skuMap[item.sku].damaged++;
     }
 
+    // Collect distinct divisions
+    const allTransfers = await prisma.fbaTransfer.findMany({
+      select: { channel: true },
+    });
+    const divisionSet = new Set<string>(["Amazon", "Flipkart"]);
+    for (const t of allTransfers) {
+      if (t.channel) divisionSet.add(t.channel);
+    }
+    const availableDivisions = Array.from(divisionSet);
+
     const availableMonths = Array.from(monthsSet).sort().reverse();
     const skuSummary = Object.values(skuMap).sort((a, b) => b.kept - a.kept);
 
     return NextResponse.json({
       items,
+      availableDivisions,
       stats: {
         totalTransferred,
         currentlyKeptAtFba,
@@ -168,17 +189,18 @@ export async function GET(req: Request) {
 
 /**
  * POST /api/fba/tally
- * Reconcile & tally FBA units:
- * - Mark as ORDERED_DELIVERED (sold/fulfilled via Amazon FBA / Flipkart FBF)
- * - Mark as DAMAGED / LOST in FC
- * - Return to Warehouse (recall back to local stock)
- * - Revert to KEPT_AT_FBA
+ * 1-click status updater and monthly tally:
+ * - ORDERED_DELIVERED (Delivered)
+ * - RETURNED_TO_WAREHOUSE (Returned)
+ * - KEPT_AT_FBA (Kept Idle)
+ * - DAMAGED
  */
 export async function POST(req: Request) {
   try {
     const body = await req.json();
     const {
       action,
+      targetStatus: rawTargetStatus,
       itemIds = [],
       sku,
       quantity,
@@ -190,56 +212,62 @@ export async function POST(req: Request) {
     const actor = resolveActor(req, "Admin Tally");
     const activeMonth = tallyMonth || new Date().toISOString().slice(0, 7);
 
-    // 1. ACTION: MARK_ORDERED_DELIVERED
-    if (action === "MARK_ORDERED_DELIVERED") {
-      let targetIds: string[] = [];
+    // Normalize action or targetStatus
+    let targetStatus = rawTargetStatus;
+    if (action === "MARK_ORDERED_DELIVERED") targetStatus = "ORDERED_DELIVERED";
+    else if (action === "RETURN_TO_WAREHOUSE" || action === "MARK_RETURNED") targetStatus = "RETURNED_TO_WAREHOUSE";
+    else if (action === "REVERT_TO_KEPT" || action === "SET_IDLE") targetStatus = "KEPT_AT_FBA";
+    else if (action === "MARK_DAMAGED") targetStatus = "DAMAGED";
 
-      if (Array.isArray(itemIds) && itemIds.length > 0) {
-        targetIds = itemIds;
-      } else if (sku && typeof quantity === "number" && quantity > 0) {
-        // Quick SKU Tally: find available KEPT_AT_FBA items of this SKU
-        const availableItems = await prisma.fbaTransferItem.findMany({
-          where: {
-            sku: sku.trim(),
-            status: "KEPT_AT_FBA",
-          },
-          take: quantity,
-          select: { id: true },
-        });
+    // 1. Resolve target item IDs
+    let targetIds: string[] = [];
 
-        if (availableItems.length === 0) {
-          return NextResponse.json(
-            { error: `No units kept at FBA found for SKU "${sku}".` },
-            { status: 400 }
-          );
-        }
+    if (Array.isArray(itemIds) && itemIds.length > 0) {
+      targetIds = itemIds;
+    } else if (sku && typeof quantity === "number" && quantity > 0) {
+      // Quick SKU Tally
+      const availableItems = await prisma.fbaTransferItem.findMany({
+        where: {
+          sku: sku.trim(),
+          status: "KEPT_AT_FBA",
+        },
+        take: quantity,
+        select: { id: true },
+      });
 
-        if (availableItems.length < quantity) {
-          return NextResponse.json(
-            {
-              error: `Only ${availableItems.length} unit(s) of SKU "${sku}" are currently kept at FBA. Cannot mark ${quantity} units.`,
-            },
-            { status: 400 }
-          );
-        }
-
-        targetIds = availableItems.map((i) => i.id);
-      } else {
+      if (availableItems.length === 0) {
         return NextResponse.json(
-          { error: "Please select units or provide SKU and quantity to mark as ordered & delivered." },
+          { error: `No units kept idle at FBA found for SKU "${sku}".` },
           { status: 400 }
         );
       }
 
-      // Fetch the target items with their transfer and unitBarcode
-      const targets = await prisma.fbaTransferItem.findMany({
-        where: { id: { in: targetIds } },
-        include: { fbaTransfer: true },
-      });
+      if (availableItems.length < quantity) {
+        return NextResponse.json(
+          {
+            error: `Only ${availableItems.length} unit(s) of SKU "${sku}" are currently kept idle. Cannot mark ${quantity} units.`,
+          },
+          { status: 400 }
+        );
+      }
 
-      const now = new Date();
+      targetIds = availableItems.map((i) => i.id);
+    } else {
+      return NextResponse.json(
+        { error: "Please select at least one unit for status update." },
+        { status: 400 }
+      );
+    }
 
-      // Update each item
+    const targets = await prisma.fbaTransferItem.findMany({
+      where: { id: { in: targetIds } },
+      include: { fbaTransfer: true },
+    });
+
+    const now = new Date();
+
+    // CASE A: ORDERED_DELIVERED
+    if (targetStatus === "ORDERED_DELIVERED") {
       for (const item of targets) {
         await prisma.fbaTransferItem.update({
           where: { id: item.id },
@@ -248,12 +276,12 @@ export async function POST(req: Request) {
             tallyMonth: activeMonth,
             tallyDate: now,
             tallyBy: actor,
-            tallyNotes: notes || `Marked Sold & Delivered in ${activeMonth} tally`,
+            tallyNotes: notes || `Marked Delivered (${activeMonth})`,
             channelOrderId: channelOrderId || null,
           },
         });
 
-        // Update physical unit barcode to SOLD
+        // Mark physical unit barcode as SOLD
         if (item.unitBarcodeId) {
           await prisma.unitBarcode.update({
             where: { id: item.unitBarcodeId },
@@ -264,7 +292,7 @@ export async function POST(req: Request) {
           });
         }
 
-        // Record InventoryTransaction for reporting and P&L
+        // Record Sale Transaction
         await prisma.inventoryTransaction.create({
           data: {
             productVariantId: item.productVariantId,
@@ -275,7 +303,7 @@ export async function POST(req: Request) {
             newStock: 0,
             referenceType: "FBA_ORDER_DELIVERED",
             referenceId: channelOrderId || item.fbaTransfer.shipmentNumber,
-            note: `FBA Monthly Tally (${activeMonth}): Unit ${item.barcode} marked ordered/delivered via ${item.fbaTransfer.channel}`,
+            note: `FBA (${item.fbaTransfer.channel}): Unit ${item.barcode} marked Ordered & Delivered`,
             performedBy: actor,
           },
         });
@@ -290,13 +318,12 @@ export async function POST(req: Request) {
         const totalCount = await prisma.fbaTransferItem.count({
           where: { fbaTransferId: transferId },
         });
-        const allReconciled = soldCount >= totalCount;
 
         await prisma.fbaTransfer.update({
           where: { id: transferId },
           data: {
             soldUnits: soldCount,
-            status: allReconciled ? "FULLY_RECONCILED" : "PARTIALLY_RECONCILED",
+            status: soldCount >= totalCount ? "FULLY_RECONCILED" : "PARTIALLY_RECONCILED",
           },
         });
       }
@@ -304,92 +331,37 @@ export async function POST(req: Request) {
       await writeAudit({
         action: "FBA_TALLY_DELIVERED",
         entity: "INVENTORY",
-        details: `Reconciled & marked ${targets.length} FBA units as Ordered / Delivered for month ${activeMonth}`,
+        details: `Marked ${targets.length} unit(s) as Ordered & Delivered in ${activeMonth}`,
         performedBy: actor,
       });
 
       return NextResponse.json({
         success: true,
-        message: `Successfully marked ${targets.length} unit(s) as Ordered & Delivered for month ${activeMonth}.`,
+        message: `Marked ${targets.length} unit(s) as Order Delivered!`,
         updatedCount: targets.length,
       });
     }
 
-    // 2. ACTION: MARK_DAMAGED
-    if (action === "MARK_DAMAGED") {
-      if (!Array.isArray(itemIds) || itemIds.length === 0) {
-        return NextResponse.json(
-          { error: "Please select at least one unit to mark as damaged/lost." },
-          { status: 400 }
-        );
-      }
-
-      const targets = await prisma.fbaTransferItem.findMany({
-        where: { id: { in: itemIds } },
-      });
-
-      for (const item of targets) {
-        await prisma.fbaTransferItem.update({
-          where: { id: item.id },
-          data: {
-            status: "DAMAGED",
-            tallyMonth: activeMonth,
-            tallyDate: new Date(),
-            tallyBy: actor,
-            tallyNotes: notes || "Damaged/Lost in FBA Fulfillment Center",
-          },
-        });
-
-        if (item.unitBarcodeId) {
-          await prisma.unitBarcode.update({
-            where: { id: item.unitBarcodeId },
-            data: {
-              status: "DAMAGED",
-              reason: notes || "Damaged/Lost at FBA FC",
-            },
-          });
-        }
-      }
-
-      return NextResponse.json({
-        success: true,
-        message: `Marked ${targets.length} unit(s) as damaged/lost in FBA warehouse.`,
-      });
-    }
-
-    // 3. ACTION: RETURN_TO_WAREHOUSE
-    if (action === "RETURN_TO_WAREHOUSE") {
-      if (!Array.isArray(itemIds) || itemIds.length === 0) {
-        return NextResponse.json(
-          { error: "Please select at least one unit to return to local warehouse." },
-          { status: 400 }
-        );
-      }
-
-      const targets = await prisma.fbaTransferItem.findMany({
-        where: { id: { in: itemIds } },
-        include: { fbaTransfer: true },
-      });
-
+    // CASE B: RETURNED_TO_WAREHOUSE (Returned)
+    if (targetStatus === "RETURNED_TO_WAREHOUSE" || targetStatus === "RETURNED") {
       for (const item of targets) {
         await prisma.fbaTransferItem.update({
           where: { id: item.id },
           data: {
             status: "RETURNED_TO_WAREHOUSE",
-            tallyDate: new Date(),
+            tallyDate: now,
             tallyBy: actor,
-            tallyNotes: notes || "Recalled from FBA back to main warehouse",
+            tallyNotes: notes || "Returned / RTO from FBA to local stock",
           },
         });
 
-        // Set UnitBarcode status back to AVAILABLE
         if (item.unitBarcodeId) {
           await prisma.unitBarcode.update({
             where: { id: item.unitBarcodeId },
             data: {
               status: "AVAILABLE",
               isReturned: true,
-              returnedAt: new Date(),
+              returnedAt: now,
             },
           });
         }
@@ -418,7 +390,7 @@ export async function POST(req: Request) {
             newStock: availableCount,
             referenceType: "FBA_RETURN",
             referenceId: item.fbaTransfer.shipmentNumber,
-            note: `Recalled unit ${item.barcode} from ${item.fbaTransfer.channel} back to local inventory`,
+            note: `Unit ${item.barcode} returned from ${item.fbaTransfer.channel} to local retail inventory`,
             performedBy: actor,
           },
         });
@@ -426,21 +398,16 @@ export async function POST(req: Request) {
 
       return NextResponse.json({
         success: true,
-        message: `Successfully returned ${targets.length} unit(s) back to local retail inventory.`,
+        message: `Marked ${targets.length} unit(s) as Returned. Restored to local shop stock!`,
+        updatedCount: targets.length,
       });
     }
 
-    // 4. ACTION: REVERT_TO_KEPT
-    if (action === "REVERT_TO_KEPT") {
-      if (!Array.isArray(itemIds) || itemIds.length === 0) {
-        return NextResponse.json({ error: "No items selected." }, { status: 400 });
-      }
-
-      const targets = await prisma.fbaTransferItem.findMany({
-        where: { id: { in: itemIds } },
-      });
-
+    // CASE C: KEPT_AT_FBA (Kept Idle)
+    if (targetStatus === "KEPT_AT_FBA" || targetStatus === "KEPT_IDLE") {
       for (const item of targets) {
+        const wasReturned = item.status === "RETURNED_TO_WAREHOUSE";
+
         await prisma.fbaTransferItem.update({
           where: { id: item.id },
           data: {
@@ -460,15 +427,61 @@ export async function POST(req: Request) {
             },
           });
         }
+
+        // If it was returned before, deduct from local available stock again
+        if (wasReturned) {
+          const availableCount = await prisma.unitBarcode.count({
+            where: { productVariantId: item.productVariantId, status: "AVAILABLE" },
+          });
+          await prisma.inventory.update({
+            where: { productVariantId: item.productVariantId },
+            data: { quantity: availableCount },
+          });
+        }
       }
 
       return NextResponse.json({
         success: true,
-        message: `Reverted ${targets.length} unit(s) back to "Kept at FBA" sitting stock.`,
+        message: `Marked ${targets.length} unit(s) as Kept Idle in FBA stock.`,
+        updatedCount: targets.length,
       });
     }
 
-    return NextResponse.json({ error: `Unknown action "${action}"` }, { status: 400 });
+    // CASE D: DAMAGED
+    if (targetStatus === "DAMAGED") {
+      for (const item of targets) {
+        await prisma.fbaTransferItem.update({
+          where: { id: item.id },
+          data: {
+            status: "DAMAGED",
+            tallyDate: now,
+            tallyBy: actor,
+            tallyNotes: notes || "Damaged/Lost in FC",
+          },
+        });
+
+        if (item.unitBarcodeId) {
+          await prisma.unitBarcode.update({
+            where: { id: item.unitBarcodeId },
+            data: {
+              status: "DAMAGED",
+              reason: notes || "Damaged in FC",
+            },
+          });
+        }
+      }
+
+      return NextResponse.json({
+        success: true,
+        message: `Marked ${targets.length} unit(s) as Damaged in FC.`,
+        updatedCount: targets.length,
+      });
+    }
+
+    return NextResponse.json(
+      { error: `Unknown status or action "${targetStatus || action}"` },
+      { status: 400 }
+    );
   } catch (error: any) {
     console.error("POST /api/fba/tally error:", error);
     return NextResponse.json({ error: error.message }, { status: 500 });
