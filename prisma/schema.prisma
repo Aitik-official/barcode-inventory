@@ -98,6 +98,7 @@ model UnitBarcode {
   returnedAt       DateTime?
   transactions     InventoryTransaction[]
   orderItems       OrderItem[]
+  fbaItems         FbaTransferItem[]
 
   @@index([productVariantId])
   @@index([status])
@@ -499,6 +500,57 @@ model CompanySettings {
   signatureUrl        String?
   createdAt           DateTime @default(now())
   updatedAt           DateTime @updatedAt
+}
+
+model FbaTransfer {
+  id             String            @id @default(cuid()) @map("_id")
+  shipmentNumber String            @unique // e.g. FBA-202611-001 or Amazon Inbound Shipment ID
+  channel        String            @default("AMAZON_FBA") // AMAZON_FBA | FLIPKART_FBF | MEESHO_3PL | OTHER_3PL
+  destinationFc  String?           // e.g. "Amazon FC BOM5 (Bhiwandi)", "Flipkart FC BLR"
+  trackingId     String?           // Inbound AWB / Courier tracking
+  courier        String?           // e.g. "Amazon ATS", "Ekart", "BlueDart"
+  status         String            @default("IN_FBA_WAREHOUSE") // IN_FBA_WAREHOUSE | PARTIALLY_RECONCILED | FULLY_RECONCILED | CANCELLED
+  totalUnits     Int               @default(0)
+  soldUnits      Int               @default(0)
+  damagedUnits   Int               @default(0)
+  returnedUnits  Int               @default(0)
+  transferredBy  String            @default("Admin")
+  notes          String?
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+  items          FbaTransferItem[]
+
+  @@index([channel])
+  @@index([status])
+  @@index([createdAt])
+}
+
+model FbaTransferItem {
+  id               String         @id @default(cuid()) @map("_id")
+  fbaTransferId    String
+  fbaTransfer      FbaTransfer    @relation(fields: [fbaTransferId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  unitBarcodeId    String?
+  unitBarcode      UnitBarcode?   @relation(fields: [unitBarcodeId], references: [id], onDelete: SetNull, onUpdate: NoAction)
+  barcode          String
+  serialNumber     Int            @default(1)
+  productVariantId String
+  sku              String
+  productName      String
+  sellingPrice     Float          @default(0)
+  status           String         @default("KEPT_AT_FBA") // KEPT_AT_FBA | ORDERED_DELIVERED | DAMAGED | RETURNED_TO_WAREHOUSE
+  tallyMonth       String?        // e.g. "2026-11" or "Nov 2026"
+  tallyDate        DateTime?
+  tallyBy          String?
+  tallyNotes       String?
+  channelOrderId   String?
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+
+  @@index([fbaTransferId])
+  @@index([barcode])
+  @@index([sku])
+  @@index([status])
+  @@index([tallyMonth])
 }
 
 

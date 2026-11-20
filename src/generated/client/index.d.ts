@@ -138,6 +138,16 @@ export type User = $Result.DefaultSelection<Prisma.$UserPayload>
  * 
  */
 export type CompanySettings = $Result.DefaultSelection<Prisma.$CompanySettingsPayload>
+/**
+ * Model FbaTransfer
+ * 
+ */
+export type FbaTransfer = $Result.DefaultSelection<Prisma.$FbaTransferPayload>
+/**
+ * Model FbaTransferItem
+ * 
+ */
+export type FbaTransferItem = $Result.DefaultSelection<Prisma.$FbaTransferItemPayload>
 
 /**
  * ##  Prisma Client ʲˢ
@@ -473,6 +483,26 @@ export class PrismaClient<
     * ```
     */
   get companySettings(): Prisma.CompanySettingsDelegate<ExtArgs, ClientOptions>;
+
+  /**
+   * `prisma.fbaTransfer`: Exposes CRUD operations for the **FbaTransfer** model.
+    * Example usage:
+    * ```ts
+    * // Fetch zero or more FbaTransfers
+    * const fbaTransfers = await prisma.fbaTransfer.findMany()
+    * ```
+    */
+  get fbaTransfer(): Prisma.FbaTransferDelegate<ExtArgs, ClientOptions>;
+
+  /**
+   * `prisma.fbaTransferItem`: Exposes CRUD operations for the **FbaTransferItem** model.
+    * Example usage:
+    * ```ts
+    * // Fetch zero or more FbaTransferItems
+    * const fbaTransferItems = await prisma.fbaTransferItem.findMany()
+    * ```
+    */
+  get fbaTransferItem(): Prisma.FbaTransferItemDelegate<ExtArgs, ClientOptions>;
 }
 
 export namespace Prisma {
@@ -938,7 +968,9 @@ export namespace Prisma {
     MarketplaceOrder: 'MarketplaceOrder',
     MarketplaceOrderItem: 'MarketplaceOrderItem',
     User: 'User',
-    CompanySettings: 'CompanySettings'
+    CompanySettings: 'CompanySettings',
+    FbaTransfer: 'FbaTransfer',
+    FbaTransferItem: 'FbaTransferItem'
   };
 
   export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -957,7 +989,7 @@ export namespace Prisma {
       omit: GlobalOmitOptions
     }
     meta: {
-      modelProps: "category" | "product" | "productVariant" | "unitBarcode" | "inventory" | "inventoryTransaction" | "printJob" | "customer" | "supplier" | "purchaseOrder" | "purchaseOrderItem" | "order" | "orderItem" | "quotation" | "enquiry" | "invoice" | "customerStock" | "waste" | "auditLog" | "marketplaceCredential" | "marketplaceMapping" | "marketplaceOrder" | "marketplaceOrderItem" | "user" | "companySettings"
+      modelProps: "category" | "product" | "productVariant" | "unitBarcode" | "inventory" | "inventoryTransaction" | "printJob" | "customer" | "supplier" | "purchaseOrder" | "purchaseOrderItem" | "order" | "orderItem" | "quotation" | "enquiry" | "invoice" | "customerStock" | "waste" | "auditLog" | "marketplaceCredential" | "marketplaceMapping" | "marketplaceOrder" | "marketplaceOrderItem" | "user" | "companySettings" | "fbaTransfer" | "fbaTransferItem"
       txIsolationLevel: never
     }
     model: {
@@ -2811,6 +2843,154 @@ export namespace Prisma {
           }
         }
       }
+      FbaTransfer: {
+        payload: Prisma.$FbaTransferPayload<ExtArgs>
+        fields: Prisma.FbaTransferFieldRefs
+        operations: {
+          findUnique: {
+            args: Prisma.FbaTransferFindUniqueArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$FbaTransferPayload> | null
+          }
+          findUniqueOrThrow: {
+            args: Prisma.FbaTransferFindUniqueOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$FbaTransferPayload>
+          }
+          findFirst: {
+            args: Prisma.FbaTransferFindFirstArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$FbaTransferPayload> | null
+          }
+          findFirstOrThrow: {
+            args: Prisma.FbaTransferFindFirstOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$FbaTransferPayload>
+          }
+          findMany: {
+            args: Prisma.FbaTransferFindManyArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$FbaTransferPayload>[]
+          }
+          create: {
+            args: Prisma.FbaTransferCreateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$FbaTransferPayload>
+          }
+          createMany: {
+            args: Prisma.FbaTransferCreateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          delete: {
+            args: Prisma.FbaTransferDeleteArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$FbaTransferPayload>
+          }
+          update: {
+            args: Prisma.FbaTransferUpdateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$FbaTransferPayload>
+          }
+          deleteMany: {
+            args: Prisma.FbaTransferDeleteManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateMany: {
+            args: Prisma.FbaTransferUpdateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          upsert: {
+            args: Prisma.FbaTransferUpsertArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$FbaTransferPayload>
+          }
+          aggregate: {
+            args: Prisma.FbaTransferAggregateArgs<ExtArgs>
+            result: $Utils.Optional<AggregateFbaTransfer>
+          }
+          groupBy: {
+            args: Prisma.FbaTransferGroupByArgs<ExtArgs>
+            result: $Utils.Optional<FbaTransferGroupByOutputType>[]
+          }
+          findRaw: {
+            args: Prisma.FbaTransferFindRawArgs<ExtArgs>
+            result: JsonObject
+          }
+          aggregateRaw: {
+            args: Prisma.FbaTransferAggregateRawArgs<ExtArgs>
+            result: JsonObject
+          }
+          count: {
+            args: Prisma.FbaTransferCountArgs<ExtArgs>
+            result: $Utils.Optional<FbaTransferCountAggregateOutputType> | number
+          }
+        }
+      }
+      FbaTransferItem: {
+        payload: Prisma.$FbaTransferItemPayload<ExtArgs>
+        fields: Prisma.FbaTransferItemFieldRefs
+        operations: {
+          findUnique: {
+            args: Prisma.FbaTransferItemFindUniqueArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$FbaTransferItemPayload> | null
+          }
+          findUniqueOrThrow: {
+            args: Prisma.FbaTransferItemFindUniqueOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$FbaTransferItemPayload>
+          }
+          findFirst: {
+            args: Prisma.FbaTransferItemFindFirstArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$FbaTransferItemPayload> | null
+          }
+          findFirstOrThrow: {
+            args: Prisma.FbaTransferItemFindFirstOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$FbaTransferItemPayload>
+          }
+          findMany: {
+            args: Prisma.FbaTransferItemFindManyArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$FbaTransferItemPayload>[]
+          }
+          create: {
+            args: Prisma.FbaTransferItemCreateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$FbaTransferItemPayload>
+          }
+          createMany: {
+            args: Prisma.FbaTransferItemCreateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          delete: {
+            args: Prisma.FbaTransferItemDeleteArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$FbaTransferItemPayload>
+          }
+          update: {
+            args: Prisma.FbaTransferItemUpdateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$FbaTransferItemPayload>
+          }
+          deleteMany: {
+            args: Prisma.FbaTransferItemDeleteManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateMany: {
+            args: Prisma.FbaTransferItemUpdateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          upsert: {
+            args: Prisma.FbaTransferItemUpsertArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$FbaTransferItemPayload>
+          }
+          aggregate: {
+            args: Prisma.FbaTransferItemAggregateArgs<ExtArgs>
+            result: $Utils.Optional<AggregateFbaTransferItem>
+          }
+          groupBy: {
+            args: Prisma.FbaTransferItemGroupByArgs<ExtArgs>
+            result: $Utils.Optional<FbaTransferItemGroupByOutputType>[]
+          }
+          findRaw: {
+            args: Prisma.FbaTransferItemFindRawArgs<ExtArgs>
+            result: JsonObject
+          }
+          aggregateRaw: {
+            args: Prisma.FbaTransferItemAggregateRawArgs<ExtArgs>
+            result: JsonObject
+          }
+          count: {
+            args: Prisma.FbaTransferItemCountArgs<ExtArgs>
+            result: $Utils.Optional<FbaTransferItemCountAggregateOutputType> | number
+          }
+        }
+      }
     }
   } & {
     other: {
@@ -2915,6 +3095,8 @@ export namespace Prisma {
     marketplaceOrderItem?: MarketplaceOrderItemOmit
     user?: UserOmit
     companySettings?: CompanySettingsOmit
+    fbaTransfer?: FbaTransferOmit
+    fbaTransferItem?: FbaTransferItemOmit
   }
 
   /* Types for Logging */
@@ -3162,11 +3344,13 @@ export namespace Prisma {
   export type UnitBarcodeCountOutputType = {
     transactions: number
     orderItems: number
+    fbaItems: number
   }
 
   export type UnitBarcodeCountOutputTypeSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     transactions?: boolean | UnitBarcodeCountOutputTypeCountTransactionsArgs
     orderItems?: boolean | UnitBarcodeCountOutputTypeCountOrderItemsArgs
+    fbaItems?: boolean | UnitBarcodeCountOutputTypeCountFbaItemsArgs
   }
 
   // Custom InputTypes
@@ -3192,6 +3376,13 @@ export namespace Prisma {
    */
   export type UnitBarcodeCountOutputTypeCountOrderItemsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     where?: OrderItemWhereInput
+  }
+
+  /**
+   * UnitBarcodeCountOutputType without action
+   */
+  export type UnitBarcodeCountOutputTypeCountFbaItemsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: FbaTransferItemWhereInput
   }
 
 
@@ -3441,6 +3632,37 @@ export namespace Prisma {
    */
   export type MarketplaceOrderCountOutputTypeCountItemsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     where?: MarketplaceOrderItemWhereInput
+  }
+
+
+  /**
+   * Count Type FbaTransferCountOutputType
+   */
+
+  export type FbaTransferCountOutputType = {
+    items: number
+  }
+
+  export type FbaTransferCountOutputTypeSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    items?: boolean | FbaTransferCountOutputTypeCountItemsArgs
+  }
+
+  // Custom InputTypes
+  /**
+   * FbaTransferCountOutputType without action
+   */
+  export type FbaTransferCountOutputTypeDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the FbaTransferCountOutputType
+     */
+    select?: FbaTransferCountOutputTypeSelect<ExtArgs> | null
+  }
+
+  /**
+   * FbaTransferCountOutputType without action
+   */
+  export type FbaTransferCountOutputTypeCountItemsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: FbaTransferItemWhereInput
   }
 
 
@@ -7485,6 +7707,7 @@ export namespace Prisma {
     productVariant?: boolean | ProductVariantDefaultArgs<ExtArgs>
     transactions?: boolean | UnitBarcode$transactionsArgs<ExtArgs>
     orderItems?: boolean | UnitBarcode$orderItemsArgs<ExtArgs>
+    fbaItems?: boolean | UnitBarcode$fbaItemsArgs<ExtArgs>
     _count?: boolean | UnitBarcodeCountOutputTypeDefaultArgs<ExtArgs>
   }, ExtArgs["result"]["unitBarcode"]>
 
@@ -7511,6 +7734,7 @@ export namespace Prisma {
     productVariant?: boolean | ProductVariantDefaultArgs<ExtArgs>
     transactions?: boolean | UnitBarcode$transactionsArgs<ExtArgs>
     orderItems?: boolean | UnitBarcode$orderItemsArgs<ExtArgs>
+    fbaItems?: boolean | UnitBarcode$fbaItemsArgs<ExtArgs>
     _count?: boolean | UnitBarcodeCountOutputTypeDefaultArgs<ExtArgs>
   }
 
@@ -7520,6 +7744,7 @@ export namespace Prisma {
       productVariant: Prisma.$ProductVariantPayload<ExtArgs>
       transactions: Prisma.$InventoryTransactionPayload<ExtArgs>[]
       orderItems: Prisma.$OrderItemPayload<ExtArgs>[]
+      fbaItems: Prisma.$FbaTransferItemPayload<ExtArgs>[]
     }
     scalars: $Extensions.GetPayloadResult<{
       id: string
@@ -7901,6 +8126,7 @@ export namespace Prisma {
     productVariant<T extends ProductVariantDefaultArgs<ExtArgs> = {}>(args?: Subset<T, ProductVariantDefaultArgs<ExtArgs>>): Prisma__ProductVariantClient<$Result.GetResult<Prisma.$ProductVariantPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
     transactions<T extends UnitBarcode$transactionsArgs<ExtArgs> = {}>(args?: Subset<T, UnitBarcode$transactionsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$InventoryTransactionPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     orderItems<T extends UnitBarcode$orderItemsArgs<ExtArgs> = {}>(args?: Subset<T, UnitBarcode$orderItemsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$OrderItemPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+    fbaItems<T extends UnitBarcode$fbaItemsArgs<ExtArgs> = {}>(args?: Subset<T, UnitBarcode$fbaItemsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$FbaTransferItemPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     /**
      * Attaches callbacks for the resolution and/or rejection of the Promise.
      * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -8358,6 +8584,30 @@ export namespace Prisma {
     take?: number
     skip?: number
     distinct?: OrderItemScalarFieldEnum | OrderItemScalarFieldEnum[]
+  }
+
+  /**
+   * UnitBarcode.fbaItems
+   */
+  export type UnitBarcode$fbaItemsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the FbaTransferItem
+     */
+    select?: FbaTransferItemSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the FbaTransferItem
+     */
+    omit?: FbaTransferItemOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: FbaTransferItemInclude<ExtArgs> | null
+    where?: FbaTransferItemWhereInput
+    orderBy?: FbaTransferItemOrderByWithRelationInput | FbaTransferItemOrderByWithRelationInput[]
+    cursor?: FbaTransferItemWhereUniqueInput
+    take?: number
+    skip?: number
+    distinct?: FbaTransferItemScalarFieldEnum | FbaTransferItemScalarFieldEnum[]
   }
 
   /**
@@ -31776,6 +32026,2339 @@ export namespace Prisma {
 
 
   /**
+   * Model FbaTransfer
+   */
+
+  export type AggregateFbaTransfer = {
+    _count: FbaTransferCountAggregateOutputType | null
+    _avg: FbaTransferAvgAggregateOutputType | null
+    _sum: FbaTransferSumAggregateOutputType | null
+    _min: FbaTransferMinAggregateOutputType | null
+    _max: FbaTransferMaxAggregateOutputType | null
+  }
+
+  export type FbaTransferAvgAggregateOutputType = {
+    totalUnits: number | null
+    soldUnits: number | null
+    damagedUnits: number | null
+    returnedUnits: number | null
+  }
+
+  export type FbaTransferSumAggregateOutputType = {
+    totalUnits: number | null
+    soldUnits: number | null
+    damagedUnits: number | null
+    returnedUnits: number | null
+  }
+
+  export type FbaTransferMinAggregateOutputType = {
+    id: string | null
+    shipmentNumber: string | null
+    channel: string | null
+    destinationFc: string | null
+    trackingId: string | null
+    courier: string | null
+    status: string | null
+    totalUnits: number | null
+    soldUnits: number | null
+    damagedUnits: number | null
+    returnedUnits: number | null
+    transferredBy: string | null
+    notes: string | null
+    createdAt: Date | null
+    updatedAt: Date | null
+  }
+
+  export type FbaTransferMaxAggregateOutputType = {
+    id: string | null
+    shipmentNumber: string | null
+    channel: string | null
+    destinationFc: string | null
+    trackingId: string | null
+    courier: string | null
+    status: string | null
+    totalUnits: number | null
+    soldUnits: number | null
+    damagedUnits: number | null
+    returnedUnits: number | null
+    transferredBy: string | null
+    notes: string | null
+    createdAt: Date | null
+    updatedAt: Date | null
+  }
+
+  export type FbaTransferCountAggregateOutputType = {
+    id: number
+    shipmentNumber: number
+    channel: number
+    destinationFc: number
+    trackingId: number
+    courier: number
+    status: number
+    totalUnits: number
+    soldUnits: number
+    damagedUnits: number
+    returnedUnits: number
+    transferredBy: number
+    notes: number
+    createdAt: number
+    updatedAt: number
+    _all: number
+  }
+
+
+  export type FbaTransferAvgAggregateInputType = {
+    totalUnits?: true
+    soldUnits?: true
+    damagedUnits?: true
+    returnedUnits?: true
+  }
+
+  export type FbaTransferSumAggregateInputType = {
+    totalUnits?: true
+    soldUnits?: true
+    damagedUnits?: true
+    returnedUnits?: true
+  }
+
+  export type FbaTransferMinAggregateInputType = {
+    id?: true
+    shipmentNumber?: true
+    channel?: true
+    destinationFc?: true
+    trackingId?: true
+    courier?: true
+    status?: true
+    totalUnits?: true
+    soldUnits?: true
+    damagedUnits?: true
+    returnedUnits?: true
+    transferredBy?: true
+    notes?: true
+    createdAt?: true
+    updatedAt?: true
+  }
+
+  export type FbaTransferMaxAggregateInputType = {
+    id?: true
+    shipmentNumber?: true
+    channel?: true
+    destinationFc?: true
+    trackingId?: true
+    courier?: true
+    status?: true
+    totalUnits?: true
+    soldUnits?: true
+    damagedUnits?: true
+    returnedUnits?: true
+    transferredBy?: true
+    notes?: true
+    createdAt?: true
+    updatedAt?: true
+  }
+
+  export type FbaTransferCountAggregateInputType = {
+    id?: true
+    shipmentNumber?: true
+    channel?: true
+    destinationFc?: true
+    trackingId?: true
+    courier?: true
+    status?: true
+    totalUnits?: true
+    soldUnits?: true
+    damagedUnits?: true
+    returnedUnits?: true
+    transferredBy?: true
+    notes?: true
+    createdAt?: true
+    updatedAt?: true
+    _all?: true
+  }
+
+  export type FbaTransferAggregateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which FbaTransfer to aggregate.
+     */
+    where?: FbaTransferWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of FbaTransfers to fetch.
+     */
+    orderBy?: FbaTransferOrderByWithRelationInput | FbaTransferOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the start position
+     */
+    cursor?: FbaTransferWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` FbaTransfers from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` FbaTransfers.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Count returned FbaTransfers
+    **/
+    _count?: true | FbaTransferCountAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to average
+    **/
+    _avg?: FbaTransferAvgAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to sum
+    **/
+    _sum?: FbaTransferSumAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the minimum value
+    **/
+    _min?: FbaTransferMinAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the maximum value
+    **/
+    _max?: FbaTransferMaxAggregateInputType
+  }
+
+  export type GetFbaTransferAggregateType<T extends FbaTransferAggregateArgs> = {
+        [P in keyof T & keyof AggregateFbaTransfer]: P extends '_count' | 'count'
+      ? T[P] extends true
+        ? number
+        : GetScalarType<T[P], AggregateFbaTransfer[P]>
+      : GetScalarType<T[P], AggregateFbaTransfer[P]>
+  }
+
+
+
+
+  export type FbaTransferGroupByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: FbaTransferWhereInput
+    orderBy?: FbaTransferOrderByWithAggregationInput | FbaTransferOrderByWithAggregationInput[]
+    by: FbaTransferScalarFieldEnum[] | FbaTransferScalarFieldEnum
+    having?: FbaTransferScalarWhereWithAggregatesInput
+    take?: number
+    skip?: number
+    _count?: FbaTransferCountAggregateInputType | true
+    _avg?: FbaTransferAvgAggregateInputType
+    _sum?: FbaTransferSumAggregateInputType
+    _min?: FbaTransferMinAggregateInputType
+    _max?: FbaTransferMaxAggregateInputType
+  }
+
+  export type FbaTransferGroupByOutputType = {
+    id: string
+    shipmentNumber: string
+    channel: string
+    destinationFc: string | null
+    trackingId: string | null
+    courier: string | null
+    status: string
+    totalUnits: number
+    soldUnits: number
+    damagedUnits: number
+    returnedUnits: number
+    transferredBy: string
+    notes: string | null
+    createdAt: Date
+    updatedAt: Date
+    _count: FbaTransferCountAggregateOutputType | null
+    _avg: FbaTransferAvgAggregateOutputType | null
+    _sum: FbaTransferSumAggregateOutputType | null
+    _min: FbaTransferMinAggregateOutputType | null
+    _max: FbaTransferMaxAggregateOutputType | null
+  }
+
+  type GetFbaTransferGroupByPayload<T extends FbaTransferGroupByArgs> = Prisma.PrismaPromise<
+    Array<
+      PickEnumerable<FbaTransferGroupByOutputType, T['by']> &
+        {
+          [P in ((keyof T) & (keyof FbaTransferGroupByOutputType))]: P extends '_count'
+            ? T[P] extends boolean
+              ? number
+              : GetScalarType<T[P], FbaTransferGroupByOutputType[P]>
+            : GetScalarType<T[P], FbaTransferGroupByOutputType[P]>
+        }
+      >
+    >
+
+
+  export type FbaTransferSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    shipmentNumber?: boolean
+    channel?: boolean
+    destinationFc?: boolean
+    trackingId?: boolean
+    courier?: boolean
+    status?: boolean
+    totalUnits?: boolean
+    soldUnits?: boolean
+    damagedUnits?: boolean
+    returnedUnits?: boolean
+    transferredBy?: boolean
+    notes?: boolean
+    createdAt?: boolean
+    updatedAt?: boolean
+    items?: boolean | FbaTransfer$itemsArgs<ExtArgs>
+    _count?: boolean | FbaTransferCountOutputTypeDefaultArgs<ExtArgs>
+  }, ExtArgs["result"]["fbaTransfer"]>
+
+
+
+  export type FbaTransferSelectScalar = {
+    id?: boolean
+    shipmentNumber?: boolean
+    channel?: boolean
+    destinationFc?: boolean
+    trackingId?: boolean
+    courier?: boolean
+    status?: boolean
+    totalUnits?: boolean
+    soldUnits?: boolean
+    damagedUnits?: boolean
+    returnedUnits?: boolean
+    transferredBy?: boolean
+    notes?: boolean
+    createdAt?: boolean
+    updatedAt?: boolean
+  }
+
+  export type FbaTransferOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "shipmentNumber" | "channel" | "destinationFc" | "trackingId" | "courier" | "status" | "totalUnits" | "soldUnits" | "damagedUnits" | "returnedUnits" | "transferredBy" | "notes" | "createdAt" | "updatedAt", ExtArgs["result"]["fbaTransfer"]>
+  export type FbaTransferInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    items?: boolean | FbaTransfer$itemsArgs<ExtArgs>
+    _count?: boolean | FbaTransferCountOutputTypeDefaultArgs<ExtArgs>
+  }
+
+  export type $FbaTransferPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    name: "FbaTransfer"
+    objects: {
+      items: Prisma.$FbaTransferItemPayload<ExtArgs>[]
+    }
+    scalars: $Extensions.GetPayloadResult<{
+      id: string
+      shipmentNumber: string
+      channel: string
+      destinationFc: string | null
+      trackingId: string | null
+      courier: string | null
+      status: string
+      totalUnits: number
+      soldUnits: number
+      damagedUnits: number
+      returnedUnits: number
+      transferredBy: string
+      notes: string | null
+      createdAt: Date
+      updatedAt: Date
+    }, ExtArgs["result"]["fbaTransfer"]>
+    composites: {}
+  }
+
+  type FbaTransferGetPayload<S extends boolean | null | undefined | FbaTransferDefaultArgs> = $Result.GetResult<Prisma.$FbaTransferPayload, S>
+
+  type FbaTransferCountArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> =
+    Omit<FbaTransferFindManyArgs, 'select' | 'include' | 'distinct' | 'omit'> & {
+      select?: FbaTransferCountAggregateInputType | true
+    }
+
+  export interface FbaTransferDelegate<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> {
+    [K: symbol]: { types: Prisma.TypeMap<ExtArgs>['model']['FbaTransfer'], meta: { name: 'FbaTransfer' } }
+    /**
+     * Find zero or one FbaTransfer that matches the filter.
+     * @param {FbaTransferFindUniqueArgs} args - Arguments to find a FbaTransfer
+     * @example
+     * // Get one FbaTransfer
+     * const fbaTransfer = await prisma.fbaTransfer.findUnique({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUnique<T extends FbaTransferFindUniqueArgs>(args: SelectSubset<T, FbaTransferFindUniqueArgs<ExtArgs>>): Prisma__FbaTransferClient<$Result.GetResult<Prisma.$FbaTransferPayload<ExtArgs>, T, "findUnique", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find one FbaTransfer that matches the filter or throw an error with `error.code='P2025'`
+     * if no matches were found.
+     * @param {FbaTransferFindUniqueOrThrowArgs} args - Arguments to find a FbaTransfer
+     * @example
+     * // Get one FbaTransfer
+     * const fbaTransfer = await prisma.fbaTransfer.findUniqueOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUniqueOrThrow<T extends FbaTransferFindUniqueOrThrowArgs>(args: SelectSubset<T, FbaTransferFindUniqueOrThrowArgs<ExtArgs>>): Prisma__FbaTransferClient<$Result.GetResult<Prisma.$FbaTransferPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first FbaTransfer that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {FbaTransferFindFirstArgs} args - Arguments to find a FbaTransfer
+     * @example
+     * // Get one FbaTransfer
+     * const fbaTransfer = await prisma.fbaTransfer.findFirst({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirst<T extends FbaTransferFindFirstArgs>(args?: SelectSubset<T, FbaTransferFindFirstArgs<ExtArgs>>): Prisma__FbaTransferClient<$Result.GetResult<Prisma.$FbaTransferPayload<ExtArgs>, T, "findFirst", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first FbaTransfer that matches the filter or
+     * throw `PrismaKnownClientError` with `P2025` code if no matches were found.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {FbaTransferFindFirstOrThrowArgs} args - Arguments to find a FbaTransfer
+     * @example
+     * // Get one FbaTransfer
+     * const fbaTransfer = await prisma.fbaTransfer.findFirstOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirstOrThrow<T extends FbaTransferFindFirstOrThrowArgs>(args?: SelectSubset<T, FbaTransferFindFirstOrThrowArgs<ExtArgs>>): Prisma__FbaTransferClient<$Result.GetResult<Prisma.$FbaTransferPayload<ExtArgs>, T, "findFirstOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find zero or more FbaTransfers that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {FbaTransferFindManyArgs} args - Arguments to filter and select certain fields only.
+     * @example
+     * // Get all FbaTransfers
+     * const fbaTransfers = await prisma.fbaTransfer.findMany()
+     * 
+     * // Get first 10 FbaTransfers
+     * const fbaTransfers = await prisma.fbaTransfer.findMany({ take: 10 })
+     * 
+     * // Only select the `id`
+     * const fbaTransferWithIdOnly = await prisma.fbaTransfer.findMany({ select: { id: true } })
+     * 
+     */
+    findMany<T extends FbaTransferFindManyArgs>(args?: SelectSubset<T, FbaTransferFindManyArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$FbaTransferPayload<ExtArgs>, T, "findMany", GlobalOmitOptions>>
+
+    /**
+     * Create a FbaTransfer.
+     * @param {FbaTransferCreateArgs} args - Arguments to create a FbaTransfer.
+     * @example
+     * // Create one FbaTransfer
+     * const FbaTransfer = await prisma.fbaTransfer.create({
+     *   data: {
+     *     // ... data to create a FbaTransfer
+     *   }
+     * })
+     * 
+     */
+    create<T extends FbaTransferCreateArgs>(args: SelectSubset<T, FbaTransferCreateArgs<ExtArgs>>): Prisma__FbaTransferClient<$Result.GetResult<Prisma.$FbaTransferPayload<ExtArgs>, T, "create", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Create many FbaTransfers.
+     * @param {FbaTransferCreateManyArgs} args - Arguments to create many FbaTransfers.
+     * @example
+     * // Create many FbaTransfers
+     * const fbaTransfer = await prisma.fbaTransfer.createMany({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     *     
+     */
+    createMany<T extends FbaTransferCreateManyArgs>(args?: SelectSubset<T, FbaTransferCreateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Delete a FbaTransfer.
+     * @param {FbaTransferDeleteArgs} args - Arguments to delete one FbaTransfer.
+     * @example
+     * // Delete one FbaTransfer
+     * const FbaTransfer = await prisma.fbaTransfer.delete({
+     *   where: {
+     *     // ... filter to delete one FbaTransfer
+     *   }
+     * })
+     * 
+     */
+    delete<T extends FbaTransferDeleteArgs>(args: SelectSubset<T, FbaTransferDeleteArgs<ExtArgs>>): Prisma__FbaTransferClient<$Result.GetResult<Prisma.$FbaTransferPayload<ExtArgs>, T, "delete", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Update one FbaTransfer.
+     * @param {FbaTransferUpdateArgs} args - Arguments to update one FbaTransfer.
+     * @example
+     * // Update one FbaTransfer
+     * const fbaTransfer = await prisma.fbaTransfer.update({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    update<T extends FbaTransferUpdateArgs>(args: SelectSubset<T, FbaTransferUpdateArgs<ExtArgs>>): Prisma__FbaTransferClient<$Result.GetResult<Prisma.$FbaTransferPayload<ExtArgs>, T, "update", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Delete zero or more FbaTransfers.
+     * @param {FbaTransferDeleteManyArgs} args - Arguments to filter FbaTransfers to delete.
+     * @example
+     * // Delete a few FbaTransfers
+     * const { count } = await prisma.fbaTransfer.deleteMany({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     * 
+     */
+    deleteMany<T extends FbaTransferDeleteManyArgs>(args?: SelectSubset<T, FbaTransferDeleteManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more FbaTransfers.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {FbaTransferUpdateManyArgs} args - Arguments to update one or more rows.
+     * @example
+     * // Update many FbaTransfers
+     * const fbaTransfer = await prisma.fbaTransfer.updateMany({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    updateMany<T extends FbaTransferUpdateManyArgs>(args: SelectSubset<T, FbaTransferUpdateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Create or update one FbaTransfer.
+     * @param {FbaTransferUpsertArgs} args - Arguments to update or create a FbaTransfer.
+     * @example
+     * // Update or create a FbaTransfer
+     * const fbaTransfer = await prisma.fbaTransfer.upsert({
+     *   create: {
+     *     // ... data to create a FbaTransfer
+     *   },
+     *   update: {
+     *     // ... in case it already exists, update
+     *   },
+     *   where: {
+     *     // ... the filter for the FbaTransfer we want to update
+     *   }
+     * })
+     */
+    upsert<T extends FbaTransferUpsertArgs>(args: SelectSubset<T, FbaTransferUpsertArgs<ExtArgs>>): Prisma__FbaTransferClient<$Result.GetResult<Prisma.$FbaTransferPayload<ExtArgs>, T, "upsert", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find zero or more FbaTransfers that matches the filter.
+     * @param {FbaTransferFindRawArgs} args - Select which filters you would like to apply.
+     * @example
+     * const fbaTransfer = await prisma.fbaTransfer.findRaw({
+     *   filter: { age: { $gt: 25 } }
+     * })
+     */
+    findRaw(args?: FbaTransferFindRawArgs): Prisma.PrismaPromise<JsonObject>
+
+    /**
+     * Perform aggregation operations on a FbaTransfer.
+     * @param {FbaTransferAggregateRawArgs} args - Select which aggregations you would like to apply.
+     * @example
+     * const fbaTransfer = await prisma.fbaTransfer.aggregateRaw({
+     *   pipeline: [
+     *     { $match: { status: "registered" } },
+     *     { $group: { _id: "$country", total: { $sum: 1 } } }
+     *   ]
+     * })
+     */
+    aggregateRaw(args?: FbaTransferAggregateRawArgs): Prisma.PrismaPromise<JsonObject>
+
+
+    /**
+     * Count the number of FbaTransfers.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {FbaTransferCountArgs} args - Arguments to filter FbaTransfers to count.
+     * @example
+     * // Count the number of FbaTransfers
+     * const count = await prisma.fbaTransfer.count({
+     *   where: {
+     *     // ... the filter for the FbaTransfers we want to count
+     *   }
+     * })
+    **/
+    count<T extends FbaTransferCountArgs>(
+      args?: Subset<T, FbaTransferCountArgs>,
+    ): Prisma.PrismaPromise<
+      T extends $Utils.Record<'select', any>
+        ? T['select'] extends true
+          ? number
+          : GetScalarType<T['select'], FbaTransferCountAggregateOutputType>
+        : number
+    >
+
+    /**
+     * Allows you to perform aggregations operations on a FbaTransfer.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {FbaTransferAggregateArgs} args - Select which aggregations you would like to apply and on what fields.
+     * @example
+     * // Ordered by age ascending
+     * // Where email contains prisma.io
+     * // Limited to the 10 users
+     * const aggregations = await prisma.user.aggregate({
+     *   _avg: {
+     *     age: true,
+     *   },
+     *   where: {
+     *     email: {
+     *       contains: "prisma.io",
+     *     },
+     *   },
+     *   orderBy: {
+     *     age: "asc",
+     *   },
+     *   take: 10,
+     * })
+    **/
+    aggregate<T extends FbaTransferAggregateArgs>(args: Subset<T, FbaTransferAggregateArgs>): Prisma.PrismaPromise<GetFbaTransferAggregateType<T>>
+
+    /**
+     * Group by FbaTransfer.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {FbaTransferGroupByArgs} args - Group by arguments.
+     * @example
+     * // Group by city, order by createdAt, get count
+     * const result = await prisma.user.groupBy({
+     *   by: ['city', 'createdAt'],
+     *   orderBy: {
+     *     createdAt: true
+     *   },
+     *   _count: {
+     *     _all: true
+     *   },
+     * })
+     * 
+    **/
+    groupBy<
+      T extends FbaTransferGroupByArgs,
+      HasSelectOrTake extends Or<
+        Extends<'skip', Keys<T>>,
+        Extends<'take', Keys<T>>
+      >,
+      OrderByArg extends True extends HasSelectOrTake
+        ? { orderBy: FbaTransferGroupByArgs['orderBy'] }
+        : { orderBy?: FbaTransferGroupByArgs['orderBy'] },
+      OrderFields extends ExcludeUnderscoreKeys<Keys<MaybeTupleToUnion<T['orderBy']>>>,
+      ByFields extends MaybeTupleToUnion<T['by']>,
+      ByValid extends Has<ByFields, OrderFields>,
+      HavingFields extends GetHavingFields<T['having']>,
+      HavingValid extends Has<ByFields, HavingFields>,
+      ByEmpty extends T['by'] extends never[] ? True : False,
+      InputErrors extends ByEmpty extends True
+      ? `Error: "by" must not be empty.`
+      : HavingValid extends False
+      ? {
+          [P in HavingFields]: P extends ByFields
+            ? never
+            : P extends string
+            ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
+            : [
+                Error,
+                'Field ',
+                P,
+                ` in "having" needs to be provided in "by"`,
+              ]
+        }[HavingFields]
+      : 'take' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "take", you also need to provide "orderBy"'
+      : 'skip' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "skip", you also need to provide "orderBy"'
+      : ByValid extends True
+      ? {}
+      : {
+          [P in OrderFields]: P extends ByFields
+            ? never
+            : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+        }[OrderFields]
+    >(args: SubsetIntersection<T, FbaTransferGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetFbaTransferGroupByPayload<T> : Prisma.PrismaPromise<InputErrors>
+  /**
+   * Fields of the FbaTransfer model
+   */
+  readonly fields: FbaTransferFieldRefs;
+  }
+
+  /**
+   * The delegate class that acts as a "Promise-like" for FbaTransfer.
+   * Why is this prefixed with `Prisma__`?
+   * Because we want to prevent naming conflicts as mentioned in
+   * https://github.com/prisma/prisma-client-js/issues/707
+   */
+  export interface Prisma__FbaTransferClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
+    readonly [Symbol.toStringTag]: "PrismaPromise"
+    items<T extends FbaTransfer$itemsArgs<ExtArgs> = {}>(args?: Subset<T, FbaTransfer$itemsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$FbaTransferItemPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+    /**
+     * Attaches callbacks for the resolution and/or rejection of the Promise.
+     * @param onfulfilled The callback to execute when the Promise is resolved.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of which ever callback is executed.
+     */
+    then<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null): $Utils.JsPromise<TResult1 | TResult2>
+    /**
+     * Attaches a callback for only the rejection of the Promise.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of the callback.
+     */
+    catch<TResult = never>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null): $Utils.JsPromise<T | TResult>
+    /**
+     * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
+     * resolved value cannot be modified from the callback.
+     * @param onfinally The callback to execute when the Promise is settled (fulfilled or rejected).
+     * @returns A Promise for the completion of the callback.
+     */
+    finally(onfinally?: (() => void) | undefined | null): $Utils.JsPromise<T>
+  }
+
+
+
+
+  /**
+   * Fields of the FbaTransfer model
+   */
+  interface FbaTransferFieldRefs {
+    readonly id: FieldRef<"FbaTransfer", 'String'>
+    readonly shipmentNumber: FieldRef<"FbaTransfer", 'String'>
+    readonly channel: FieldRef<"FbaTransfer", 'String'>
+    readonly destinationFc: FieldRef<"FbaTransfer", 'String'>
+    readonly trackingId: FieldRef<"FbaTransfer", 'String'>
+    readonly courier: FieldRef<"FbaTransfer", 'String'>
+    readonly status: FieldRef<"FbaTransfer", 'String'>
+    readonly totalUnits: FieldRef<"FbaTransfer", 'Int'>
+    readonly soldUnits: FieldRef<"FbaTransfer", 'Int'>
+    readonly damagedUnits: FieldRef<"FbaTransfer", 'Int'>
+    readonly returnedUnits: FieldRef<"FbaTransfer", 'Int'>
+    readonly transferredBy: FieldRef<"FbaTransfer", 'String'>
+    readonly notes: FieldRef<"FbaTransfer", 'String'>
+    readonly createdAt: FieldRef<"FbaTransfer", 'DateTime'>
+    readonly updatedAt: FieldRef<"FbaTransfer", 'DateTime'>
+  }
+    
+
+  // Custom InputTypes
+  /**
+   * FbaTransfer findUnique
+   */
+  export type FbaTransferFindUniqueArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the FbaTransfer
+     */
+    select?: FbaTransferSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the FbaTransfer
+     */
+    omit?: FbaTransferOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: FbaTransferInclude<ExtArgs> | null
+    /**
+     * Filter, which FbaTransfer to fetch.
+     */
+    where: FbaTransferWhereUniqueInput
+  }
+
+  /**
+   * FbaTransfer findUniqueOrThrow
+   */
+  export type FbaTransferFindUniqueOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the FbaTransfer
+     */
+    select?: FbaTransferSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the FbaTransfer
+     */
+    omit?: FbaTransferOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: FbaTransferInclude<ExtArgs> | null
+    /**
+     * Filter, which FbaTransfer to fetch.
+     */
+    where: FbaTransferWhereUniqueInput
+  }
+
+  /**
+   * FbaTransfer findFirst
+   */
+  export type FbaTransferFindFirstArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the FbaTransfer
+     */
+    select?: FbaTransferSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the FbaTransfer
+     */
+    omit?: FbaTransferOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: FbaTransferInclude<ExtArgs> | null
+    /**
+     * Filter, which FbaTransfer to fetch.
+     */
+    where?: FbaTransferWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of FbaTransfers to fetch.
+     */
+    orderBy?: FbaTransferOrderByWithRelationInput | FbaTransferOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for FbaTransfers.
+     */
+    cursor?: FbaTransferWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` FbaTransfers from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` FbaTransfers.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of FbaTransfers.
+     */
+    distinct?: FbaTransferScalarFieldEnum | FbaTransferScalarFieldEnum[]
+  }
+
+  /**
+   * FbaTransfer findFirstOrThrow
+   */
+  export type FbaTransferFindFirstOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the FbaTransfer
+     */
+    select?: FbaTransferSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the FbaTransfer
+     */
+    omit?: FbaTransferOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: FbaTransferInclude<ExtArgs> | null
+    /**
+     * Filter, which FbaTransfer to fetch.
+     */
+    where?: FbaTransferWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of FbaTransfers to fetch.
+     */
+    orderBy?: FbaTransferOrderByWithRelationInput | FbaTransferOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for FbaTransfers.
+     */
+    cursor?: FbaTransferWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` FbaTransfers from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` FbaTransfers.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of FbaTransfers.
+     */
+    distinct?: FbaTransferScalarFieldEnum | FbaTransferScalarFieldEnum[]
+  }
+
+  /**
+   * FbaTransfer findMany
+   */
+  export type FbaTransferFindManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the FbaTransfer
+     */
+    select?: FbaTransferSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the FbaTransfer
+     */
+    omit?: FbaTransferOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: FbaTransferInclude<ExtArgs> | null
+    /**
+     * Filter, which FbaTransfers to fetch.
+     */
+    where?: FbaTransferWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of FbaTransfers to fetch.
+     */
+    orderBy?: FbaTransferOrderByWithRelationInput | FbaTransferOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for listing FbaTransfers.
+     */
+    cursor?: FbaTransferWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` FbaTransfers from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` FbaTransfers.
+     */
+    skip?: number
+    distinct?: FbaTransferScalarFieldEnum | FbaTransferScalarFieldEnum[]
+  }
+
+  /**
+   * FbaTransfer create
+   */
+  export type FbaTransferCreateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the FbaTransfer
+     */
+    select?: FbaTransferSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the FbaTransfer
+     */
+    omit?: FbaTransferOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: FbaTransferInclude<ExtArgs> | null
+    /**
+     * The data needed to create a FbaTransfer.
+     */
+    data: XOR<FbaTransferCreateInput, FbaTransferUncheckedCreateInput>
+  }
+
+  /**
+   * FbaTransfer createMany
+   */
+  export type FbaTransferCreateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to create many FbaTransfers.
+     */
+    data: FbaTransferCreateManyInput | FbaTransferCreateManyInput[]
+  }
+
+  /**
+   * FbaTransfer update
+   */
+  export type FbaTransferUpdateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the FbaTransfer
+     */
+    select?: FbaTransferSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the FbaTransfer
+     */
+    omit?: FbaTransferOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: FbaTransferInclude<ExtArgs> | null
+    /**
+     * The data needed to update a FbaTransfer.
+     */
+    data: XOR<FbaTransferUpdateInput, FbaTransferUncheckedUpdateInput>
+    /**
+     * Choose, which FbaTransfer to update.
+     */
+    where: FbaTransferWhereUniqueInput
+  }
+
+  /**
+   * FbaTransfer updateMany
+   */
+  export type FbaTransferUpdateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to update FbaTransfers.
+     */
+    data: XOR<FbaTransferUpdateManyMutationInput, FbaTransferUncheckedUpdateManyInput>
+    /**
+     * Filter which FbaTransfers to update
+     */
+    where?: FbaTransferWhereInput
+    /**
+     * Limit how many FbaTransfers to update.
+     */
+    limit?: number
+  }
+
+  /**
+   * FbaTransfer upsert
+   */
+  export type FbaTransferUpsertArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the FbaTransfer
+     */
+    select?: FbaTransferSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the FbaTransfer
+     */
+    omit?: FbaTransferOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: FbaTransferInclude<ExtArgs> | null
+    /**
+     * The filter to search for the FbaTransfer to update in case it exists.
+     */
+    where: FbaTransferWhereUniqueInput
+    /**
+     * In case the FbaTransfer found by the `where` argument doesn't exist, create a new FbaTransfer with this data.
+     */
+    create: XOR<FbaTransferCreateInput, FbaTransferUncheckedCreateInput>
+    /**
+     * In case the FbaTransfer was found with the provided `where` argument, update it with this data.
+     */
+    update: XOR<FbaTransferUpdateInput, FbaTransferUncheckedUpdateInput>
+  }
+
+  /**
+   * FbaTransfer delete
+   */
+  export type FbaTransferDeleteArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the FbaTransfer
+     */
+    select?: FbaTransferSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the FbaTransfer
+     */
+    omit?: FbaTransferOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: FbaTransferInclude<ExtArgs> | null
+    /**
+     * Filter which FbaTransfer to delete.
+     */
+    where: FbaTransferWhereUniqueInput
+  }
+
+  /**
+   * FbaTransfer deleteMany
+   */
+  export type FbaTransferDeleteManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which FbaTransfers to delete
+     */
+    where?: FbaTransferWhereInput
+    /**
+     * Limit how many FbaTransfers to delete.
+     */
+    limit?: number
+  }
+
+  /**
+   * FbaTransfer findRaw
+   */
+  export type FbaTransferFindRawArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The query predicate filter. If unspecified, then all documents in the collection will match the predicate. ${@link https://docs.mongodb.com/manual/reference/operator/query MongoDB Docs}.
+     */
+    filter?: InputJsonValue
+    /**
+     * Additional options to pass to the `find` command ${@link https://docs.mongodb.com/manual/reference/command/find/#command-fields MongoDB Docs}.
+     */
+    options?: InputJsonValue
+  }
+
+  /**
+   * FbaTransfer aggregateRaw
+   */
+  export type FbaTransferAggregateRawArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * An array of aggregation stages to process and transform the document stream via the aggregation pipeline. ${@link https://docs.mongodb.com/manual/reference/operator/aggregation-pipeline MongoDB Docs}.
+     */
+    pipeline?: InputJsonValue[]
+    /**
+     * Additional options to pass to the `aggregate` command ${@link https://docs.mongodb.com/manual/reference/command/aggregate/#command-fields MongoDB Docs}.
+     */
+    options?: InputJsonValue
+  }
+
+  /**
+   * FbaTransfer.items
+   */
+  export type FbaTransfer$itemsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the FbaTransferItem
+     */
+    select?: FbaTransferItemSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the FbaTransferItem
+     */
+    omit?: FbaTransferItemOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: FbaTransferItemInclude<ExtArgs> | null
+    where?: FbaTransferItemWhereInput
+    orderBy?: FbaTransferItemOrderByWithRelationInput | FbaTransferItemOrderByWithRelationInput[]
+    cursor?: FbaTransferItemWhereUniqueInput
+    take?: number
+    skip?: number
+    distinct?: FbaTransferItemScalarFieldEnum | FbaTransferItemScalarFieldEnum[]
+  }
+
+  /**
+   * FbaTransfer without action
+   */
+  export type FbaTransferDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the FbaTransfer
+     */
+    select?: FbaTransferSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the FbaTransfer
+     */
+    omit?: FbaTransferOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: FbaTransferInclude<ExtArgs> | null
+  }
+
+
+  /**
+   * Model FbaTransferItem
+   */
+
+  export type AggregateFbaTransferItem = {
+    _count: FbaTransferItemCountAggregateOutputType | null
+    _avg: FbaTransferItemAvgAggregateOutputType | null
+    _sum: FbaTransferItemSumAggregateOutputType | null
+    _min: FbaTransferItemMinAggregateOutputType | null
+    _max: FbaTransferItemMaxAggregateOutputType | null
+  }
+
+  export type FbaTransferItemAvgAggregateOutputType = {
+    serialNumber: number | null
+    sellingPrice: number | null
+  }
+
+  export type FbaTransferItemSumAggregateOutputType = {
+    serialNumber: number | null
+    sellingPrice: number | null
+  }
+
+  export type FbaTransferItemMinAggregateOutputType = {
+    id: string | null
+    fbaTransferId: string | null
+    unitBarcodeId: string | null
+    barcode: string | null
+    serialNumber: number | null
+    productVariantId: string | null
+    sku: string | null
+    productName: string | null
+    sellingPrice: number | null
+    status: string | null
+    tallyMonth: string | null
+    tallyDate: Date | null
+    tallyBy: string | null
+    tallyNotes: string | null
+    channelOrderId: string | null
+    createdAt: Date | null
+    updatedAt: Date | null
+  }
+
+  export type FbaTransferItemMaxAggregateOutputType = {
+    id: string | null
+    fbaTransferId: string | null
+    unitBarcodeId: string | null
+    barcode: string | null
+    serialNumber: number | null
+    productVariantId: string | null
+    sku: string | null
+    productName: string | null
+    sellingPrice: number | null
+    status: string | null
+    tallyMonth: string | null
+    tallyDate: Date | null
+    tallyBy: string | null
+    tallyNotes: string | null
+    channelOrderId: string | null
+    createdAt: Date | null
+    updatedAt: Date | null
+  }
+
+  export type FbaTransferItemCountAggregateOutputType = {
+    id: number
+    fbaTransferId: number
+    unitBarcodeId: number
+    barcode: number
+    serialNumber: number
+    productVariantId: number
+    sku: number
+    productName: number
+    sellingPrice: number
+    status: number
+    tallyMonth: number
+    tallyDate: number
+    tallyBy: number
+    tallyNotes: number
+    channelOrderId: number
+    createdAt: number
+    updatedAt: number
+    _all: number
+  }
+
+
+  export type FbaTransferItemAvgAggregateInputType = {
+    serialNumber?: true
+    sellingPrice?: true
+  }
+
+  export type FbaTransferItemSumAggregateInputType = {
+    serialNumber?: true
+    sellingPrice?: true
+  }
+
+  export type FbaTransferItemMinAggregateInputType = {
+    id?: true
+    fbaTransferId?: true
+    unitBarcodeId?: true
+    barcode?: true
+    serialNumber?: true
+    productVariantId?: true
+    sku?: true
+    productName?: true
+    sellingPrice?: true
+    status?: true
+    tallyMonth?: true
+    tallyDate?: true
+    tallyBy?: true
+    tallyNotes?: true
+    channelOrderId?: true
+    createdAt?: true
+    updatedAt?: true
+  }
+
+  export type FbaTransferItemMaxAggregateInputType = {
+    id?: true
+    fbaTransferId?: true
+    unitBarcodeId?: true
+    barcode?: true
+    serialNumber?: true
+    productVariantId?: true
+    sku?: true
+    productName?: true
+    sellingPrice?: true
+    status?: true
+    tallyMonth?: true
+    tallyDate?: true
+    tallyBy?: true
+    tallyNotes?: true
+    channelOrderId?: true
+    createdAt?: true
+    updatedAt?: true
+  }
+
+  export type FbaTransferItemCountAggregateInputType = {
+    id?: true
+    fbaTransferId?: true
+    unitBarcodeId?: true
+    barcode?: true
+    serialNumber?: true
+    productVariantId?: true
+    sku?: true
+    productName?: true
+    sellingPrice?: true
+    status?: true
+    tallyMonth?: true
+    tallyDate?: true
+    tallyBy?: true
+    tallyNotes?: true
+    channelOrderId?: true
+    createdAt?: true
+    updatedAt?: true
+    _all?: true
+  }
+
+  export type FbaTransferItemAggregateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which FbaTransferItem to aggregate.
+     */
+    where?: FbaTransferItemWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of FbaTransferItems to fetch.
+     */
+    orderBy?: FbaTransferItemOrderByWithRelationInput | FbaTransferItemOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the start position
+     */
+    cursor?: FbaTransferItemWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` FbaTransferItems from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` FbaTransferItems.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Count returned FbaTransferItems
+    **/
+    _count?: true | FbaTransferItemCountAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to average
+    **/
+    _avg?: FbaTransferItemAvgAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to sum
+    **/
+    _sum?: FbaTransferItemSumAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the minimum value
+    **/
+    _min?: FbaTransferItemMinAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the maximum value
+    **/
+    _max?: FbaTransferItemMaxAggregateInputType
+  }
+
+  export type GetFbaTransferItemAggregateType<T extends FbaTransferItemAggregateArgs> = {
+        [P in keyof T & keyof AggregateFbaTransferItem]: P extends '_count' | 'count'
+      ? T[P] extends true
+        ? number
+        : GetScalarType<T[P], AggregateFbaTransferItem[P]>
+      : GetScalarType<T[P], AggregateFbaTransferItem[P]>
+  }
+
+
+
+
+  export type FbaTransferItemGroupByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: FbaTransferItemWhereInput
+    orderBy?: FbaTransferItemOrderByWithAggregationInput | FbaTransferItemOrderByWithAggregationInput[]
+    by: FbaTransferItemScalarFieldEnum[] | FbaTransferItemScalarFieldEnum
+    having?: FbaTransferItemScalarWhereWithAggregatesInput
+    take?: number
+    skip?: number
+    _count?: FbaTransferItemCountAggregateInputType | true
+    _avg?: FbaTransferItemAvgAggregateInputType
+    _sum?: FbaTransferItemSumAggregateInputType
+    _min?: FbaTransferItemMinAggregateInputType
+    _max?: FbaTransferItemMaxAggregateInputType
+  }
+
+  export type FbaTransferItemGroupByOutputType = {
+    id: string
+    fbaTransferId: string
+    unitBarcodeId: string | null
+    barcode: string
+    serialNumber: number
+    productVariantId: string
+    sku: string
+    productName: string
+    sellingPrice: number
+    status: string
+    tallyMonth: string | null
+    tallyDate: Date | null
+    tallyBy: string | null
+    tallyNotes: string | null
+    channelOrderId: string | null
+    createdAt: Date
+    updatedAt: Date
+    _count: FbaTransferItemCountAggregateOutputType | null
+    _avg: FbaTransferItemAvgAggregateOutputType | null
+    _sum: FbaTransferItemSumAggregateOutputType | null
+    _min: FbaTransferItemMinAggregateOutputType | null
+    _max: FbaTransferItemMaxAggregateOutputType | null
+  }
+
+  type GetFbaTransferItemGroupByPayload<T extends FbaTransferItemGroupByArgs> = Prisma.PrismaPromise<
+    Array<
+      PickEnumerable<FbaTransferItemGroupByOutputType, T['by']> &
+        {
+          [P in ((keyof T) & (keyof FbaTransferItemGroupByOutputType))]: P extends '_count'
+            ? T[P] extends boolean
+              ? number
+              : GetScalarType<T[P], FbaTransferItemGroupByOutputType[P]>
+            : GetScalarType<T[P], FbaTransferItemGroupByOutputType[P]>
+        }
+      >
+    >
+
+
+  export type FbaTransferItemSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    fbaTransferId?: boolean
+    unitBarcodeId?: boolean
+    barcode?: boolean
+    serialNumber?: boolean
+    productVariantId?: boolean
+    sku?: boolean
+    productName?: boolean
+    sellingPrice?: boolean
+    status?: boolean
+    tallyMonth?: boolean
+    tallyDate?: boolean
+    tallyBy?: boolean
+    tallyNotes?: boolean
+    channelOrderId?: boolean
+    createdAt?: boolean
+    updatedAt?: boolean
+    fbaTransfer?: boolean | FbaTransferDefaultArgs<ExtArgs>
+    unitBarcode?: boolean | FbaTransferItem$unitBarcodeArgs<ExtArgs>
+  }, ExtArgs["result"]["fbaTransferItem"]>
+
+
+
+  export type FbaTransferItemSelectScalar = {
+    id?: boolean
+    fbaTransferId?: boolean
+    unitBarcodeId?: boolean
+    barcode?: boolean
+    serialNumber?: boolean
+    productVariantId?: boolean
+    sku?: boolean
+    productName?: boolean
+    sellingPrice?: boolean
+    status?: boolean
+    tallyMonth?: boolean
+    tallyDate?: boolean
+    tallyBy?: boolean
+    tallyNotes?: boolean
+    channelOrderId?: boolean
+    createdAt?: boolean
+    updatedAt?: boolean
+  }
+
+  export type FbaTransferItemOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "fbaTransferId" | "unitBarcodeId" | "barcode" | "serialNumber" | "productVariantId" | "sku" | "productName" | "sellingPrice" | "status" | "tallyMonth" | "tallyDate" | "tallyBy" | "tallyNotes" | "channelOrderId" | "createdAt" | "updatedAt", ExtArgs["result"]["fbaTransferItem"]>
+  export type FbaTransferItemInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    fbaTransfer?: boolean | FbaTransferDefaultArgs<ExtArgs>
+    unitBarcode?: boolean | FbaTransferItem$unitBarcodeArgs<ExtArgs>
+  }
+
+  export type $FbaTransferItemPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    name: "FbaTransferItem"
+    objects: {
+      fbaTransfer: Prisma.$FbaTransferPayload<ExtArgs>
+      unitBarcode: Prisma.$UnitBarcodePayload<ExtArgs> | null
+    }
+    scalars: $Extensions.GetPayloadResult<{
+      id: string
+      fbaTransferId: string
+      unitBarcodeId: string | null
+      barcode: string
+      serialNumber: number
+      productVariantId: string
+      sku: string
+      productName: string
+      sellingPrice: number
+      status: string
+      tallyMonth: string | null
+      tallyDate: Date | null
+      tallyBy: string | null
+      tallyNotes: string | null
+      channelOrderId: string | null
+      createdAt: Date
+      updatedAt: Date
+    }, ExtArgs["result"]["fbaTransferItem"]>
+    composites: {}
+  }
+
+  type FbaTransferItemGetPayload<S extends boolean | null | undefined | FbaTransferItemDefaultArgs> = $Result.GetResult<Prisma.$FbaTransferItemPayload, S>
+
+  type FbaTransferItemCountArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> =
+    Omit<FbaTransferItemFindManyArgs, 'select' | 'include' | 'distinct' | 'omit'> & {
+      select?: FbaTransferItemCountAggregateInputType | true
+    }
+
+  export interface FbaTransferItemDelegate<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> {
+    [K: symbol]: { types: Prisma.TypeMap<ExtArgs>['model']['FbaTransferItem'], meta: { name: 'FbaTransferItem' } }
+    /**
+     * Find zero or one FbaTransferItem that matches the filter.
+     * @param {FbaTransferItemFindUniqueArgs} args - Arguments to find a FbaTransferItem
+     * @example
+     * // Get one FbaTransferItem
+     * const fbaTransferItem = await prisma.fbaTransferItem.findUnique({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUnique<T extends FbaTransferItemFindUniqueArgs>(args: SelectSubset<T, FbaTransferItemFindUniqueArgs<ExtArgs>>): Prisma__FbaTransferItemClient<$Result.GetResult<Prisma.$FbaTransferItemPayload<ExtArgs>, T, "findUnique", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find one FbaTransferItem that matches the filter or throw an error with `error.code='P2025'`
+     * if no matches were found.
+     * @param {FbaTransferItemFindUniqueOrThrowArgs} args - Arguments to find a FbaTransferItem
+     * @example
+     * // Get one FbaTransferItem
+     * const fbaTransferItem = await prisma.fbaTransferItem.findUniqueOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUniqueOrThrow<T extends FbaTransferItemFindUniqueOrThrowArgs>(args: SelectSubset<T, FbaTransferItemFindUniqueOrThrowArgs<ExtArgs>>): Prisma__FbaTransferItemClient<$Result.GetResult<Prisma.$FbaTransferItemPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first FbaTransferItem that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {FbaTransferItemFindFirstArgs} args - Arguments to find a FbaTransferItem
+     * @example
+     * // Get one FbaTransferItem
+     * const fbaTransferItem = await prisma.fbaTransferItem.findFirst({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirst<T extends FbaTransferItemFindFirstArgs>(args?: SelectSubset<T, FbaTransferItemFindFirstArgs<ExtArgs>>): Prisma__FbaTransferItemClient<$Result.GetResult<Prisma.$FbaTransferItemPayload<ExtArgs>, T, "findFirst", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first FbaTransferItem that matches the filter or
+     * throw `PrismaKnownClientError` with `P2025` code if no matches were found.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {FbaTransferItemFindFirstOrThrowArgs} args - Arguments to find a FbaTransferItem
+     * @example
+     * // Get one FbaTransferItem
+     * const fbaTransferItem = await prisma.fbaTransferItem.findFirstOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirstOrThrow<T extends FbaTransferItemFindFirstOrThrowArgs>(args?: SelectSubset<T, FbaTransferItemFindFirstOrThrowArgs<ExtArgs>>): Prisma__FbaTransferItemClient<$Result.GetResult<Prisma.$FbaTransferItemPayload<ExtArgs>, T, "findFirstOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find zero or more FbaTransferItems that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {FbaTransferItemFindManyArgs} args - Arguments to filter and select certain fields only.
+     * @example
+     * // Get all FbaTransferItems
+     * const fbaTransferItems = await prisma.fbaTransferItem.findMany()
+     * 
+     * // Get first 10 FbaTransferItems
+     * const fbaTransferItems = await prisma.fbaTransferItem.findMany({ take: 10 })
+     * 
+     * // Only select the `id`
+     * const fbaTransferItemWithIdOnly = await prisma.fbaTransferItem.findMany({ select: { id: true } })
+     * 
+     */
+    findMany<T extends FbaTransferItemFindManyArgs>(args?: SelectSubset<T, FbaTransferItemFindManyArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$FbaTransferItemPayload<ExtArgs>, T, "findMany", GlobalOmitOptions>>
+
+    /**
+     * Create a FbaTransferItem.
+     * @param {FbaTransferItemCreateArgs} args - Arguments to create a FbaTransferItem.
+     * @example
+     * // Create one FbaTransferItem
+     * const FbaTransferItem = await prisma.fbaTransferItem.create({
+     *   data: {
+     *     // ... data to create a FbaTransferItem
+     *   }
+     * })
+     * 
+     */
+    create<T extends FbaTransferItemCreateArgs>(args: SelectSubset<T, FbaTransferItemCreateArgs<ExtArgs>>): Prisma__FbaTransferItemClient<$Result.GetResult<Prisma.$FbaTransferItemPayload<ExtArgs>, T, "create", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Create many FbaTransferItems.
+     * @param {FbaTransferItemCreateManyArgs} args - Arguments to create many FbaTransferItems.
+     * @example
+     * // Create many FbaTransferItems
+     * const fbaTransferItem = await prisma.fbaTransferItem.createMany({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     *     
+     */
+    createMany<T extends FbaTransferItemCreateManyArgs>(args?: SelectSubset<T, FbaTransferItemCreateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Delete a FbaTransferItem.
+     * @param {FbaTransferItemDeleteArgs} args - Arguments to delete one FbaTransferItem.
+     * @example
+     * // Delete one FbaTransferItem
+     * const FbaTransferItem = await prisma.fbaTransferItem.delete({
+     *   where: {
+     *     // ... filter to delete one FbaTransferItem
+     *   }
+     * })
+     * 
+     */
+    delete<T extends FbaTransferItemDeleteArgs>(args: SelectSubset<T, FbaTransferItemDeleteArgs<ExtArgs>>): Prisma__FbaTransferItemClient<$Result.GetResult<Prisma.$FbaTransferItemPayload<ExtArgs>, T, "delete", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Update one FbaTransferItem.
+     * @param {FbaTransferItemUpdateArgs} args - Arguments to update one FbaTransferItem.
+     * @example
+     * // Update one FbaTransferItem
+     * const fbaTransferItem = await prisma.fbaTransferItem.update({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    update<T extends FbaTransferItemUpdateArgs>(args: SelectSubset<T, FbaTransferItemUpdateArgs<ExtArgs>>): Prisma__FbaTransferItemClient<$Result.GetResult<Prisma.$FbaTransferItemPayload<ExtArgs>, T, "update", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Delete zero or more FbaTransferItems.
+     * @param {FbaTransferItemDeleteManyArgs} args - Arguments to filter FbaTransferItems to delete.
+     * @example
+     * // Delete a few FbaTransferItems
+     * const { count } = await prisma.fbaTransferItem.deleteMany({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     * 
+     */
+    deleteMany<T extends FbaTransferItemDeleteManyArgs>(args?: SelectSubset<T, FbaTransferItemDeleteManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more FbaTransferItems.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {FbaTransferItemUpdateManyArgs} args - Arguments to update one or more rows.
+     * @example
+     * // Update many FbaTransferItems
+     * const fbaTransferItem = await prisma.fbaTransferItem.updateMany({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    updateMany<T extends FbaTransferItemUpdateManyArgs>(args: SelectSubset<T, FbaTransferItemUpdateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Create or update one FbaTransferItem.
+     * @param {FbaTransferItemUpsertArgs} args - Arguments to update or create a FbaTransferItem.
+     * @example
+     * // Update or create a FbaTransferItem
+     * const fbaTransferItem = await prisma.fbaTransferItem.upsert({
+     *   create: {
+     *     // ... data to create a FbaTransferItem
+     *   },
+     *   update: {
+     *     // ... in case it already exists, update
+     *   },
+     *   where: {
+     *     // ... the filter for the FbaTransferItem we want to update
+     *   }
+     * })
+     */
+    upsert<T extends FbaTransferItemUpsertArgs>(args: SelectSubset<T, FbaTransferItemUpsertArgs<ExtArgs>>): Prisma__FbaTransferItemClient<$Result.GetResult<Prisma.$FbaTransferItemPayload<ExtArgs>, T, "upsert", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find zero or more FbaTransferItems that matches the filter.
+     * @param {FbaTransferItemFindRawArgs} args - Select which filters you would like to apply.
+     * @example
+     * const fbaTransferItem = await prisma.fbaTransferItem.findRaw({
+     *   filter: { age: { $gt: 25 } }
+     * })
+     */
+    findRaw(args?: FbaTransferItemFindRawArgs): Prisma.PrismaPromise<JsonObject>
+
+    /**
+     * Perform aggregation operations on a FbaTransferItem.
+     * @param {FbaTransferItemAggregateRawArgs} args - Select which aggregations you would like to apply.
+     * @example
+     * const fbaTransferItem = await prisma.fbaTransferItem.aggregateRaw({
+     *   pipeline: [
+     *     { $match: { status: "registered" } },
+     *     { $group: { _id: "$country", total: { $sum: 1 } } }
+     *   ]
+     * })
+     */
+    aggregateRaw(args?: FbaTransferItemAggregateRawArgs): Prisma.PrismaPromise<JsonObject>
+
+
+    /**
+     * Count the number of FbaTransferItems.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {FbaTransferItemCountArgs} args - Arguments to filter FbaTransferItems to count.
+     * @example
+     * // Count the number of FbaTransferItems
+     * const count = await prisma.fbaTransferItem.count({
+     *   where: {
+     *     // ... the filter for the FbaTransferItems we want to count
+     *   }
+     * })
+    **/
+    count<T extends FbaTransferItemCountArgs>(
+      args?: Subset<T, FbaTransferItemCountArgs>,
+    ): Prisma.PrismaPromise<
+      T extends $Utils.Record<'select', any>
+        ? T['select'] extends true
+          ? number
+          : GetScalarType<T['select'], FbaTransferItemCountAggregateOutputType>
+        : number
+    >
+
+    /**
+     * Allows you to perform aggregations operations on a FbaTransferItem.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {FbaTransferItemAggregateArgs} args - Select which aggregations you would like to apply and on what fields.
+     * @example
+     * // Ordered by age ascending
+     * // Where email contains prisma.io
+     * // Limited to the 10 users
+     * const aggregations = await prisma.user.aggregate({
+     *   _avg: {
+     *     age: true,
+     *   },
+     *   where: {
+     *     email: {
+     *       contains: "prisma.io",
+     *     },
+     *   },
+     *   orderBy: {
+     *     age: "asc",
+     *   },
+     *   take: 10,
+     * })
+    **/
+    aggregate<T extends FbaTransferItemAggregateArgs>(args: Subset<T, FbaTransferItemAggregateArgs>): Prisma.PrismaPromise<GetFbaTransferItemAggregateType<T>>
+
+    /**
+     * Group by FbaTransferItem.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {FbaTransferItemGroupByArgs} args - Group by arguments.
+     * @example
+     * // Group by city, order by createdAt, get count
+     * const result = await prisma.user.groupBy({
+     *   by: ['city', 'createdAt'],
+     *   orderBy: {
+     *     createdAt: true
+     *   },
+     *   _count: {
+     *     _all: true
+     *   },
+     * })
+     * 
+    **/
+    groupBy<
+      T extends FbaTransferItemGroupByArgs,
+      HasSelectOrTake extends Or<
+        Extends<'skip', Keys<T>>,
+        Extends<'take', Keys<T>>
+      >,
+      OrderByArg extends True extends HasSelectOrTake
+        ? { orderBy: FbaTransferItemGroupByArgs['orderBy'] }
+        : { orderBy?: FbaTransferItemGroupByArgs['orderBy'] },
+      OrderFields extends ExcludeUnderscoreKeys<Keys<MaybeTupleToUnion<T['orderBy']>>>,
+      ByFields extends MaybeTupleToUnion<T['by']>,
+      ByValid extends Has<ByFields, OrderFields>,
+      HavingFields extends GetHavingFields<T['having']>,
+      HavingValid extends Has<ByFields, HavingFields>,
+      ByEmpty extends T['by'] extends never[] ? True : False,
+      InputErrors extends ByEmpty extends True
+      ? `Error: "by" must not be empty.`
+      : HavingValid extends False
+      ? {
+          [P in HavingFields]: P extends ByFields
+            ? never
+            : P extends string
+            ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
+            : [
+                Error,
+                'Field ',
+                P,
+                ` in "having" needs to be provided in "by"`,
+              ]
+        }[HavingFields]
+      : 'take' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "take", you also need to provide "orderBy"'
+      : 'skip' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "skip", you also need to provide "orderBy"'
+      : ByValid extends True
+      ? {}
+      : {
+          [P in OrderFields]: P extends ByFields
+            ? never
+            : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+        }[OrderFields]
+    >(args: SubsetIntersection<T, FbaTransferItemGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetFbaTransferItemGroupByPayload<T> : Prisma.PrismaPromise<InputErrors>
+  /**
+   * Fields of the FbaTransferItem model
+   */
+  readonly fields: FbaTransferItemFieldRefs;
+  }
+
+  /**
+   * The delegate class that acts as a "Promise-like" for FbaTransferItem.
+   * Why is this prefixed with `Prisma__`?
+   * Because we want to prevent naming conflicts as mentioned in
+   * https://github.com/prisma/prisma-client-js/issues/707
+   */
+  export interface Prisma__FbaTransferItemClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
+    readonly [Symbol.toStringTag]: "PrismaPromise"
+    fbaTransfer<T extends FbaTransferDefaultArgs<ExtArgs> = {}>(args?: Subset<T, FbaTransferDefaultArgs<ExtArgs>>): Prisma__FbaTransferClient<$Result.GetResult<Prisma.$FbaTransferPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+    unitBarcode<T extends FbaTransferItem$unitBarcodeArgs<ExtArgs> = {}>(args?: Subset<T, FbaTransferItem$unitBarcodeArgs<ExtArgs>>): Prisma__UnitBarcodeClient<$Result.GetResult<Prisma.$UnitBarcodePayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+    /**
+     * Attaches callbacks for the resolution and/or rejection of the Promise.
+     * @param onfulfilled The callback to execute when the Promise is resolved.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of which ever callback is executed.
+     */
+    then<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null): $Utils.JsPromise<TResult1 | TResult2>
+    /**
+     * Attaches a callback for only the rejection of the Promise.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of the callback.
+     */
+    catch<TResult = never>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null): $Utils.JsPromise<T | TResult>
+    /**
+     * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
+     * resolved value cannot be modified from the callback.
+     * @param onfinally The callback to execute when the Promise is settled (fulfilled or rejected).
+     * @returns A Promise for the completion of the callback.
+     */
+    finally(onfinally?: (() => void) | undefined | null): $Utils.JsPromise<T>
+  }
+
+
+
+
+  /**
+   * Fields of the FbaTransferItem model
+   */
+  interface FbaTransferItemFieldRefs {
+    readonly id: FieldRef<"FbaTransferItem", 'String'>
+    readonly fbaTransferId: FieldRef<"FbaTransferItem", 'String'>
+    readonly unitBarcodeId: FieldRef<"FbaTransferItem", 'String'>
+    readonly barcode: FieldRef<"FbaTransferItem", 'String'>
+    readonly serialNumber: FieldRef<"FbaTransferItem", 'Int'>
+    readonly productVariantId: FieldRef<"FbaTransferItem", 'String'>
+    readonly sku: FieldRef<"FbaTransferItem", 'String'>
+    readonly productName: FieldRef<"FbaTransferItem", 'String'>
+    readonly sellingPrice: FieldRef<"FbaTransferItem", 'Float'>
+    readonly status: FieldRef<"FbaTransferItem", 'String'>
+    readonly tallyMonth: FieldRef<"FbaTransferItem", 'String'>
+    readonly tallyDate: FieldRef<"FbaTransferItem", 'DateTime'>
+    readonly tallyBy: FieldRef<"FbaTransferItem", 'String'>
+    readonly tallyNotes: FieldRef<"FbaTransferItem", 'String'>
+    readonly channelOrderId: FieldRef<"FbaTransferItem", 'String'>
+    readonly createdAt: FieldRef<"FbaTransferItem", 'DateTime'>
+    readonly updatedAt: FieldRef<"FbaTransferItem", 'DateTime'>
+  }
+    
+
+  // Custom InputTypes
+  /**
+   * FbaTransferItem findUnique
+   */
+  export type FbaTransferItemFindUniqueArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the FbaTransferItem
+     */
+    select?: FbaTransferItemSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the FbaTransferItem
+     */
+    omit?: FbaTransferItemOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: FbaTransferItemInclude<ExtArgs> | null
+    /**
+     * Filter, which FbaTransferItem to fetch.
+     */
+    where: FbaTransferItemWhereUniqueInput
+  }
+
+  /**
+   * FbaTransferItem findUniqueOrThrow
+   */
+  export type FbaTransferItemFindUniqueOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the FbaTransferItem
+     */
+    select?: FbaTransferItemSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the FbaTransferItem
+     */
+    omit?: FbaTransferItemOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: FbaTransferItemInclude<ExtArgs> | null
+    /**
+     * Filter, which FbaTransferItem to fetch.
+     */
+    where: FbaTransferItemWhereUniqueInput
+  }
+
+  /**
+   * FbaTransferItem findFirst
+   */
+  export type FbaTransferItemFindFirstArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the FbaTransferItem
+     */
+    select?: FbaTransferItemSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the FbaTransferItem
+     */
+    omit?: FbaTransferItemOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: FbaTransferItemInclude<ExtArgs> | null
+    /**
+     * Filter, which FbaTransferItem to fetch.
+     */
+    where?: FbaTransferItemWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of FbaTransferItems to fetch.
+     */
+    orderBy?: FbaTransferItemOrderByWithRelationInput | FbaTransferItemOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for FbaTransferItems.
+     */
+    cursor?: FbaTransferItemWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` FbaTransferItems from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` FbaTransferItems.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of FbaTransferItems.
+     */
+    distinct?: FbaTransferItemScalarFieldEnum | FbaTransferItemScalarFieldEnum[]
+  }
+
+  /**
+   * FbaTransferItem findFirstOrThrow
+   */
+  export type FbaTransferItemFindFirstOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the FbaTransferItem
+     */
+    select?: FbaTransferItemSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the FbaTransferItem
+     */
+    omit?: FbaTransferItemOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: FbaTransferItemInclude<ExtArgs> | null
+    /**
+     * Filter, which FbaTransferItem to fetch.
+     */
+    where?: FbaTransferItemWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of FbaTransferItems to fetch.
+     */
+    orderBy?: FbaTransferItemOrderByWithRelationInput | FbaTransferItemOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for FbaTransferItems.
+     */
+    cursor?: FbaTransferItemWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` FbaTransferItems from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` FbaTransferItems.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of FbaTransferItems.
+     */
+    distinct?: FbaTransferItemScalarFieldEnum | FbaTransferItemScalarFieldEnum[]
+  }
+
+  /**
+   * FbaTransferItem findMany
+   */
+  export type FbaTransferItemFindManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the FbaTransferItem
+     */
+    select?: FbaTransferItemSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the FbaTransferItem
+     */
+    omit?: FbaTransferItemOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: FbaTransferItemInclude<ExtArgs> | null
+    /**
+     * Filter, which FbaTransferItems to fetch.
+     */
+    where?: FbaTransferItemWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of FbaTransferItems to fetch.
+     */
+    orderBy?: FbaTransferItemOrderByWithRelationInput | FbaTransferItemOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for listing FbaTransferItems.
+     */
+    cursor?: FbaTransferItemWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` FbaTransferItems from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` FbaTransferItems.
+     */
+    skip?: number
+    distinct?: FbaTransferItemScalarFieldEnum | FbaTransferItemScalarFieldEnum[]
+  }
+
+  /**
+   * FbaTransferItem create
+   */
+  export type FbaTransferItemCreateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the FbaTransferItem
+     */
+    select?: FbaTransferItemSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the FbaTransferItem
+     */
+    omit?: FbaTransferItemOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: FbaTransferItemInclude<ExtArgs> | null
+    /**
+     * The data needed to create a FbaTransferItem.
+     */
+    data: XOR<FbaTransferItemCreateInput, FbaTransferItemUncheckedCreateInput>
+  }
+
+  /**
+   * FbaTransferItem createMany
+   */
+  export type FbaTransferItemCreateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to create many FbaTransferItems.
+     */
+    data: FbaTransferItemCreateManyInput | FbaTransferItemCreateManyInput[]
+  }
+
+  /**
+   * FbaTransferItem update
+   */
+  export type FbaTransferItemUpdateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the FbaTransferItem
+     */
+    select?: FbaTransferItemSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the FbaTransferItem
+     */
+    omit?: FbaTransferItemOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: FbaTransferItemInclude<ExtArgs> | null
+    /**
+     * The data needed to update a FbaTransferItem.
+     */
+    data: XOR<FbaTransferItemUpdateInput, FbaTransferItemUncheckedUpdateInput>
+    /**
+     * Choose, which FbaTransferItem to update.
+     */
+    where: FbaTransferItemWhereUniqueInput
+  }
+
+  /**
+   * FbaTransferItem updateMany
+   */
+  export type FbaTransferItemUpdateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to update FbaTransferItems.
+     */
+    data: XOR<FbaTransferItemUpdateManyMutationInput, FbaTransferItemUncheckedUpdateManyInput>
+    /**
+     * Filter which FbaTransferItems to update
+     */
+    where?: FbaTransferItemWhereInput
+    /**
+     * Limit how many FbaTransferItems to update.
+     */
+    limit?: number
+  }
+
+  /**
+   * FbaTransferItem upsert
+   */
+  export type FbaTransferItemUpsertArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the FbaTransferItem
+     */
+    select?: FbaTransferItemSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the FbaTransferItem
+     */
+    omit?: FbaTransferItemOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: FbaTransferItemInclude<ExtArgs> | null
+    /**
+     * The filter to search for the FbaTransferItem to update in case it exists.
+     */
+    where: FbaTransferItemWhereUniqueInput
+    /**
+     * In case the FbaTransferItem found by the `where` argument doesn't exist, create a new FbaTransferItem with this data.
+     */
+    create: XOR<FbaTransferItemCreateInput, FbaTransferItemUncheckedCreateInput>
+    /**
+     * In case the FbaTransferItem was found with the provided `where` argument, update it with this data.
+     */
+    update: XOR<FbaTransferItemUpdateInput, FbaTransferItemUncheckedUpdateInput>
+  }
+
+  /**
+   * FbaTransferItem delete
+   */
+  export type FbaTransferItemDeleteArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the FbaTransferItem
+     */
+    select?: FbaTransferItemSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the FbaTransferItem
+     */
+    omit?: FbaTransferItemOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: FbaTransferItemInclude<ExtArgs> | null
+    /**
+     * Filter which FbaTransferItem to delete.
+     */
+    where: FbaTransferItemWhereUniqueInput
+  }
+
+  /**
+   * FbaTransferItem deleteMany
+   */
+  export type FbaTransferItemDeleteManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which FbaTransferItems to delete
+     */
+    where?: FbaTransferItemWhereInput
+    /**
+     * Limit how many FbaTransferItems to delete.
+     */
+    limit?: number
+  }
+
+  /**
+   * FbaTransferItem findRaw
+   */
+  export type FbaTransferItemFindRawArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The query predicate filter. If unspecified, then all documents in the collection will match the predicate. ${@link https://docs.mongodb.com/manual/reference/operator/query MongoDB Docs}.
+     */
+    filter?: InputJsonValue
+    /**
+     * Additional options to pass to the `find` command ${@link https://docs.mongodb.com/manual/reference/command/find/#command-fields MongoDB Docs}.
+     */
+    options?: InputJsonValue
+  }
+
+  /**
+   * FbaTransferItem aggregateRaw
+   */
+  export type FbaTransferItemAggregateRawArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * An array of aggregation stages to process and transform the document stream via the aggregation pipeline. ${@link https://docs.mongodb.com/manual/reference/operator/aggregation-pipeline MongoDB Docs}.
+     */
+    pipeline?: InputJsonValue[]
+    /**
+     * Additional options to pass to the `aggregate` command ${@link https://docs.mongodb.com/manual/reference/command/aggregate/#command-fields MongoDB Docs}.
+     */
+    options?: InputJsonValue
+  }
+
+  /**
+   * FbaTransferItem.unitBarcode
+   */
+  export type FbaTransferItem$unitBarcodeArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the UnitBarcode
+     */
+    select?: UnitBarcodeSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the UnitBarcode
+     */
+    omit?: UnitBarcodeOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: UnitBarcodeInclude<ExtArgs> | null
+    where?: UnitBarcodeWhereInput
+  }
+
+  /**
+   * FbaTransferItem without action
+   */
+  export type FbaTransferItemDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the FbaTransferItem
+     */
+    select?: FbaTransferItemSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the FbaTransferItem
+     */
+    omit?: FbaTransferItemOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: FbaTransferItemInclude<ExtArgs> | null
+  }
+
+
+  /**
    * Enums
    */
 
@@ -32260,6 +34843,50 @@ export namespace Prisma {
   export type CompanySettingsScalarFieldEnum = (typeof CompanySettingsScalarFieldEnum)[keyof typeof CompanySettingsScalarFieldEnum]
 
 
+  export const FbaTransferScalarFieldEnum: {
+    id: 'id',
+    shipmentNumber: 'shipmentNumber',
+    channel: 'channel',
+    destinationFc: 'destinationFc',
+    trackingId: 'trackingId',
+    courier: 'courier',
+    status: 'status',
+    totalUnits: 'totalUnits',
+    soldUnits: 'soldUnits',
+    damagedUnits: 'damagedUnits',
+    returnedUnits: 'returnedUnits',
+    transferredBy: 'transferredBy',
+    notes: 'notes',
+    createdAt: 'createdAt',
+    updatedAt: 'updatedAt'
+  };
+
+  export type FbaTransferScalarFieldEnum = (typeof FbaTransferScalarFieldEnum)[keyof typeof FbaTransferScalarFieldEnum]
+
+
+  export const FbaTransferItemScalarFieldEnum: {
+    id: 'id',
+    fbaTransferId: 'fbaTransferId',
+    unitBarcodeId: 'unitBarcodeId',
+    barcode: 'barcode',
+    serialNumber: 'serialNumber',
+    productVariantId: 'productVariantId',
+    sku: 'sku',
+    productName: 'productName',
+    sellingPrice: 'sellingPrice',
+    status: 'status',
+    tallyMonth: 'tallyMonth',
+    tallyDate: 'tallyDate',
+    tallyBy: 'tallyBy',
+    tallyNotes: 'tallyNotes',
+    channelOrderId: 'channelOrderId',
+    createdAt: 'createdAt',
+    updatedAt: 'updatedAt'
+  };
+
+  export type FbaTransferItemScalarFieldEnum = (typeof FbaTransferItemScalarFieldEnum)[keyof typeof FbaTransferItemScalarFieldEnum]
+
+
   export const SortOrder: {
     asc: 'asc',
     desc: 'desc'
@@ -32728,6 +35355,7 @@ export namespace Prisma {
     productVariant?: XOR<ProductVariantScalarRelationFilter, ProductVariantWhereInput>
     transactions?: InventoryTransactionListRelationFilter
     orderItems?: OrderItemListRelationFilter
+    fbaItems?: FbaTransferItemListRelationFilter
   }
 
   export type UnitBarcodeOrderByWithRelationInput = {
@@ -32747,6 +35375,7 @@ export namespace Prisma {
     productVariant?: ProductVariantOrderByWithRelationInput
     transactions?: InventoryTransactionOrderByRelationAggregateInput
     orderItems?: OrderItemOrderByRelationAggregateInput
+    fbaItems?: FbaTransferItemOrderByRelationAggregateInput
   }
 
   export type UnitBarcodeWhereUniqueInput = Prisma.AtLeast<{
@@ -32769,6 +35398,7 @@ export namespace Prisma {
     productVariant?: XOR<ProductVariantScalarRelationFilter, ProductVariantWhereInput>
     transactions?: InventoryTransactionListRelationFilter
     orderItems?: OrderItemListRelationFilter
+    fbaItems?: FbaTransferItemListRelationFilter
   }, "id" | "barcode">
 
   export type UnitBarcodeOrderByWithAggregationInput = {
@@ -34873,6 +37503,233 @@ export namespace Prisma {
     updatedAt?: DateTimeWithAggregatesFilter<"CompanySettings"> | Date | string
   }
 
+  export type FbaTransferWhereInput = {
+    AND?: FbaTransferWhereInput | FbaTransferWhereInput[]
+    OR?: FbaTransferWhereInput[]
+    NOT?: FbaTransferWhereInput | FbaTransferWhereInput[]
+    id?: StringFilter<"FbaTransfer"> | string
+    shipmentNumber?: StringFilter<"FbaTransfer"> | string
+    channel?: StringFilter<"FbaTransfer"> | string
+    destinationFc?: StringNullableFilter<"FbaTransfer"> | string | null
+    trackingId?: StringNullableFilter<"FbaTransfer"> | string | null
+    courier?: StringNullableFilter<"FbaTransfer"> | string | null
+    status?: StringFilter<"FbaTransfer"> | string
+    totalUnits?: IntFilter<"FbaTransfer"> | number
+    soldUnits?: IntFilter<"FbaTransfer"> | number
+    damagedUnits?: IntFilter<"FbaTransfer"> | number
+    returnedUnits?: IntFilter<"FbaTransfer"> | number
+    transferredBy?: StringFilter<"FbaTransfer"> | string
+    notes?: StringNullableFilter<"FbaTransfer"> | string | null
+    createdAt?: DateTimeFilter<"FbaTransfer"> | Date | string
+    updatedAt?: DateTimeFilter<"FbaTransfer"> | Date | string
+    items?: FbaTransferItemListRelationFilter
+  }
+
+  export type FbaTransferOrderByWithRelationInput = {
+    id?: SortOrder
+    shipmentNumber?: SortOrder
+    channel?: SortOrder
+    destinationFc?: SortOrder
+    trackingId?: SortOrder
+    courier?: SortOrder
+    status?: SortOrder
+    totalUnits?: SortOrder
+    soldUnits?: SortOrder
+    damagedUnits?: SortOrder
+    returnedUnits?: SortOrder
+    transferredBy?: SortOrder
+    notes?: SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+    items?: FbaTransferItemOrderByRelationAggregateInput
+  }
+
+  export type FbaTransferWhereUniqueInput = Prisma.AtLeast<{
+    id?: string
+    shipmentNumber?: string
+    AND?: FbaTransferWhereInput | FbaTransferWhereInput[]
+    OR?: FbaTransferWhereInput[]
+    NOT?: FbaTransferWhereInput | FbaTransferWhereInput[]
+    channel?: StringFilter<"FbaTransfer"> | string
+    destinationFc?: StringNullableFilter<"FbaTransfer"> | string | null
+    trackingId?: StringNullableFilter<"FbaTransfer"> | string | null
+    courier?: StringNullableFilter<"FbaTransfer"> | string | null
+    status?: StringFilter<"FbaTransfer"> | string
+    totalUnits?: IntFilter<"FbaTransfer"> | number
+    soldUnits?: IntFilter<"FbaTransfer"> | number
+    damagedUnits?: IntFilter<"FbaTransfer"> | number
+    returnedUnits?: IntFilter<"FbaTransfer"> | number
+    transferredBy?: StringFilter<"FbaTransfer"> | string
+    notes?: StringNullableFilter<"FbaTransfer"> | string | null
+    createdAt?: DateTimeFilter<"FbaTransfer"> | Date | string
+    updatedAt?: DateTimeFilter<"FbaTransfer"> | Date | string
+    items?: FbaTransferItemListRelationFilter
+  }, "id" | "shipmentNumber">
+
+  export type FbaTransferOrderByWithAggregationInput = {
+    id?: SortOrder
+    shipmentNumber?: SortOrder
+    channel?: SortOrder
+    destinationFc?: SortOrder
+    trackingId?: SortOrder
+    courier?: SortOrder
+    status?: SortOrder
+    totalUnits?: SortOrder
+    soldUnits?: SortOrder
+    damagedUnits?: SortOrder
+    returnedUnits?: SortOrder
+    transferredBy?: SortOrder
+    notes?: SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+    _count?: FbaTransferCountOrderByAggregateInput
+    _avg?: FbaTransferAvgOrderByAggregateInput
+    _max?: FbaTransferMaxOrderByAggregateInput
+    _min?: FbaTransferMinOrderByAggregateInput
+    _sum?: FbaTransferSumOrderByAggregateInput
+  }
+
+  export type FbaTransferScalarWhereWithAggregatesInput = {
+    AND?: FbaTransferScalarWhereWithAggregatesInput | FbaTransferScalarWhereWithAggregatesInput[]
+    OR?: FbaTransferScalarWhereWithAggregatesInput[]
+    NOT?: FbaTransferScalarWhereWithAggregatesInput | FbaTransferScalarWhereWithAggregatesInput[]
+    id?: StringWithAggregatesFilter<"FbaTransfer"> | string
+    shipmentNumber?: StringWithAggregatesFilter<"FbaTransfer"> | string
+    channel?: StringWithAggregatesFilter<"FbaTransfer"> | string
+    destinationFc?: StringNullableWithAggregatesFilter<"FbaTransfer"> | string | null
+    trackingId?: StringNullableWithAggregatesFilter<"FbaTransfer"> | string | null
+    courier?: StringNullableWithAggregatesFilter<"FbaTransfer"> | string | null
+    status?: StringWithAggregatesFilter<"FbaTransfer"> | string
+    totalUnits?: IntWithAggregatesFilter<"FbaTransfer"> | number
+    soldUnits?: IntWithAggregatesFilter<"FbaTransfer"> | number
+    damagedUnits?: IntWithAggregatesFilter<"FbaTransfer"> | number
+    returnedUnits?: IntWithAggregatesFilter<"FbaTransfer"> | number
+    transferredBy?: StringWithAggregatesFilter<"FbaTransfer"> | string
+    notes?: StringNullableWithAggregatesFilter<"FbaTransfer"> | string | null
+    createdAt?: DateTimeWithAggregatesFilter<"FbaTransfer"> | Date | string
+    updatedAt?: DateTimeWithAggregatesFilter<"FbaTransfer"> | Date | string
+  }
+
+  export type FbaTransferItemWhereInput = {
+    AND?: FbaTransferItemWhereInput | FbaTransferItemWhereInput[]
+    OR?: FbaTransferItemWhereInput[]
+    NOT?: FbaTransferItemWhereInput | FbaTransferItemWhereInput[]
+    id?: StringFilter<"FbaTransferItem"> | string
+    fbaTransferId?: StringFilter<"FbaTransferItem"> | string
+    unitBarcodeId?: StringNullableFilter<"FbaTransferItem"> | string | null
+    barcode?: StringFilter<"FbaTransferItem"> | string
+    serialNumber?: IntFilter<"FbaTransferItem"> | number
+    productVariantId?: StringFilter<"FbaTransferItem"> | string
+    sku?: StringFilter<"FbaTransferItem"> | string
+    productName?: StringFilter<"FbaTransferItem"> | string
+    sellingPrice?: FloatFilter<"FbaTransferItem"> | number
+    status?: StringFilter<"FbaTransferItem"> | string
+    tallyMonth?: StringNullableFilter<"FbaTransferItem"> | string | null
+    tallyDate?: DateTimeNullableFilter<"FbaTransferItem"> | Date | string | null
+    tallyBy?: StringNullableFilter<"FbaTransferItem"> | string | null
+    tallyNotes?: StringNullableFilter<"FbaTransferItem"> | string | null
+    channelOrderId?: StringNullableFilter<"FbaTransferItem"> | string | null
+    createdAt?: DateTimeFilter<"FbaTransferItem"> | Date | string
+    updatedAt?: DateTimeFilter<"FbaTransferItem"> | Date | string
+    fbaTransfer?: XOR<FbaTransferScalarRelationFilter, FbaTransferWhereInput>
+    unitBarcode?: XOR<UnitBarcodeNullableScalarRelationFilter, UnitBarcodeWhereInput> | null
+  }
+
+  export type FbaTransferItemOrderByWithRelationInput = {
+    id?: SortOrder
+    fbaTransferId?: SortOrder
+    unitBarcodeId?: SortOrder
+    barcode?: SortOrder
+    serialNumber?: SortOrder
+    productVariantId?: SortOrder
+    sku?: SortOrder
+    productName?: SortOrder
+    sellingPrice?: SortOrder
+    status?: SortOrder
+    tallyMonth?: SortOrder
+    tallyDate?: SortOrder
+    tallyBy?: SortOrder
+    tallyNotes?: SortOrder
+    channelOrderId?: SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+    fbaTransfer?: FbaTransferOrderByWithRelationInput
+    unitBarcode?: UnitBarcodeOrderByWithRelationInput
+  }
+
+  export type FbaTransferItemWhereUniqueInput = Prisma.AtLeast<{
+    id?: string
+    AND?: FbaTransferItemWhereInput | FbaTransferItemWhereInput[]
+    OR?: FbaTransferItemWhereInput[]
+    NOT?: FbaTransferItemWhereInput | FbaTransferItemWhereInput[]
+    fbaTransferId?: StringFilter<"FbaTransferItem"> | string
+    unitBarcodeId?: StringNullableFilter<"FbaTransferItem"> | string | null
+    barcode?: StringFilter<"FbaTransferItem"> | string
+    serialNumber?: IntFilter<"FbaTransferItem"> | number
+    productVariantId?: StringFilter<"FbaTransferItem"> | string
+    sku?: StringFilter<"FbaTransferItem"> | string
+    productName?: StringFilter<"FbaTransferItem"> | string
+    sellingPrice?: FloatFilter<"FbaTransferItem"> | number
+    status?: StringFilter<"FbaTransferItem"> | string
+    tallyMonth?: StringNullableFilter<"FbaTransferItem"> | string | null
+    tallyDate?: DateTimeNullableFilter<"FbaTransferItem"> | Date | string | null
+    tallyBy?: StringNullableFilter<"FbaTransferItem"> | string | null
+    tallyNotes?: StringNullableFilter<"FbaTransferItem"> | string | null
+    channelOrderId?: StringNullableFilter<"FbaTransferItem"> | string | null
+    createdAt?: DateTimeFilter<"FbaTransferItem"> | Date | string
+    updatedAt?: DateTimeFilter<"FbaTransferItem"> | Date | string
+    fbaTransfer?: XOR<FbaTransferScalarRelationFilter, FbaTransferWhereInput>
+    unitBarcode?: XOR<UnitBarcodeNullableScalarRelationFilter, UnitBarcodeWhereInput> | null
+  }, "id">
+
+  export type FbaTransferItemOrderByWithAggregationInput = {
+    id?: SortOrder
+    fbaTransferId?: SortOrder
+    unitBarcodeId?: SortOrder
+    barcode?: SortOrder
+    serialNumber?: SortOrder
+    productVariantId?: SortOrder
+    sku?: SortOrder
+    productName?: SortOrder
+    sellingPrice?: SortOrder
+    status?: SortOrder
+    tallyMonth?: SortOrder
+    tallyDate?: SortOrder
+    tallyBy?: SortOrder
+    tallyNotes?: SortOrder
+    channelOrderId?: SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+    _count?: FbaTransferItemCountOrderByAggregateInput
+    _avg?: FbaTransferItemAvgOrderByAggregateInput
+    _max?: FbaTransferItemMaxOrderByAggregateInput
+    _min?: FbaTransferItemMinOrderByAggregateInput
+    _sum?: FbaTransferItemSumOrderByAggregateInput
+  }
+
+  export type FbaTransferItemScalarWhereWithAggregatesInput = {
+    AND?: FbaTransferItemScalarWhereWithAggregatesInput | FbaTransferItemScalarWhereWithAggregatesInput[]
+    OR?: FbaTransferItemScalarWhereWithAggregatesInput[]
+    NOT?: FbaTransferItemScalarWhereWithAggregatesInput | FbaTransferItemScalarWhereWithAggregatesInput[]
+    id?: StringWithAggregatesFilter<"FbaTransferItem"> | string
+    fbaTransferId?: StringWithAggregatesFilter<"FbaTransferItem"> | string
+    unitBarcodeId?: StringNullableWithAggregatesFilter<"FbaTransferItem"> | string | null
+    barcode?: StringWithAggregatesFilter<"FbaTransferItem"> | string
+    serialNumber?: IntWithAggregatesFilter<"FbaTransferItem"> | number
+    productVariantId?: StringWithAggregatesFilter<"FbaTransferItem"> | string
+    sku?: StringWithAggregatesFilter<"FbaTransferItem"> | string
+    productName?: StringWithAggregatesFilter<"FbaTransferItem"> | string
+    sellingPrice?: FloatWithAggregatesFilter<"FbaTransferItem"> | number
+    status?: StringWithAggregatesFilter<"FbaTransferItem"> | string
+    tallyMonth?: StringNullableWithAggregatesFilter<"FbaTransferItem"> | string | null
+    tallyDate?: DateTimeNullableWithAggregatesFilter<"FbaTransferItem"> | Date | string | null
+    tallyBy?: StringNullableWithAggregatesFilter<"FbaTransferItem"> | string | null
+    tallyNotes?: StringNullableWithAggregatesFilter<"FbaTransferItem"> | string | null
+    channelOrderId?: StringNullableWithAggregatesFilter<"FbaTransferItem"> | string | null
+    createdAt?: DateTimeWithAggregatesFilter<"FbaTransferItem"> | Date | string
+    updatedAt?: DateTimeWithAggregatesFilter<"FbaTransferItem"> | Date | string
+  }
+
   export type CategoryCreateInput = {
     id?: string
     name: string
@@ -35298,6 +38155,7 @@ export namespace Prisma {
     productVariant: ProductVariantCreateNestedOneWithoutUnitBarcodesInput
     transactions?: InventoryTransactionCreateNestedManyWithoutUnitBarcodeInput
     orderItems?: OrderItemCreateNestedManyWithoutUnitBarcodeInput
+    fbaItems?: FbaTransferItemCreateNestedManyWithoutUnitBarcodeInput
   }
 
   export type UnitBarcodeUncheckedCreateInput = {
@@ -35316,6 +38174,7 @@ export namespace Prisma {
     returnedAt?: Date | string | null
     transactions?: InventoryTransactionUncheckedCreateNestedManyWithoutUnitBarcodeInput
     orderItems?: OrderItemUncheckedCreateNestedManyWithoutUnitBarcodeInput
+    fbaItems?: FbaTransferItemUncheckedCreateNestedManyWithoutUnitBarcodeInput
   }
 
   export type UnitBarcodeUpdateInput = {
@@ -35333,6 +38192,7 @@ export namespace Prisma {
     productVariant?: ProductVariantUpdateOneRequiredWithoutUnitBarcodesNestedInput
     transactions?: InventoryTransactionUpdateManyWithoutUnitBarcodeNestedInput
     orderItems?: OrderItemUpdateManyWithoutUnitBarcodeNestedInput
+    fbaItems?: FbaTransferItemUpdateManyWithoutUnitBarcodeNestedInput
   }
 
   export type UnitBarcodeUncheckedUpdateInput = {
@@ -35350,6 +38210,7 @@ export namespace Prisma {
     returnedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     transactions?: InventoryTransactionUncheckedUpdateManyWithoutUnitBarcodeNestedInput
     orderItems?: OrderItemUncheckedUpdateManyWithoutUnitBarcodeNestedInput
+    fbaItems?: FbaTransferItemUncheckedUpdateManyWithoutUnitBarcodeNestedInput
   }
 
   export type UnitBarcodeCreateManyInput = {
@@ -37696,6 +40557,266 @@ export namespace Prisma {
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
+  export type FbaTransferCreateInput = {
+    id?: string
+    shipmentNumber: string
+    channel?: string
+    destinationFc?: string | null
+    trackingId?: string | null
+    courier?: string | null
+    status?: string
+    totalUnits?: number
+    soldUnits?: number
+    damagedUnits?: number
+    returnedUnits?: number
+    transferredBy?: string
+    notes?: string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    items?: FbaTransferItemCreateNestedManyWithoutFbaTransferInput
+  }
+
+  export type FbaTransferUncheckedCreateInput = {
+    id?: string
+    shipmentNumber: string
+    channel?: string
+    destinationFc?: string | null
+    trackingId?: string | null
+    courier?: string | null
+    status?: string
+    totalUnits?: number
+    soldUnits?: number
+    damagedUnits?: number
+    returnedUnits?: number
+    transferredBy?: string
+    notes?: string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    items?: FbaTransferItemUncheckedCreateNestedManyWithoutFbaTransferInput
+  }
+
+  export type FbaTransferUpdateInput = {
+    shipmentNumber?: StringFieldUpdateOperationsInput | string
+    channel?: StringFieldUpdateOperationsInput | string
+    destinationFc?: NullableStringFieldUpdateOperationsInput | string | null
+    trackingId?: NullableStringFieldUpdateOperationsInput | string | null
+    courier?: NullableStringFieldUpdateOperationsInput | string | null
+    status?: StringFieldUpdateOperationsInput | string
+    totalUnits?: IntFieldUpdateOperationsInput | number
+    soldUnits?: IntFieldUpdateOperationsInput | number
+    damagedUnits?: IntFieldUpdateOperationsInput | number
+    returnedUnits?: IntFieldUpdateOperationsInput | number
+    transferredBy?: StringFieldUpdateOperationsInput | string
+    notes?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    items?: FbaTransferItemUpdateManyWithoutFbaTransferNestedInput
+  }
+
+  export type FbaTransferUncheckedUpdateInput = {
+    shipmentNumber?: StringFieldUpdateOperationsInput | string
+    channel?: StringFieldUpdateOperationsInput | string
+    destinationFc?: NullableStringFieldUpdateOperationsInput | string | null
+    trackingId?: NullableStringFieldUpdateOperationsInput | string | null
+    courier?: NullableStringFieldUpdateOperationsInput | string | null
+    status?: StringFieldUpdateOperationsInput | string
+    totalUnits?: IntFieldUpdateOperationsInput | number
+    soldUnits?: IntFieldUpdateOperationsInput | number
+    damagedUnits?: IntFieldUpdateOperationsInput | number
+    returnedUnits?: IntFieldUpdateOperationsInput | number
+    transferredBy?: StringFieldUpdateOperationsInput | string
+    notes?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    items?: FbaTransferItemUncheckedUpdateManyWithoutFbaTransferNestedInput
+  }
+
+  export type FbaTransferCreateManyInput = {
+    id?: string
+    shipmentNumber: string
+    channel?: string
+    destinationFc?: string | null
+    trackingId?: string | null
+    courier?: string | null
+    status?: string
+    totalUnits?: number
+    soldUnits?: number
+    damagedUnits?: number
+    returnedUnits?: number
+    transferredBy?: string
+    notes?: string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+  }
+
+  export type FbaTransferUpdateManyMutationInput = {
+    shipmentNumber?: StringFieldUpdateOperationsInput | string
+    channel?: StringFieldUpdateOperationsInput | string
+    destinationFc?: NullableStringFieldUpdateOperationsInput | string | null
+    trackingId?: NullableStringFieldUpdateOperationsInput | string | null
+    courier?: NullableStringFieldUpdateOperationsInput | string | null
+    status?: StringFieldUpdateOperationsInput | string
+    totalUnits?: IntFieldUpdateOperationsInput | number
+    soldUnits?: IntFieldUpdateOperationsInput | number
+    damagedUnits?: IntFieldUpdateOperationsInput | number
+    returnedUnits?: IntFieldUpdateOperationsInput | number
+    transferredBy?: StringFieldUpdateOperationsInput | string
+    notes?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type FbaTransferUncheckedUpdateManyInput = {
+    shipmentNumber?: StringFieldUpdateOperationsInput | string
+    channel?: StringFieldUpdateOperationsInput | string
+    destinationFc?: NullableStringFieldUpdateOperationsInput | string | null
+    trackingId?: NullableStringFieldUpdateOperationsInput | string | null
+    courier?: NullableStringFieldUpdateOperationsInput | string | null
+    status?: StringFieldUpdateOperationsInput | string
+    totalUnits?: IntFieldUpdateOperationsInput | number
+    soldUnits?: IntFieldUpdateOperationsInput | number
+    damagedUnits?: IntFieldUpdateOperationsInput | number
+    returnedUnits?: IntFieldUpdateOperationsInput | number
+    transferredBy?: StringFieldUpdateOperationsInput | string
+    notes?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type FbaTransferItemCreateInput = {
+    id?: string
+    barcode: string
+    serialNumber?: number
+    productVariantId: string
+    sku: string
+    productName: string
+    sellingPrice?: number
+    status?: string
+    tallyMonth?: string | null
+    tallyDate?: Date | string | null
+    tallyBy?: string | null
+    tallyNotes?: string | null
+    channelOrderId?: string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    fbaTransfer: FbaTransferCreateNestedOneWithoutItemsInput
+    unitBarcode?: UnitBarcodeCreateNestedOneWithoutFbaItemsInput
+  }
+
+  export type FbaTransferItemUncheckedCreateInput = {
+    id?: string
+    fbaTransferId: string
+    unitBarcodeId?: string | null
+    barcode: string
+    serialNumber?: number
+    productVariantId: string
+    sku: string
+    productName: string
+    sellingPrice?: number
+    status?: string
+    tallyMonth?: string | null
+    tallyDate?: Date | string | null
+    tallyBy?: string | null
+    tallyNotes?: string | null
+    channelOrderId?: string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+  }
+
+  export type FbaTransferItemUpdateInput = {
+    barcode?: StringFieldUpdateOperationsInput | string
+    serialNumber?: IntFieldUpdateOperationsInput | number
+    productVariantId?: StringFieldUpdateOperationsInput | string
+    sku?: StringFieldUpdateOperationsInput | string
+    productName?: StringFieldUpdateOperationsInput | string
+    sellingPrice?: FloatFieldUpdateOperationsInput | number
+    status?: StringFieldUpdateOperationsInput | string
+    tallyMonth?: NullableStringFieldUpdateOperationsInput | string | null
+    tallyDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    tallyBy?: NullableStringFieldUpdateOperationsInput | string | null
+    tallyNotes?: NullableStringFieldUpdateOperationsInput | string | null
+    channelOrderId?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    fbaTransfer?: FbaTransferUpdateOneRequiredWithoutItemsNestedInput
+    unitBarcode?: UnitBarcodeUpdateOneWithoutFbaItemsNestedInput
+  }
+
+  export type FbaTransferItemUncheckedUpdateInput = {
+    fbaTransferId?: StringFieldUpdateOperationsInput | string
+    unitBarcodeId?: NullableStringFieldUpdateOperationsInput | string | null
+    barcode?: StringFieldUpdateOperationsInput | string
+    serialNumber?: IntFieldUpdateOperationsInput | number
+    productVariantId?: StringFieldUpdateOperationsInput | string
+    sku?: StringFieldUpdateOperationsInput | string
+    productName?: StringFieldUpdateOperationsInput | string
+    sellingPrice?: FloatFieldUpdateOperationsInput | number
+    status?: StringFieldUpdateOperationsInput | string
+    tallyMonth?: NullableStringFieldUpdateOperationsInput | string | null
+    tallyDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    tallyBy?: NullableStringFieldUpdateOperationsInput | string | null
+    tallyNotes?: NullableStringFieldUpdateOperationsInput | string | null
+    channelOrderId?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type FbaTransferItemCreateManyInput = {
+    id?: string
+    fbaTransferId: string
+    unitBarcodeId?: string | null
+    barcode: string
+    serialNumber?: number
+    productVariantId: string
+    sku: string
+    productName: string
+    sellingPrice?: number
+    status?: string
+    tallyMonth?: string | null
+    tallyDate?: Date | string | null
+    tallyBy?: string | null
+    tallyNotes?: string | null
+    channelOrderId?: string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+  }
+
+  export type FbaTransferItemUpdateManyMutationInput = {
+    barcode?: StringFieldUpdateOperationsInput | string
+    serialNumber?: IntFieldUpdateOperationsInput | number
+    productVariantId?: StringFieldUpdateOperationsInput | string
+    sku?: StringFieldUpdateOperationsInput | string
+    productName?: StringFieldUpdateOperationsInput | string
+    sellingPrice?: FloatFieldUpdateOperationsInput | number
+    status?: StringFieldUpdateOperationsInput | string
+    tallyMonth?: NullableStringFieldUpdateOperationsInput | string | null
+    tallyDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    tallyBy?: NullableStringFieldUpdateOperationsInput | string | null
+    tallyNotes?: NullableStringFieldUpdateOperationsInput | string | null
+    channelOrderId?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type FbaTransferItemUncheckedUpdateManyInput = {
+    fbaTransferId?: StringFieldUpdateOperationsInput | string
+    unitBarcodeId?: NullableStringFieldUpdateOperationsInput | string | null
+    barcode?: StringFieldUpdateOperationsInput | string
+    serialNumber?: IntFieldUpdateOperationsInput | number
+    productVariantId?: StringFieldUpdateOperationsInput | string
+    sku?: StringFieldUpdateOperationsInput | string
+    productName?: StringFieldUpdateOperationsInput | string
+    sellingPrice?: FloatFieldUpdateOperationsInput | number
+    status?: StringFieldUpdateOperationsInput | string
+    tallyMonth?: NullableStringFieldUpdateOperationsInput | string | null
+    tallyDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    tallyBy?: NullableStringFieldUpdateOperationsInput | string | null
+    tallyNotes?: NullableStringFieldUpdateOperationsInput | string | null
+    channelOrderId?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
   export type StringFilter<$PrismaModel = never> = {
     equals?: string | StringFieldRefInput<$PrismaModel>
     in?: string[] | ListStringFieldRefInput<$PrismaModel>
@@ -38183,6 +41304,16 @@ export namespace Prisma {
   export type ProductVariantScalarRelationFilter = {
     is?: ProductVariantWhereInput
     isNot?: ProductVariantWhereInput
+  }
+
+  export type FbaTransferItemListRelationFilter = {
+    every?: FbaTransferItemWhereInput
+    some?: FbaTransferItemWhereInput
+    none?: FbaTransferItemWhereInput
+  }
+
+  export type FbaTransferItemOrderByRelationAggregateInput = {
+    _count?: SortOrder
   }
 
   export type UnitBarcodeCountOrderByAggregateInput = {
@@ -39551,6 +42682,149 @@ export namespace Prisma {
     updatedAt?: SortOrder
   }
 
+  export type FbaTransferCountOrderByAggregateInput = {
+    id?: SortOrder
+    shipmentNumber?: SortOrder
+    channel?: SortOrder
+    destinationFc?: SortOrder
+    trackingId?: SortOrder
+    courier?: SortOrder
+    status?: SortOrder
+    totalUnits?: SortOrder
+    soldUnits?: SortOrder
+    damagedUnits?: SortOrder
+    returnedUnits?: SortOrder
+    transferredBy?: SortOrder
+    notes?: SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+  }
+
+  export type FbaTransferAvgOrderByAggregateInput = {
+    totalUnits?: SortOrder
+    soldUnits?: SortOrder
+    damagedUnits?: SortOrder
+    returnedUnits?: SortOrder
+  }
+
+  export type FbaTransferMaxOrderByAggregateInput = {
+    id?: SortOrder
+    shipmentNumber?: SortOrder
+    channel?: SortOrder
+    destinationFc?: SortOrder
+    trackingId?: SortOrder
+    courier?: SortOrder
+    status?: SortOrder
+    totalUnits?: SortOrder
+    soldUnits?: SortOrder
+    damagedUnits?: SortOrder
+    returnedUnits?: SortOrder
+    transferredBy?: SortOrder
+    notes?: SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+  }
+
+  export type FbaTransferMinOrderByAggregateInput = {
+    id?: SortOrder
+    shipmentNumber?: SortOrder
+    channel?: SortOrder
+    destinationFc?: SortOrder
+    trackingId?: SortOrder
+    courier?: SortOrder
+    status?: SortOrder
+    totalUnits?: SortOrder
+    soldUnits?: SortOrder
+    damagedUnits?: SortOrder
+    returnedUnits?: SortOrder
+    transferredBy?: SortOrder
+    notes?: SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+  }
+
+  export type FbaTransferSumOrderByAggregateInput = {
+    totalUnits?: SortOrder
+    soldUnits?: SortOrder
+    damagedUnits?: SortOrder
+    returnedUnits?: SortOrder
+  }
+
+  export type FbaTransferScalarRelationFilter = {
+    is?: FbaTransferWhereInput
+    isNot?: FbaTransferWhereInput
+  }
+
+  export type FbaTransferItemCountOrderByAggregateInput = {
+    id?: SortOrder
+    fbaTransferId?: SortOrder
+    unitBarcodeId?: SortOrder
+    barcode?: SortOrder
+    serialNumber?: SortOrder
+    productVariantId?: SortOrder
+    sku?: SortOrder
+    productName?: SortOrder
+    sellingPrice?: SortOrder
+    status?: SortOrder
+    tallyMonth?: SortOrder
+    tallyDate?: SortOrder
+    tallyBy?: SortOrder
+    tallyNotes?: SortOrder
+    channelOrderId?: SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+  }
+
+  export type FbaTransferItemAvgOrderByAggregateInput = {
+    serialNumber?: SortOrder
+    sellingPrice?: SortOrder
+  }
+
+  export type FbaTransferItemMaxOrderByAggregateInput = {
+    id?: SortOrder
+    fbaTransferId?: SortOrder
+    unitBarcodeId?: SortOrder
+    barcode?: SortOrder
+    serialNumber?: SortOrder
+    productVariantId?: SortOrder
+    sku?: SortOrder
+    productName?: SortOrder
+    sellingPrice?: SortOrder
+    status?: SortOrder
+    tallyMonth?: SortOrder
+    tallyDate?: SortOrder
+    tallyBy?: SortOrder
+    tallyNotes?: SortOrder
+    channelOrderId?: SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+  }
+
+  export type FbaTransferItemMinOrderByAggregateInput = {
+    id?: SortOrder
+    fbaTransferId?: SortOrder
+    unitBarcodeId?: SortOrder
+    barcode?: SortOrder
+    serialNumber?: SortOrder
+    productVariantId?: SortOrder
+    sku?: SortOrder
+    productName?: SortOrder
+    sellingPrice?: SortOrder
+    status?: SortOrder
+    tallyMonth?: SortOrder
+    tallyDate?: SortOrder
+    tallyBy?: SortOrder
+    tallyNotes?: SortOrder
+    channelOrderId?: SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+  }
+
+  export type FbaTransferItemSumOrderByAggregateInput = {
+    serialNumber?: SortOrder
+    sellingPrice?: SortOrder
+  }
+
   export type CategoryCreateNestedOneWithoutChildrenInput = {
     create?: XOR<CategoryCreateWithoutChildrenInput, CategoryUncheckedCreateWithoutChildrenInput>
     connectOrCreate?: CategoryCreateOrConnectWithoutChildrenInput
@@ -40190,6 +43464,13 @@ export namespace Prisma {
     connect?: OrderItemWhereUniqueInput | OrderItemWhereUniqueInput[]
   }
 
+  export type FbaTransferItemCreateNestedManyWithoutUnitBarcodeInput = {
+    create?: XOR<FbaTransferItemCreateWithoutUnitBarcodeInput, FbaTransferItemUncheckedCreateWithoutUnitBarcodeInput> | FbaTransferItemCreateWithoutUnitBarcodeInput[] | FbaTransferItemUncheckedCreateWithoutUnitBarcodeInput[]
+    connectOrCreate?: FbaTransferItemCreateOrConnectWithoutUnitBarcodeInput | FbaTransferItemCreateOrConnectWithoutUnitBarcodeInput[]
+    createMany?: FbaTransferItemCreateManyUnitBarcodeInputEnvelope
+    connect?: FbaTransferItemWhereUniqueInput | FbaTransferItemWhereUniqueInput[]
+  }
+
   export type InventoryTransactionUncheckedCreateNestedManyWithoutUnitBarcodeInput = {
     create?: XOR<InventoryTransactionCreateWithoutUnitBarcodeInput, InventoryTransactionUncheckedCreateWithoutUnitBarcodeInput> | InventoryTransactionCreateWithoutUnitBarcodeInput[] | InventoryTransactionUncheckedCreateWithoutUnitBarcodeInput[]
     connectOrCreate?: InventoryTransactionCreateOrConnectWithoutUnitBarcodeInput | InventoryTransactionCreateOrConnectWithoutUnitBarcodeInput[]
@@ -40202,6 +43483,13 @@ export namespace Prisma {
     connectOrCreate?: OrderItemCreateOrConnectWithoutUnitBarcodeInput | OrderItemCreateOrConnectWithoutUnitBarcodeInput[]
     createMany?: OrderItemCreateManyUnitBarcodeInputEnvelope
     connect?: OrderItemWhereUniqueInput | OrderItemWhereUniqueInput[]
+  }
+
+  export type FbaTransferItemUncheckedCreateNestedManyWithoutUnitBarcodeInput = {
+    create?: XOR<FbaTransferItemCreateWithoutUnitBarcodeInput, FbaTransferItemUncheckedCreateWithoutUnitBarcodeInput> | FbaTransferItemCreateWithoutUnitBarcodeInput[] | FbaTransferItemUncheckedCreateWithoutUnitBarcodeInput[]
+    connectOrCreate?: FbaTransferItemCreateOrConnectWithoutUnitBarcodeInput | FbaTransferItemCreateOrConnectWithoutUnitBarcodeInput[]
+    createMany?: FbaTransferItemCreateManyUnitBarcodeInputEnvelope
+    connect?: FbaTransferItemWhereUniqueInput | FbaTransferItemWhereUniqueInput[]
   }
 
   export type ProductVariantUpdateOneRequiredWithoutUnitBarcodesNestedInput = {
@@ -40240,6 +43528,20 @@ export namespace Prisma {
     deleteMany?: OrderItemScalarWhereInput | OrderItemScalarWhereInput[]
   }
 
+  export type FbaTransferItemUpdateManyWithoutUnitBarcodeNestedInput = {
+    create?: XOR<FbaTransferItemCreateWithoutUnitBarcodeInput, FbaTransferItemUncheckedCreateWithoutUnitBarcodeInput> | FbaTransferItemCreateWithoutUnitBarcodeInput[] | FbaTransferItemUncheckedCreateWithoutUnitBarcodeInput[]
+    connectOrCreate?: FbaTransferItemCreateOrConnectWithoutUnitBarcodeInput | FbaTransferItemCreateOrConnectWithoutUnitBarcodeInput[]
+    upsert?: FbaTransferItemUpsertWithWhereUniqueWithoutUnitBarcodeInput | FbaTransferItemUpsertWithWhereUniqueWithoutUnitBarcodeInput[]
+    createMany?: FbaTransferItemCreateManyUnitBarcodeInputEnvelope
+    set?: FbaTransferItemWhereUniqueInput | FbaTransferItemWhereUniqueInput[]
+    disconnect?: FbaTransferItemWhereUniqueInput | FbaTransferItemWhereUniqueInput[]
+    delete?: FbaTransferItemWhereUniqueInput | FbaTransferItemWhereUniqueInput[]
+    connect?: FbaTransferItemWhereUniqueInput | FbaTransferItemWhereUniqueInput[]
+    update?: FbaTransferItemUpdateWithWhereUniqueWithoutUnitBarcodeInput | FbaTransferItemUpdateWithWhereUniqueWithoutUnitBarcodeInput[]
+    updateMany?: FbaTransferItemUpdateManyWithWhereWithoutUnitBarcodeInput | FbaTransferItemUpdateManyWithWhereWithoutUnitBarcodeInput[]
+    deleteMany?: FbaTransferItemScalarWhereInput | FbaTransferItemScalarWhereInput[]
+  }
+
   export type InventoryTransactionUncheckedUpdateManyWithoutUnitBarcodeNestedInput = {
     create?: XOR<InventoryTransactionCreateWithoutUnitBarcodeInput, InventoryTransactionUncheckedCreateWithoutUnitBarcodeInput> | InventoryTransactionCreateWithoutUnitBarcodeInput[] | InventoryTransactionUncheckedCreateWithoutUnitBarcodeInput[]
     connectOrCreate?: InventoryTransactionCreateOrConnectWithoutUnitBarcodeInput | InventoryTransactionCreateOrConnectWithoutUnitBarcodeInput[]
@@ -40266,6 +43568,20 @@ export namespace Prisma {
     update?: OrderItemUpdateWithWhereUniqueWithoutUnitBarcodeInput | OrderItemUpdateWithWhereUniqueWithoutUnitBarcodeInput[]
     updateMany?: OrderItemUpdateManyWithWhereWithoutUnitBarcodeInput | OrderItemUpdateManyWithWhereWithoutUnitBarcodeInput[]
     deleteMany?: OrderItemScalarWhereInput | OrderItemScalarWhereInput[]
+  }
+
+  export type FbaTransferItemUncheckedUpdateManyWithoutUnitBarcodeNestedInput = {
+    create?: XOR<FbaTransferItemCreateWithoutUnitBarcodeInput, FbaTransferItemUncheckedCreateWithoutUnitBarcodeInput> | FbaTransferItemCreateWithoutUnitBarcodeInput[] | FbaTransferItemUncheckedCreateWithoutUnitBarcodeInput[]
+    connectOrCreate?: FbaTransferItemCreateOrConnectWithoutUnitBarcodeInput | FbaTransferItemCreateOrConnectWithoutUnitBarcodeInput[]
+    upsert?: FbaTransferItemUpsertWithWhereUniqueWithoutUnitBarcodeInput | FbaTransferItemUpsertWithWhereUniqueWithoutUnitBarcodeInput[]
+    createMany?: FbaTransferItemCreateManyUnitBarcodeInputEnvelope
+    set?: FbaTransferItemWhereUniqueInput | FbaTransferItemWhereUniqueInput[]
+    disconnect?: FbaTransferItemWhereUniqueInput | FbaTransferItemWhereUniqueInput[]
+    delete?: FbaTransferItemWhereUniqueInput | FbaTransferItemWhereUniqueInput[]
+    connect?: FbaTransferItemWhereUniqueInput | FbaTransferItemWhereUniqueInput[]
+    update?: FbaTransferItemUpdateWithWhereUniqueWithoutUnitBarcodeInput | FbaTransferItemUpdateWithWhereUniqueWithoutUnitBarcodeInput[]
+    updateMany?: FbaTransferItemUpdateManyWithWhereWithoutUnitBarcodeInput | FbaTransferItemUpdateManyWithWhereWithoutUnitBarcodeInput[]
+    deleteMany?: FbaTransferItemScalarWhereInput | FbaTransferItemScalarWhereInput[]
   }
 
   export type ProductVariantCreateNestedOneWithoutInventoryInput = {
@@ -41135,6 +44451,78 @@ export namespace Prisma {
   export type UserUpdatepermissionsInput = {
     set?: string[]
     push?: string | string[]
+  }
+
+  export type FbaTransferItemCreateNestedManyWithoutFbaTransferInput = {
+    create?: XOR<FbaTransferItemCreateWithoutFbaTransferInput, FbaTransferItemUncheckedCreateWithoutFbaTransferInput> | FbaTransferItemCreateWithoutFbaTransferInput[] | FbaTransferItemUncheckedCreateWithoutFbaTransferInput[]
+    connectOrCreate?: FbaTransferItemCreateOrConnectWithoutFbaTransferInput | FbaTransferItemCreateOrConnectWithoutFbaTransferInput[]
+    createMany?: FbaTransferItemCreateManyFbaTransferInputEnvelope
+    connect?: FbaTransferItemWhereUniqueInput | FbaTransferItemWhereUniqueInput[]
+  }
+
+  export type FbaTransferItemUncheckedCreateNestedManyWithoutFbaTransferInput = {
+    create?: XOR<FbaTransferItemCreateWithoutFbaTransferInput, FbaTransferItemUncheckedCreateWithoutFbaTransferInput> | FbaTransferItemCreateWithoutFbaTransferInput[] | FbaTransferItemUncheckedCreateWithoutFbaTransferInput[]
+    connectOrCreate?: FbaTransferItemCreateOrConnectWithoutFbaTransferInput | FbaTransferItemCreateOrConnectWithoutFbaTransferInput[]
+    createMany?: FbaTransferItemCreateManyFbaTransferInputEnvelope
+    connect?: FbaTransferItemWhereUniqueInput | FbaTransferItemWhereUniqueInput[]
+  }
+
+  export type FbaTransferItemUpdateManyWithoutFbaTransferNestedInput = {
+    create?: XOR<FbaTransferItemCreateWithoutFbaTransferInput, FbaTransferItemUncheckedCreateWithoutFbaTransferInput> | FbaTransferItemCreateWithoutFbaTransferInput[] | FbaTransferItemUncheckedCreateWithoutFbaTransferInput[]
+    connectOrCreate?: FbaTransferItemCreateOrConnectWithoutFbaTransferInput | FbaTransferItemCreateOrConnectWithoutFbaTransferInput[]
+    upsert?: FbaTransferItemUpsertWithWhereUniqueWithoutFbaTransferInput | FbaTransferItemUpsertWithWhereUniqueWithoutFbaTransferInput[]
+    createMany?: FbaTransferItemCreateManyFbaTransferInputEnvelope
+    set?: FbaTransferItemWhereUniqueInput | FbaTransferItemWhereUniqueInput[]
+    disconnect?: FbaTransferItemWhereUniqueInput | FbaTransferItemWhereUniqueInput[]
+    delete?: FbaTransferItemWhereUniqueInput | FbaTransferItemWhereUniqueInput[]
+    connect?: FbaTransferItemWhereUniqueInput | FbaTransferItemWhereUniqueInput[]
+    update?: FbaTransferItemUpdateWithWhereUniqueWithoutFbaTransferInput | FbaTransferItemUpdateWithWhereUniqueWithoutFbaTransferInput[]
+    updateMany?: FbaTransferItemUpdateManyWithWhereWithoutFbaTransferInput | FbaTransferItemUpdateManyWithWhereWithoutFbaTransferInput[]
+    deleteMany?: FbaTransferItemScalarWhereInput | FbaTransferItemScalarWhereInput[]
+  }
+
+  export type FbaTransferItemUncheckedUpdateManyWithoutFbaTransferNestedInput = {
+    create?: XOR<FbaTransferItemCreateWithoutFbaTransferInput, FbaTransferItemUncheckedCreateWithoutFbaTransferInput> | FbaTransferItemCreateWithoutFbaTransferInput[] | FbaTransferItemUncheckedCreateWithoutFbaTransferInput[]
+    connectOrCreate?: FbaTransferItemCreateOrConnectWithoutFbaTransferInput | FbaTransferItemCreateOrConnectWithoutFbaTransferInput[]
+    upsert?: FbaTransferItemUpsertWithWhereUniqueWithoutFbaTransferInput | FbaTransferItemUpsertWithWhereUniqueWithoutFbaTransferInput[]
+    createMany?: FbaTransferItemCreateManyFbaTransferInputEnvelope
+    set?: FbaTransferItemWhereUniqueInput | FbaTransferItemWhereUniqueInput[]
+    disconnect?: FbaTransferItemWhereUniqueInput | FbaTransferItemWhereUniqueInput[]
+    delete?: FbaTransferItemWhereUniqueInput | FbaTransferItemWhereUniqueInput[]
+    connect?: FbaTransferItemWhereUniqueInput | FbaTransferItemWhereUniqueInput[]
+    update?: FbaTransferItemUpdateWithWhereUniqueWithoutFbaTransferInput | FbaTransferItemUpdateWithWhereUniqueWithoutFbaTransferInput[]
+    updateMany?: FbaTransferItemUpdateManyWithWhereWithoutFbaTransferInput | FbaTransferItemUpdateManyWithWhereWithoutFbaTransferInput[]
+    deleteMany?: FbaTransferItemScalarWhereInput | FbaTransferItemScalarWhereInput[]
+  }
+
+  export type FbaTransferCreateNestedOneWithoutItemsInput = {
+    create?: XOR<FbaTransferCreateWithoutItemsInput, FbaTransferUncheckedCreateWithoutItemsInput>
+    connectOrCreate?: FbaTransferCreateOrConnectWithoutItemsInput
+    connect?: FbaTransferWhereUniqueInput
+  }
+
+  export type UnitBarcodeCreateNestedOneWithoutFbaItemsInput = {
+    create?: XOR<UnitBarcodeCreateWithoutFbaItemsInput, UnitBarcodeUncheckedCreateWithoutFbaItemsInput>
+    connectOrCreate?: UnitBarcodeCreateOrConnectWithoutFbaItemsInput
+    connect?: UnitBarcodeWhereUniqueInput
+  }
+
+  export type FbaTransferUpdateOneRequiredWithoutItemsNestedInput = {
+    create?: XOR<FbaTransferCreateWithoutItemsInput, FbaTransferUncheckedCreateWithoutItemsInput>
+    connectOrCreate?: FbaTransferCreateOrConnectWithoutItemsInput
+    upsert?: FbaTransferUpsertWithoutItemsInput
+    connect?: FbaTransferWhereUniqueInput
+    update?: XOR<XOR<FbaTransferUpdateToOneWithWhereWithoutItemsInput, FbaTransferUpdateWithoutItemsInput>, FbaTransferUncheckedUpdateWithoutItemsInput>
+  }
+
+  export type UnitBarcodeUpdateOneWithoutFbaItemsNestedInput = {
+    create?: XOR<UnitBarcodeCreateWithoutFbaItemsInput, UnitBarcodeUncheckedCreateWithoutFbaItemsInput>
+    connectOrCreate?: UnitBarcodeCreateOrConnectWithoutFbaItemsInput
+    upsert?: UnitBarcodeUpsertWithoutFbaItemsInput
+    disconnect?: boolean
+    delete?: UnitBarcodeWhereInput | boolean
+    connect?: UnitBarcodeWhereUniqueInput
+    update?: XOR<XOR<UnitBarcodeUpdateToOneWithWhereWithoutFbaItemsInput, UnitBarcodeUpdateWithoutFbaItemsInput>, UnitBarcodeUncheckedUpdateWithoutFbaItemsInput>
   }
 
   export type NestedStringFilter<$PrismaModel = never> = {
@@ -42092,6 +45480,7 @@ export namespace Prisma {
     returnedAt?: Date | string | null
     transactions?: InventoryTransactionCreateNestedManyWithoutUnitBarcodeInput
     orderItems?: OrderItemCreateNestedManyWithoutUnitBarcodeInput
+    fbaItems?: FbaTransferItemCreateNestedManyWithoutUnitBarcodeInput
   }
 
   export type UnitBarcodeUncheckedCreateWithoutProductVariantInput = {
@@ -42109,6 +45498,7 @@ export namespace Prisma {
     returnedAt?: Date | string | null
     transactions?: InventoryTransactionUncheckedCreateNestedManyWithoutUnitBarcodeInput
     orderItems?: OrderItemUncheckedCreateNestedManyWithoutUnitBarcodeInput
+    fbaItems?: FbaTransferItemUncheckedCreateNestedManyWithoutUnitBarcodeInput
   }
 
   export type UnitBarcodeCreateOrConnectWithoutProductVariantInput = {
@@ -42693,6 +46083,53 @@ export namespace Prisma {
     data: OrderItemCreateManyUnitBarcodeInput | OrderItemCreateManyUnitBarcodeInput[]
   }
 
+  export type FbaTransferItemCreateWithoutUnitBarcodeInput = {
+    id?: string
+    barcode: string
+    serialNumber?: number
+    productVariantId: string
+    sku: string
+    productName: string
+    sellingPrice?: number
+    status?: string
+    tallyMonth?: string | null
+    tallyDate?: Date | string | null
+    tallyBy?: string | null
+    tallyNotes?: string | null
+    channelOrderId?: string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    fbaTransfer: FbaTransferCreateNestedOneWithoutItemsInput
+  }
+
+  export type FbaTransferItemUncheckedCreateWithoutUnitBarcodeInput = {
+    id?: string
+    fbaTransferId: string
+    barcode: string
+    serialNumber?: number
+    productVariantId: string
+    sku: string
+    productName: string
+    sellingPrice?: number
+    status?: string
+    tallyMonth?: string | null
+    tallyDate?: Date | string | null
+    tallyBy?: string | null
+    tallyNotes?: string | null
+    channelOrderId?: string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+  }
+
+  export type FbaTransferItemCreateOrConnectWithoutUnitBarcodeInput = {
+    where: FbaTransferItemWhereUniqueInput
+    create: XOR<FbaTransferItemCreateWithoutUnitBarcodeInput, FbaTransferItemUncheckedCreateWithoutUnitBarcodeInput>
+  }
+
+  export type FbaTransferItemCreateManyUnitBarcodeInputEnvelope = {
+    data: FbaTransferItemCreateManyUnitBarcodeInput | FbaTransferItemCreateManyUnitBarcodeInput[]
+  }
+
   export type ProductVariantUpsertWithoutUnitBarcodesInput = {
     update: XOR<ProductVariantUpdateWithoutUnitBarcodesInput, ProductVariantUncheckedUpdateWithoutUnitBarcodesInput>
     create: XOR<ProductVariantCreateWithoutUnitBarcodesInput, ProductVariantUncheckedCreateWithoutUnitBarcodesInput>
@@ -42778,6 +46215,45 @@ export namespace Prisma {
   export type OrderItemUpdateManyWithWhereWithoutUnitBarcodeInput = {
     where: OrderItemScalarWhereInput
     data: XOR<OrderItemUpdateManyMutationInput, OrderItemUncheckedUpdateManyWithoutUnitBarcodeInput>
+  }
+
+  export type FbaTransferItemUpsertWithWhereUniqueWithoutUnitBarcodeInput = {
+    where: FbaTransferItemWhereUniqueInput
+    update: XOR<FbaTransferItemUpdateWithoutUnitBarcodeInput, FbaTransferItemUncheckedUpdateWithoutUnitBarcodeInput>
+    create: XOR<FbaTransferItemCreateWithoutUnitBarcodeInput, FbaTransferItemUncheckedCreateWithoutUnitBarcodeInput>
+  }
+
+  export type FbaTransferItemUpdateWithWhereUniqueWithoutUnitBarcodeInput = {
+    where: FbaTransferItemWhereUniqueInput
+    data: XOR<FbaTransferItemUpdateWithoutUnitBarcodeInput, FbaTransferItemUncheckedUpdateWithoutUnitBarcodeInput>
+  }
+
+  export type FbaTransferItemUpdateManyWithWhereWithoutUnitBarcodeInput = {
+    where: FbaTransferItemScalarWhereInput
+    data: XOR<FbaTransferItemUpdateManyMutationInput, FbaTransferItemUncheckedUpdateManyWithoutUnitBarcodeInput>
+  }
+
+  export type FbaTransferItemScalarWhereInput = {
+    AND?: FbaTransferItemScalarWhereInput | FbaTransferItemScalarWhereInput[]
+    OR?: FbaTransferItemScalarWhereInput[]
+    NOT?: FbaTransferItemScalarWhereInput | FbaTransferItemScalarWhereInput[]
+    id?: StringFilter<"FbaTransferItem"> | string
+    fbaTransferId?: StringFilter<"FbaTransferItem"> | string
+    unitBarcodeId?: StringNullableFilter<"FbaTransferItem"> | string | null
+    barcode?: StringFilter<"FbaTransferItem"> | string
+    serialNumber?: IntFilter<"FbaTransferItem"> | number
+    productVariantId?: StringFilter<"FbaTransferItem"> | string
+    sku?: StringFilter<"FbaTransferItem"> | string
+    productName?: StringFilter<"FbaTransferItem"> | string
+    sellingPrice?: FloatFilter<"FbaTransferItem"> | number
+    status?: StringFilter<"FbaTransferItem"> | string
+    tallyMonth?: StringNullableFilter<"FbaTransferItem"> | string | null
+    tallyDate?: DateTimeNullableFilter<"FbaTransferItem"> | Date | string | null
+    tallyBy?: StringNullableFilter<"FbaTransferItem"> | string | null
+    tallyNotes?: StringNullableFilter<"FbaTransferItem"> | string | null
+    channelOrderId?: StringNullableFilter<"FbaTransferItem"> | string | null
+    createdAt?: DateTimeFilter<"FbaTransferItem"> | Date | string
+    updatedAt?: DateTimeFilter<"FbaTransferItem"> | Date | string
   }
 
   export type ProductVariantCreateWithoutInventoryInput = {
@@ -42952,6 +46428,7 @@ export namespace Prisma {
     returnedAt?: Date | string | null
     productVariant: ProductVariantCreateNestedOneWithoutUnitBarcodesInput
     orderItems?: OrderItemCreateNestedManyWithoutUnitBarcodeInput
+    fbaItems?: FbaTransferItemCreateNestedManyWithoutUnitBarcodeInput
   }
 
   export type UnitBarcodeUncheckedCreateWithoutTransactionsInput = {
@@ -42969,6 +46446,7 @@ export namespace Prisma {
     isReturned?: boolean
     returnedAt?: Date | string | null
     orderItems?: OrderItemUncheckedCreateNestedManyWithoutUnitBarcodeInput
+    fbaItems?: FbaTransferItemUncheckedCreateNestedManyWithoutUnitBarcodeInput
   }
 
   export type UnitBarcodeCreateOrConnectWithoutTransactionsInput = {
@@ -43056,6 +46534,7 @@ export namespace Prisma {
     returnedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     productVariant?: ProductVariantUpdateOneRequiredWithoutUnitBarcodesNestedInput
     orderItems?: OrderItemUpdateManyWithoutUnitBarcodeNestedInput
+    fbaItems?: FbaTransferItemUpdateManyWithoutUnitBarcodeNestedInput
   }
 
   export type UnitBarcodeUncheckedUpdateWithoutTransactionsInput = {
@@ -43072,6 +46551,7 @@ export namespace Prisma {
     isReturned?: BoolFieldUpdateOperationsInput | boolean
     returnedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     orderItems?: OrderItemUncheckedUpdateManyWithoutUnitBarcodeNestedInput
+    fbaItems?: FbaTransferItemUncheckedUpdateManyWithoutUnitBarcodeNestedInput
   }
 
   export type ProductVariantCreateWithoutPrintJobsInput = {
@@ -44171,6 +47651,7 @@ export namespace Prisma {
     returnedAt?: Date | string | null
     productVariant: ProductVariantCreateNestedOneWithoutUnitBarcodesInput
     transactions?: InventoryTransactionCreateNestedManyWithoutUnitBarcodeInput
+    fbaItems?: FbaTransferItemCreateNestedManyWithoutUnitBarcodeInput
   }
 
   export type UnitBarcodeUncheckedCreateWithoutOrderItemsInput = {
@@ -44188,6 +47669,7 @@ export namespace Prisma {
     isReturned?: boolean
     returnedAt?: Date | string | null
     transactions?: InventoryTransactionUncheckedCreateNestedManyWithoutUnitBarcodeInput
+    fbaItems?: FbaTransferItemUncheckedCreateNestedManyWithoutUnitBarcodeInput
   }
 
   export type UnitBarcodeCreateOrConnectWithoutOrderItemsInput = {
@@ -44328,6 +47810,7 @@ export namespace Prisma {
     returnedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     productVariant?: ProductVariantUpdateOneRequiredWithoutUnitBarcodesNestedInput
     transactions?: InventoryTransactionUpdateManyWithoutUnitBarcodeNestedInput
+    fbaItems?: FbaTransferItemUpdateManyWithoutUnitBarcodeNestedInput
   }
 
   export type UnitBarcodeUncheckedUpdateWithoutOrderItemsInput = {
@@ -44344,6 +47827,7 @@ export namespace Prisma {
     isReturned?: BoolFieldUpdateOperationsInput | boolean
     returnedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     transactions?: InventoryTransactionUncheckedUpdateManyWithoutUnitBarcodeNestedInput
+    fbaItems?: FbaTransferItemUncheckedUpdateManyWithoutUnitBarcodeNestedInput
   }
 
   export type CustomerCreateWithoutQuotationsInput = {
@@ -45722,6 +49206,241 @@ export namespace Prisma {
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
+  export type FbaTransferItemCreateWithoutFbaTransferInput = {
+    id?: string
+    barcode: string
+    serialNumber?: number
+    productVariantId: string
+    sku: string
+    productName: string
+    sellingPrice?: number
+    status?: string
+    tallyMonth?: string | null
+    tallyDate?: Date | string | null
+    tallyBy?: string | null
+    tallyNotes?: string | null
+    channelOrderId?: string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    unitBarcode?: UnitBarcodeCreateNestedOneWithoutFbaItemsInput
+  }
+
+  export type FbaTransferItemUncheckedCreateWithoutFbaTransferInput = {
+    id?: string
+    unitBarcodeId?: string | null
+    barcode: string
+    serialNumber?: number
+    productVariantId: string
+    sku: string
+    productName: string
+    sellingPrice?: number
+    status?: string
+    tallyMonth?: string | null
+    tallyDate?: Date | string | null
+    tallyBy?: string | null
+    tallyNotes?: string | null
+    channelOrderId?: string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+  }
+
+  export type FbaTransferItemCreateOrConnectWithoutFbaTransferInput = {
+    where: FbaTransferItemWhereUniqueInput
+    create: XOR<FbaTransferItemCreateWithoutFbaTransferInput, FbaTransferItemUncheckedCreateWithoutFbaTransferInput>
+  }
+
+  export type FbaTransferItemCreateManyFbaTransferInputEnvelope = {
+    data: FbaTransferItemCreateManyFbaTransferInput | FbaTransferItemCreateManyFbaTransferInput[]
+  }
+
+  export type FbaTransferItemUpsertWithWhereUniqueWithoutFbaTransferInput = {
+    where: FbaTransferItemWhereUniqueInput
+    update: XOR<FbaTransferItemUpdateWithoutFbaTransferInput, FbaTransferItemUncheckedUpdateWithoutFbaTransferInput>
+    create: XOR<FbaTransferItemCreateWithoutFbaTransferInput, FbaTransferItemUncheckedCreateWithoutFbaTransferInput>
+  }
+
+  export type FbaTransferItemUpdateWithWhereUniqueWithoutFbaTransferInput = {
+    where: FbaTransferItemWhereUniqueInput
+    data: XOR<FbaTransferItemUpdateWithoutFbaTransferInput, FbaTransferItemUncheckedUpdateWithoutFbaTransferInput>
+  }
+
+  export type FbaTransferItemUpdateManyWithWhereWithoutFbaTransferInput = {
+    where: FbaTransferItemScalarWhereInput
+    data: XOR<FbaTransferItemUpdateManyMutationInput, FbaTransferItemUncheckedUpdateManyWithoutFbaTransferInput>
+  }
+
+  export type FbaTransferCreateWithoutItemsInput = {
+    id?: string
+    shipmentNumber: string
+    channel?: string
+    destinationFc?: string | null
+    trackingId?: string | null
+    courier?: string | null
+    status?: string
+    totalUnits?: number
+    soldUnits?: number
+    damagedUnits?: number
+    returnedUnits?: number
+    transferredBy?: string
+    notes?: string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+  }
+
+  export type FbaTransferUncheckedCreateWithoutItemsInput = {
+    id?: string
+    shipmentNumber: string
+    channel?: string
+    destinationFc?: string | null
+    trackingId?: string | null
+    courier?: string | null
+    status?: string
+    totalUnits?: number
+    soldUnits?: number
+    damagedUnits?: number
+    returnedUnits?: number
+    transferredBy?: string
+    notes?: string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+  }
+
+  export type FbaTransferCreateOrConnectWithoutItemsInput = {
+    where: FbaTransferWhereUniqueInput
+    create: XOR<FbaTransferCreateWithoutItemsInput, FbaTransferUncheckedCreateWithoutItemsInput>
+  }
+
+  export type UnitBarcodeCreateWithoutFbaItemsInput = {
+    id?: string
+    barcode: string
+    serialNumber?: number
+    status?: string
+    printedCount?: number
+    generatedAt?: Date | string
+    generatedBy?: string
+    soldAt?: Date | string | null
+    deactivatedAt?: Date | string | null
+    reason?: string | null
+    isReturned?: boolean
+    returnedAt?: Date | string | null
+    productVariant: ProductVariantCreateNestedOneWithoutUnitBarcodesInput
+    transactions?: InventoryTransactionCreateNestedManyWithoutUnitBarcodeInput
+    orderItems?: OrderItemCreateNestedManyWithoutUnitBarcodeInput
+  }
+
+  export type UnitBarcodeUncheckedCreateWithoutFbaItemsInput = {
+    id?: string
+    productVariantId: string
+    barcode: string
+    serialNumber?: number
+    status?: string
+    printedCount?: number
+    generatedAt?: Date | string
+    generatedBy?: string
+    soldAt?: Date | string | null
+    deactivatedAt?: Date | string | null
+    reason?: string | null
+    isReturned?: boolean
+    returnedAt?: Date | string | null
+    transactions?: InventoryTransactionUncheckedCreateNestedManyWithoutUnitBarcodeInput
+    orderItems?: OrderItemUncheckedCreateNestedManyWithoutUnitBarcodeInput
+  }
+
+  export type UnitBarcodeCreateOrConnectWithoutFbaItemsInput = {
+    where: UnitBarcodeWhereUniqueInput
+    create: XOR<UnitBarcodeCreateWithoutFbaItemsInput, UnitBarcodeUncheckedCreateWithoutFbaItemsInput>
+  }
+
+  export type FbaTransferUpsertWithoutItemsInput = {
+    update: XOR<FbaTransferUpdateWithoutItemsInput, FbaTransferUncheckedUpdateWithoutItemsInput>
+    create: XOR<FbaTransferCreateWithoutItemsInput, FbaTransferUncheckedCreateWithoutItemsInput>
+    where?: FbaTransferWhereInput
+  }
+
+  export type FbaTransferUpdateToOneWithWhereWithoutItemsInput = {
+    where?: FbaTransferWhereInput
+    data: XOR<FbaTransferUpdateWithoutItemsInput, FbaTransferUncheckedUpdateWithoutItemsInput>
+  }
+
+  export type FbaTransferUpdateWithoutItemsInput = {
+    shipmentNumber?: StringFieldUpdateOperationsInput | string
+    channel?: StringFieldUpdateOperationsInput | string
+    destinationFc?: NullableStringFieldUpdateOperationsInput | string | null
+    trackingId?: NullableStringFieldUpdateOperationsInput | string | null
+    courier?: NullableStringFieldUpdateOperationsInput | string | null
+    status?: StringFieldUpdateOperationsInput | string
+    totalUnits?: IntFieldUpdateOperationsInput | number
+    soldUnits?: IntFieldUpdateOperationsInput | number
+    damagedUnits?: IntFieldUpdateOperationsInput | number
+    returnedUnits?: IntFieldUpdateOperationsInput | number
+    transferredBy?: StringFieldUpdateOperationsInput | string
+    notes?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type FbaTransferUncheckedUpdateWithoutItemsInput = {
+    shipmentNumber?: StringFieldUpdateOperationsInput | string
+    channel?: StringFieldUpdateOperationsInput | string
+    destinationFc?: NullableStringFieldUpdateOperationsInput | string | null
+    trackingId?: NullableStringFieldUpdateOperationsInput | string | null
+    courier?: NullableStringFieldUpdateOperationsInput | string | null
+    status?: StringFieldUpdateOperationsInput | string
+    totalUnits?: IntFieldUpdateOperationsInput | number
+    soldUnits?: IntFieldUpdateOperationsInput | number
+    damagedUnits?: IntFieldUpdateOperationsInput | number
+    returnedUnits?: IntFieldUpdateOperationsInput | number
+    transferredBy?: StringFieldUpdateOperationsInput | string
+    notes?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type UnitBarcodeUpsertWithoutFbaItemsInput = {
+    update: XOR<UnitBarcodeUpdateWithoutFbaItemsInput, UnitBarcodeUncheckedUpdateWithoutFbaItemsInput>
+    create: XOR<UnitBarcodeCreateWithoutFbaItemsInput, UnitBarcodeUncheckedCreateWithoutFbaItemsInput>
+    where?: UnitBarcodeWhereInput
+  }
+
+  export type UnitBarcodeUpdateToOneWithWhereWithoutFbaItemsInput = {
+    where?: UnitBarcodeWhereInput
+    data: XOR<UnitBarcodeUpdateWithoutFbaItemsInput, UnitBarcodeUncheckedUpdateWithoutFbaItemsInput>
+  }
+
+  export type UnitBarcodeUpdateWithoutFbaItemsInput = {
+    barcode?: StringFieldUpdateOperationsInput | string
+    serialNumber?: IntFieldUpdateOperationsInput | number
+    status?: StringFieldUpdateOperationsInput | string
+    printedCount?: IntFieldUpdateOperationsInput | number
+    generatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    generatedBy?: StringFieldUpdateOperationsInput | string
+    soldAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    deactivatedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    reason?: NullableStringFieldUpdateOperationsInput | string | null
+    isReturned?: BoolFieldUpdateOperationsInput | boolean
+    returnedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    productVariant?: ProductVariantUpdateOneRequiredWithoutUnitBarcodesNestedInput
+    transactions?: InventoryTransactionUpdateManyWithoutUnitBarcodeNestedInput
+    orderItems?: OrderItemUpdateManyWithoutUnitBarcodeNestedInput
+  }
+
+  export type UnitBarcodeUncheckedUpdateWithoutFbaItemsInput = {
+    productVariantId?: StringFieldUpdateOperationsInput | string
+    barcode?: StringFieldUpdateOperationsInput | string
+    serialNumber?: IntFieldUpdateOperationsInput | number
+    status?: StringFieldUpdateOperationsInput | string
+    printedCount?: IntFieldUpdateOperationsInput | number
+    generatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    generatedBy?: StringFieldUpdateOperationsInput | string
+    soldAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    deactivatedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    reason?: NullableStringFieldUpdateOperationsInput | string | null
+    isReturned?: BoolFieldUpdateOperationsInput | boolean
+    returnedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    transactions?: InventoryTransactionUncheckedUpdateManyWithoutUnitBarcodeNestedInput
+    orderItems?: OrderItemUncheckedUpdateManyWithoutUnitBarcodeNestedInput
+  }
+
   export type CategoryCreateManyParentInput = {
     id?: string
     name: string
@@ -46231,6 +49950,7 @@ export namespace Prisma {
     returnedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     transactions?: InventoryTransactionUpdateManyWithoutUnitBarcodeNestedInput
     orderItems?: OrderItemUpdateManyWithoutUnitBarcodeNestedInput
+    fbaItems?: FbaTransferItemUpdateManyWithoutUnitBarcodeNestedInput
   }
 
   export type UnitBarcodeUncheckedUpdateWithoutProductVariantInput = {
@@ -46247,6 +49967,7 @@ export namespace Prisma {
     returnedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     transactions?: InventoryTransactionUncheckedUpdateManyWithoutUnitBarcodeNestedInput
     orderItems?: OrderItemUncheckedUpdateManyWithoutUnitBarcodeNestedInput
+    fbaItems?: FbaTransferItemUncheckedUpdateManyWithoutUnitBarcodeNestedInput
   }
 
   export type UnitBarcodeUncheckedUpdateManyWithoutProductVariantInput = {
@@ -46438,6 +50159,25 @@ export namespace Prisma {
     totalPrice: number
   }
 
+  export type FbaTransferItemCreateManyUnitBarcodeInput = {
+    id?: string
+    fbaTransferId: string
+    barcode: string
+    serialNumber?: number
+    productVariantId: string
+    sku: string
+    productName: string
+    sellingPrice?: number
+    status?: string
+    tallyMonth?: string | null
+    tallyDate?: Date | string | null
+    tallyBy?: string | null
+    tallyNotes?: string | null
+    channelOrderId?: string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+  }
+
   export type InventoryTransactionUpdateWithoutUnitBarcodeInput = {
     transactionType?: StringFieldUpdateOperationsInput | string
     quantity?: IntFieldUpdateOperationsInput | number
@@ -46505,6 +50245,60 @@ export namespace Prisma {
     quantity?: IntFieldUpdateOperationsInput | number
     unitPrice?: FloatFieldUpdateOperationsInput | number
     totalPrice?: FloatFieldUpdateOperationsInput | number
+  }
+
+  export type FbaTransferItemUpdateWithoutUnitBarcodeInput = {
+    barcode?: StringFieldUpdateOperationsInput | string
+    serialNumber?: IntFieldUpdateOperationsInput | number
+    productVariantId?: StringFieldUpdateOperationsInput | string
+    sku?: StringFieldUpdateOperationsInput | string
+    productName?: StringFieldUpdateOperationsInput | string
+    sellingPrice?: FloatFieldUpdateOperationsInput | number
+    status?: StringFieldUpdateOperationsInput | string
+    tallyMonth?: NullableStringFieldUpdateOperationsInput | string | null
+    tallyDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    tallyBy?: NullableStringFieldUpdateOperationsInput | string | null
+    tallyNotes?: NullableStringFieldUpdateOperationsInput | string | null
+    channelOrderId?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    fbaTransfer?: FbaTransferUpdateOneRequiredWithoutItemsNestedInput
+  }
+
+  export type FbaTransferItemUncheckedUpdateWithoutUnitBarcodeInput = {
+    fbaTransferId?: StringFieldUpdateOperationsInput | string
+    barcode?: StringFieldUpdateOperationsInput | string
+    serialNumber?: IntFieldUpdateOperationsInput | number
+    productVariantId?: StringFieldUpdateOperationsInput | string
+    sku?: StringFieldUpdateOperationsInput | string
+    productName?: StringFieldUpdateOperationsInput | string
+    sellingPrice?: FloatFieldUpdateOperationsInput | number
+    status?: StringFieldUpdateOperationsInput | string
+    tallyMonth?: NullableStringFieldUpdateOperationsInput | string | null
+    tallyDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    tallyBy?: NullableStringFieldUpdateOperationsInput | string | null
+    tallyNotes?: NullableStringFieldUpdateOperationsInput | string | null
+    channelOrderId?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type FbaTransferItemUncheckedUpdateManyWithoutUnitBarcodeInput = {
+    fbaTransferId?: StringFieldUpdateOperationsInput | string
+    barcode?: StringFieldUpdateOperationsInput | string
+    serialNumber?: IntFieldUpdateOperationsInput | number
+    productVariantId?: StringFieldUpdateOperationsInput | string
+    sku?: StringFieldUpdateOperationsInput | string
+    productName?: StringFieldUpdateOperationsInput | string
+    sellingPrice?: FloatFieldUpdateOperationsInput | number
+    status?: StringFieldUpdateOperationsInput | string
+    tallyMonth?: NullableStringFieldUpdateOperationsInput | string | null
+    tallyDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    tallyBy?: NullableStringFieldUpdateOperationsInput | string | null
+    tallyNotes?: NullableStringFieldUpdateOperationsInput | string | null
+    channelOrderId?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
   export type OrderCreateManyCustomerInput = {
@@ -47210,6 +51004,79 @@ export namespace Prisma {
     taxPrice?: FloatFieldUpdateOperationsInput | number
     localVariantId?: NullableStringFieldUpdateOperationsInput | string | null
     scannedBarcode?: NullableStringFieldUpdateOperationsInput | string | null
+  }
+
+  export type FbaTransferItemCreateManyFbaTransferInput = {
+    id?: string
+    unitBarcodeId?: string | null
+    barcode: string
+    serialNumber?: number
+    productVariantId: string
+    sku: string
+    productName: string
+    sellingPrice?: number
+    status?: string
+    tallyMonth?: string | null
+    tallyDate?: Date | string | null
+    tallyBy?: string | null
+    tallyNotes?: string | null
+    channelOrderId?: string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+  }
+
+  export type FbaTransferItemUpdateWithoutFbaTransferInput = {
+    barcode?: StringFieldUpdateOperationsInput | string
+    serialNumber?: IntFieldUpdateOperationsInput | number
+    productVariantId?: StringFieldUpdateOperationsInput | string
+    sku?: StringFieldUpdateOperationsInput | string
+    productName?: StringFieldUpdateOperationsInput | string
+    sellingPrice?: FloatFieldUpdateOperationsInput | number
+    status?: StringFieldUpdateOperationsInput | string
+    tallyMonth?: NullableStringFieldUpdateOperationsInput | string | null
+    tallyDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    tallyBy?: NullableStringFieldUpdateOperationsInput | string | null
+    tallyNotes?: NullableStringFieldUpdateOperationsInput | string | null
+    channelOrderId?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    unitBarcode?: UnitBarcodeUpdateOneWithoutFbaItemsNestedInput
+  }
+
+  export type FbaTransferItemUncheckedUpdateWithoutFbaTransferInput = {
+    unitBarcodeId?: NullableStringFieldUpdateOperationsInput | string | null
+    barcode?: StringFieldUpdateOperationsInput | string
+    serialNumber?: IntFieldUpdateOperationsInput | number
+    productVariantId?: StringFieldUpdateOperationsInput | string
+    sku?: StringFieldUpdateOperationsInput | string
+    productName?: StringFieldUpdateOperationsInput | string
+    sellingPrice?: FloatFieldUpdateOperationsInput | number
+    status?: StringFieldUpdateOperationsInput | string
+    tallyMonth?: NullableStringFieldUpdateOperationsInput | string | null
+    tallyDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    tallyBy?: NullableStringFieldUpdateOperationsInput | string | null
+    tallyNotes?: NullableStringFieldUpdateOperationsInput | string | null
+    channelOrderId?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type FbaTransferItemUncheckedUpdateManyWithoutFbaTransferInput = {
+    unitBarcodeId?: NullableStringFieldUpdateOperationsInput | string | null
+    barcode?: StringFieldUpdateOperationsInput | string
+    serialNumber?: IntFieldUpdateOperationsInput | number
+    productVariantId?: StringFieldUpdateOperationsInput | string
+    sku?: StringFieldUpdateOperationsInput | string
+    productName?: StringFieldUpdateOperationsInput | string
+    sellingPrice?: FloatFieldUpdateOperationsInput | number
+    status?: StringFieldUpdateOperationsInput | string
+    tallyMonth?: NullableStringFieldUpdateOperationsInput | string | null
+    tallyDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    tallyBy?: NullableStringFieldUpdateOperationsInput | string | null
+    tallyNotes?: NullableStringFieldUpdateOperationsInput | string | null
+    channelOrderId?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
 

@@ -26,11 +26,17 @@ import {
   ShieldCheck,
   Edit3,
   RotateCcw,
+  ChevronDown,
+  PackagePlus,
+  ClipboardList,
+  MoreVertical,
 } from "lucide-react";
 import {
   PrintShippingInvoiceDialog,
   ShippingInvoiceData,
 } from "@/components/PrintShippingInvoiceDialog";
+import { BulkFbaTransferModal } from "@/components/BulkFbaTransferModal";
+import { FbaMonthlyTallyModal } from "@/components/FbaMonthlyTallyModal";
 
 export default function ScanPosPage() {
   const [scanInput, setScanInput] = useState("");
@@ -84,6 +90,11 @@ export default function ScanPosPage() {
   // Invoice dialog state
   const [invoiceModalData, setInvoiceModalData] = useState<ShippingInvoiceData | null>(null);
   const [invoiceModalMode, setInvoiceModalMode] = useState<"A4_INVOICE" | "THERMAL_LABEL">("A4_INVOICE");
+
+  // FBA Bulk Scan & Monthly Tally Modal states
+  const [showMoreMenu, setShowMoreMenu] = useState(false);
+  const [showBulkFbaModal, setShowBulkFbaModal] = useState(false);
+  const [showFbaTallyModal, setShowFbaTallyModal] = useState(false);
 
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -342,6 +353,110 @@ export default function ScanPosPage() {
           <p className="text-xs text-slate-500 mt-1">
             Scan physical Code 128 unit barcodes for Amazon, Flipkart, Website, Walk-in POS, or B2B orders with automatic stock deduction and invoice generation.
           </p>
+        </div>
+
+        {/* Topbar Actions: Bulk Scan to FBA & More Menu */}
+        <div className="flex items-center gap-2 relative">
+          <button
+            type="button"
+            onClick={() => setShowBulkFbaModal(true)}
+            className="px-3.5 py-2 bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 rounded-xl text-xs font-bold flex items-center gap-2 transition-all shadow-xs cursor-pointer active:scale-95"
+            title="Scan bulk unit barcodes and transfer to Amazon FBA / Flipkart FBF warehouse"
+          >
+            <PackagePlus className="w-4 h-4 text-amber-600" />
+            <span>Bulk Scan to FBA</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setShowFbaTallyModal(true)}
+            className="px-3.5 py-2 bg-teal-50 hover:bg-teal-100 text-[#056468] border border-teal-300 rounded-xl text-xs font-bold flex items-center gap-2 transition-all shadow-xs cursor-pointer active:scale-95"
+            title="View units kept at FBA and mark them as ordered/delivered during monthly sales tally"
+          >
+            <ClipboardList className="w-4 h-4 text-[#056468]" />
+            <span>FBA Monthly Tally</span>
+          </button>
+
+          {/* More Dropdown Menu */}
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => setShowMoreMenu(!showMoreMenu)}
+              className="px-3 py-2 bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all shadow-xs cursor-pointer"
+            >
+              <span>More</span>
+              <ChevronDown className={`w-3.5 h-3.5 text-slate-500 transition-transform ${showMoreMenu ? "rotate-180" : ""}`} />
+            </button>
+
+            {showMoreMenu && (
+              <>
+                <div
+                  className="fixed inset-0 z-20"
+                  onClick={() => setShowMoreMenu(false)}
+                />
+                <div className="absolute right-0 mt-2 w-72 bg-white border border-slate-200 rounded-2xl shadow-xl z-30 py-2 divide-y divide-slate-100 animate-in fade-in zoom-in-95">
+                  <div className="px-3.5 py-1.5 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                    FBA & Marketplace Inbound
+                  </div>
+                  <div className="py-1">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowMoreMenu(false);
+                        setShowBulkFbaModal(true);
+                      }}
+                      className="w-full px-3.5 py-2 text-left text-xs font-semibold text-slate-800 hover:bg-amber-50 hover:text-amber-900 flex items-center gap-2.5 transition-colors cursor-pointer"
+                    >
+                      <PackagePlus className="w-4 h-4 text-amber-600 shrink-0" />
+                      <div>
+                        <div className="font-bold">Bulk Scan to FBA</div>
+                        <div className="text-[10px] text-slate-400 font-normal">
+                          Inward & transfer physical units to Amazon/Flipkart FC
+                        </div>
+                      </div>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowMoreMenu(false);
+                        setShowFbaTallyModal(true);
+                      }}
+                      className="w-full px-3.5 py-2 text-left text-xs font-semibold text-slate-800 hover:bg-teal-50 hover:text-[#056468] flex items-center gap-2.5 transition-colors cursor-pointer"
+                    >
+                      <ClipboardList className="w-4 h-4 text-[#056468] shrink-0" />
+                      <div>
+                        <div className="font-bold">FBA Stock & Monthly Tally</div>
+                        <div className="text-[10px] text-slate-400 font-normal">
+                          View sitting units & mark ordered/delivered
+                        </div>
+                      </div>
+                    </button>
+                  </div>
+
+                  <div className="px-3.5 py-1.5 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                    Quick Links
+                  </div>
+                  <div className="py-1">
+                    <a
+                      href="/orders"
+                      className="w-full px-3.5 py-2 text-left text-xs font-semibold text-slate-700 hover:bg-slate-50 flex items-center gap-2.5 transition-colors"
+                    >
+                      <Receipt className="w-4 h-4 text-slate-500" />
+                      <span>View Orders & Live Tracking</span>
+                    </a>
+                    <a
+                      href="/reports"
+                      className="w-full px-3.5 py-2 text-left text-xs font-semibold text-slate-700 hover:bg-slate-50 flex items-center gap-2.5 transition-colors"
+                    >
+                      <FileText className="w-4 h-4 text-slate-500" />
+                      <span>Export Reports & Tally</span>
+                    </a>
+                  </div>
+                </div>
+              </>
+            )}
+          </div>
         </div>
       </div>
 
@@ -1045,6 +1160,20 @@ export default function ScanPosPage() {
           initialMode={invoiceModalMode}
         />
       )}
+
+      {/* Bulk Scan to FBA Modal */}
+      <BulkFbaTransferModal
+        isOpen={showBulkFbaModal}
+        onClose={() => setShowBulkFbaModal(false)}
+        onOpenTally={() => setShowFbaTallyModal(true)}
+      />
+
+      {/* FBA Monthly Tally System Modal */}
+      <FbaMonthlyTallyModal
+        isOpen={showFbaTallyModal}
+        onClose={() => setShowFbaTallyModal(false)}
+        onOpenTransferModal={() => setShowBulkFbaModal(true)}
+      />
     </div>
   );
 }

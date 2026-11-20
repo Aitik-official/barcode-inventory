@@ -520,6 +520,44 @@ exports.Prisma.CompanySettingsScalarFieldEnum = {
   updatedAt: 'updatedAt'
 };
 
+exports.Prisma.FbaTransferScalarFieldEnum = {
+  id: 'id',
+  shipmentNumber: 'shipmentNumber',
+  channel: 'channel',
+  destinationFc: 'destinationFc',
+  trackingId: 'trackingId',
+  courier: 'courier',
+  status: 'status',
+  totalUnits: 'totalUnits',
+  soldUnits: 'soldUnits',
+  damagedUnits: 'damagedUnits',
+  returnedUnits: 'returnedUnits',
+  transferredBy: 'transferredBy',
+  notes: 'notes',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+};
+
+exports.Prisma.FbaTransferItemScalarFieldEnum = {
+  id: 'id',
+  fbaTransferId: 'fbaTransferId',
+  unitBarcodeId: 'unitBarcodeId',
+  barcode: 'barcode',
+  serialNumber: 'serialNumber',
+  productVariantId: 'productVariantId',
+  sku: 'sku',
+  productName: 'productName',
+  sellingPrice: 'sellingPrice',
+  status: 'status',
+  tallyMonth: 'tallyMonth',
+  tallyDate: 'tallyDate',
+  tallyBy: 'tallyBy',
+  tallyNotes: 'tallyNotes',
+  channelOrderId: 'channelOrderId',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+};
+
 exports.Prisma.SortOrder = {
   asc: 'asc',
   desc: 'desc'
@@ -556,7 +594,9 @@ exports.Prisma.ModelName = {
   MarketplaceOrder: 'MarketplaceOrder',
   MarketplaceOrderItem: 'MarketplaceOrderItem',
   User: 'User',
-  CompanySettings: 'CompanySettings'
+  CompanySettings: 'CompanySettings',
+  FbaTransfer: 'FbaTransfer',
+  FbaTransferItem: 'FbaTransferItem'
 };
 
 /**
